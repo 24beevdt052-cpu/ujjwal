@@ -205,6 +205,17 @@ freight levels and the lag-2 grade mix are hindsight reconstructions (§4.3, scr
 6. *PSIC* (Gulf origin) and *grade-specific payloads* enter port/freight costs; the anchor uses the MCX contract that
    matches the sale date; `wc_rate_inr_pa` is now a dated path.
 
+## 5a. Trade eligibility rule (Table 4 row 2.9) — DECLARED EX ANTE on 2026-09-16, before any Phase 1 result existed
+The Phase 0 gate showed the base flag alone barely filters (111/156 lane-week-grade cases open), so a trade may only be
+executed in week × grade × lane cases that are open under **all three** of:
+1. **Base** — §5 exactly as registered.
+2. **No hindsight** — `grade_factor_mix_pit` (the mix a 2022 desk could actually have known) in place of the lag-2 mix.
+3. **Margin of safety** — conversion cost one grid step above base: 18,000 ₹/t ingot (`conversion_cost_sensitivity_inr_t_ingot`).
+
+P1 publishes this as `trade_eligible` in `parity_weekly.csv` (alongside every sensitivity flag). A trade dated `d` is
+tested against the latest parity `week_end ≤ d` (decisions use only information published by the trade date).
+Changing this rule after seeing results is not allowed; if it proves unworkable, P1 reports that and the rule stays.
+
 ## 6. Later-phase output contracts (outline — each phase documents final columns in its docs page)
 - P1 `outputs/tables/parity_weekly.csv` (one row per week × grade × lane with every §5 line item + `window_open`),
   `parity_sensitivity_lme_fx.csv`, `parity_sensitivity_freight_duty.csv`, `term_structure_weekly.csv`.
@@ -217,3 +228,23 @@ freight levels and the lag-2 grade mix are hindsight reconstructions (§4.3, scr
 - P5 `credit_scores.csv`, `credit_tracker.csv`, `margin_liquidity.csv`; `outputs/reports/risk_policy_memo.*`.
 - P6/P7 `outputs/reports/desk_note_<n>_<week>.{md,pdf}`, `post_mortem.{md,pdf}`, `interview_pack.md`,
   `sentiment_weekly.csv`; root `README.md`.
+
+## 7. Position model decisions (fixed before Phase 2/3 design; the design doc `docs/design/30_position_model.md` details them)
+1. **Horizon.** `HORIZON_END` = 2022-10-31. Every trade's cashflows (LC payments incl. usance, duties, freight, buyer
+   receipts, hedge unwinds, forward settlements) settle on or before it. Window reporting (Mar–Aug) cuts at `WINDOW_END`
+   and shows unrealised MTM; final P&L is at `HORIZON_END`.
+2. **P&L buckets.** `attribution_daily.csv` uses `desk.reporting.style.PNL_BUCKETS` = `new_deal` (deal margin at
+   inception: value of the trade at contract terms vs market on its trade date) + the seven market factors in
+   `FACTOR_ORDER`, plus a `residual` column that must be |residual| ≤ ₹1 per trade-day. Σ buckets = daily total P&L.
+3. **Total P&L identity.** For each trade and day: cumulative P&L = realised cash to date + MTM of remaining legs;
+   daily P&L = Δ cumulative P&L. MTM is undiscounted; finance costs are explicit cashflows/accruals, not discounting.
+4. **Attribution method.** Sequential full revaluation from state(t−1) to state(t) in `FACTOR_ORDER`, where each step
+   swaps in one block of market state; the order and each block's contents are documented, and cross-terms land in the
+   factor that moves last (never in `residual`). Adverse-event impacts (Table 5 rows 3.4–3.6) are computed from these
+   attributions over dated event windows plus counterfactual (unhedged) books.
+5. **MCX source switch.** Base runs use the panel MCX columns (PROXY). The engine accepts an alternative MCX series
+   (the third-party mirror in `data/interim`, PROXY) so the LME–MCX basis risk can be shown as a sensitivity; results
+   from it are never presented as base P&L.
+6. **Honest framing of adverse event #3.** Freight fell through the window (docs/research/freight_notes.md). Event #3 is a
+   buyer payment delay (SIM) plus the real July-2022 carrier call cancellations at Nhava Sheva/Mundra (demurrage), and the
+   real freight effect of fixtures locked above a falling market. Any freight *spike* is a labelled hypothetical stress.

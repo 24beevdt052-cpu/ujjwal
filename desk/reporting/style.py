@@ -35,7 +35,12 @@ FACTOR_LABELS = {
     "demurrage_penalty": "(f) Demurrage / penalties",
     "roll_term_structure": "(g) Roll / term structure",
 }
+# Full P&L bucket list for attribution tables: day-one deal margin + the seven market factors (CONTRACTS §7).
+PNL_BUCKETS = ["new_deal"] + FACTOR_ORDER
+FACTOR_LABELS["new_deal"] = "(0) Deal margin at inception"
+
 FACTOR_COLORS = {
+    "new_deal": "#2e7d32",
     "lme_flat": "#1f4e79",
     "cross_exchange_basis": "#c55a11",
     "grade_spread": "#8064a2",

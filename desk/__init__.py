@@ -9,7 +9,7 @@ BASE_CCY = "INR"
 # Headline backtest window (Table 2) and the wider engine horizon (lets trades settle after August).
 WINDOW_START = _dt.date(2022, 3, 1)
 WINDOW_END = _dt.date(2022, 8, 31)
-HORIZON_END = _dt.date(2022, 9, 30)
+HORIZON_END = _dt.date(2022, 10, 31)  # every trade cashflow settles by here (CONTRACTS §7)
 # Pre-window history used for GARCH lookback and covariance estimation.
 HISTORY_START = _dt.date(2018, 1, 2)
 # Last day of the Phase 0 market panel (every processed daily/weekly file ends here).

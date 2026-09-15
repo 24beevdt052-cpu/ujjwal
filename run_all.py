@@ -29,11 +29,11 @@ STAGES: list[tuple[str, str, str]] = [
     ("P1", "Import parity model", "desk.parity.run"),
     ("P2", "Mock trading book", "desk.book.run"),
     ("P3", "Daily MTM + P&L attribution + adverse events", "desk.mtm.run"),
+    ("P3", "Master Excel workbook (Components 1–3, formula-driven)", "desk.excel.build"),
     ("P4", "GARCH vs historical VaR + Kupiec backtest", "desk.risk.run_var"),
     ("P4", "Monte Carlo stress (10,000 paths)", "desk.risk.run_mc"),
     ("P5", "Counterparty credit scoring + tracker", "desk.risk.run_credit"),
     ("P5", "Margin & liquidity", "desk.risk.run_liquidity"),
-    ("P5", "Master Excel workbook (Components 1–3, formula-driven)", "desk.excel.build"),
     ("P7", "Sentiment overlay (VADER)", "desk.sentiment.run"),
     ("P6", "Desk notes, post-mortem, risk memo, interview pack", "desk.reporting.run_reports"),
 ]
