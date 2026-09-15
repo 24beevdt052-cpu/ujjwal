@@ -1,0 +1,38 @@
+# SEED VALUES — owned by the Phase 0 market-data agent. Policy-rate paths are public facts; spreads are proxies.
+
+rbi_repo_rate_pa:
+  path:
+    - [2020-05-22, 0.0400]
+    - [2022-05-04, 0.0440]
+    - [2022-06-08, 0.0490]
+    - [2022-08-05, 0.0540]
+    - [2022-09-30, 0.0590]
+  interp: step
+  unit: rate_pa
+  flag: DIRECT
+  source: "RBI Monetary Policy Statements (off-cycle 4 May 2022; 8 Jun; 5 Aug; 30 Sep 2022)"
+  verify: "PENDING"
+  note: "Seed. Step path, effective on announcement date."
+
+fed_funds_upper_pa:
+  path:
+    - [2020-03-16, 0.0025]
+    - [2022-03-17, 0.0050]
+    - [2022-05-05, 0.0100]
+    - [2022-06-16, 0.0175]
+    - [2022-07-28, 0.0250]
+    - [2022-09-22, 0.0325]
+  interp: step
+  unit: rate_pa
+  flag: DIRECT
+  source: "FOMC statements (16 Mar, 4 May, 15 Jun, 27 Jul, 21 Sep 2022); effective the day after"
+  verify: "PENDING"
+  note: "Seed. Upper bound of the target range."
+
+wc_rate_inr_pa:
+  value: 0.095
+  unit: rate_pa
+  flag: ASSUMPTION
+  source: "Desk assumption: mid-size trader working-capital line ~ bank MCLR + ~2%"
+  verify: "N/A — assumption; sanity-check vs SBI 1Y MCLR 2022 (~7.0–7.7%)"
+  note: "Seed. Used for finance cost = (AV + duty) × days/365 × rate."

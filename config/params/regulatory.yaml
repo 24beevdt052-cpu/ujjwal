@@ -1,0 +1,42 @@
+# SEED VALUES — owned by the Phase 0 regulatory/contract research agent, who verifies and refines them.
+# Indian customs & trade-policy parameters for HS 7602 (aluminium waste & scrap), Mar–Aug 2022.
+
+bcd_scrap_hs7602:
+  value: 0.025
+  unit: frac_of_assessable_value
+  flag: DIRECT
+  source: "CBIC Customs Tariff of India, Chapter 76, tariff item 7602 00 (effective rate via Notification 50/2017-Customs as amended by Budget 2021)"
+  verify: "PENDING — confirm effective BCD on 7602 00 10/90 for Mar–Aug 2022 on cbic.gov.in"
+  note: "Seed. Budget 2021-22 cut BCD on aluminium scrap to 2.5%."
+
+sws_rate_on_bcd:
+  value: 0.10
+  unit: frac_of_bcd
+  flag: DIRECT
+  source: "Finance Act 2018, s.110 (Social Welfare Surcharge = 10% of aggregate customs duties)"
+  verify: "PENDING"
+  note: "Seed. SWS is levied on BCD (not on assessable value)."
+
+igst_rate_hs7602:
+  value: 0.18
+  unit: frac_of_av_plus_customs_duty
+  flag: DIRECT
+  source: "IGST rate schedule (Notification 1/2017-Integrated Tax (Rate)), HS 7602"
+  verify: "PENDING"
+  note: "Seed. Import IGST is creditable as ITC for a GST-registered trader."
+
+igst_itc_available:
+  value: true
+  unit: bool
+  flag: ASSUMPTION
+  source: "Desk assumption: GST-registered importer re-selling taxable goods claims full ITC"
+  verify: "N/A — structural assumption"
+  note: "When true, import IGST is excluded from landed cost (only its financing cost is kept)."
+
+bcd_primary_al_hs7601:
+  value: 0.075
+  unit: frac_of_assessable_value
+  flag: DIRECT
+  source: "CBIC Customs Tariff of India, Chapter 76, tariff item 7601 (unwrought aluminium)"
+  verify: "PENDING — confirm effective BCD on 7601 for 2022"
+  note: "Seed. Used only for the MCX import-parity proxy (MCX Aluminium is priced duty-paid)."
