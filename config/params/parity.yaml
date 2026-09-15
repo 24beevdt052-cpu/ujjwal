@@ -1,0 +1,146 @@
+# Owned by Phase 1 (import parity model, desk.parity). Only keys the parity model needs that no Phase 0 file defines.
+# Every CONTRACTS §5 line item still reads its canonical Phase 0 key; nothing here renames or replaces one.
+# Methods page: docs/10_parity_model.md.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Base-case modelling choices left open by CONTRACTS §5
+# ---------------------------------------------------------------------------------------------------------------
+parity_goods_fx_basis:
+  value: usdinr_fwd_1m
+  unit: panel_column_name
+  flag: ASSUMPTION
+  source: "CONTRACTS §5 goods_inr_t: 'market spot (P1 may use usdinr_fwd_* matched to the LC payment date instead, and must say which)'. Column from data/processed/market_daily.csv (PROXY, covered-interest-parity forward)."
+  verify: "N/A — modelling choice; the spot alternative is published as sensitivity case goods_fx_spot"
+  note: >-
+    Goods are paid under a sight LC on document presentation, ~7 days after the B/L (logistics.yaml finance_days_*
+    notes), and the B/L falls inside the 15-day shipment window (typical_laycan_days) after the parity week — so the
+    USD payment is roughly one month after the decision on both lanes. An importer that fixes the rupee cost on the
+    decision date buys USD one month forward; the domestic anchor is also a forward price (the MCX contract matched to
+    the sale date), so both legs are valued at prices lockable on the same day. Pricing goods at spot would book the
+    ~1-month forward premium (≈ INR 340–610/t of scrap in the Mar–Aug 2022 weeks) as margin. finance_inr_t then covers payment → buyer receipt
+    only, so no time period is financed twice.
+
+customs_fx_notification_validity_days:
+  value: 14
+  unit: calendar_days
+  flag: ASSUMPTION
+  source: "CBIC fortnightly exchange-rate notifications: consecutive USD-changing breakpoints in customs_usdinr_import (regulatory.yaml) are 14–21 days apart"
+  verify: "N/A — coverage rule for dates outside the registered notifications"
+  note: >-
+    The registered notification path runs 18-Feb-2022 → 16-Sep-2022. A parity week whose value date is before the first
+    notification, or more than this many days after the last one, uses customs_fx_markup_frac × market USD/INR (the
+    register's documented fallback) instead of clamping a stale notified rate; parity_weekly.csv labels each row in
+    customs_fx_src. Only out-of-window context weeks (Jan–mid-Feb and October 2022) are affected.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Sensitivity ranges quoted in Phase 0 notes, registered as numbers so the band is traceable
+# ---------------------------------------------------------------------------------------------------------------
+grade_factor_diff_quartiles_zorba:
+  value: [-0.0442, 0.0066]
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml grade_factor_diff_zorba source ('IQR −0.044 … +0.007, n=15'); 4-dp values from data/interim/price_evidence/grade_differentials.csv (p25_diff_clean, p75_diff_clean)"
+  verify: "N/A — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table"
+  note: "Applied to 2022 exactly like the median differential (hence ASSUMPTION). Cases grade_diff_q25/q75 put the differential at each quartile; grade_diff_minus_iqr/plus_iqr move the registered median by one full IQR width."
+
+grade_factor_diff_quartiles_taint_tabor:
+  value: [-0.0583, -0.0093]
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml grade_factor_diff_taint_tabor source ('IQR −0.058 … −0.009, n=8'); data/interim/price_evidence/grade_differentials.csv"
+  verify: "N/A — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table"
+  note: "n=8: the widest relative uncertainty of the three grades."
+
+grade_factor_diff_quartiles_tense:
+  value: [-0.0823, -0.0236]
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml grade_factor_diff_tense source ('IQR −0.082 … −0.024, n=28'); data/interim/price_evidence/grade_differentials.csv"
+  verify: "N/A — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table"
+  note: "Asymmetric around the −0.07 median: the upper quartile is 4.6 points above it, so the high case raises Tense CFR cost by ~USD 130/t."
+
+grade_factor_taint_tabor_spec_uplift:
+  value: 0.10
+  unit: frac_of_lme_3m
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 3 row 1.2 guide 'Taint-Tabor ~88–92%' vs the registered clean-TT CFR factor (Mar–Aug mean 0.786); scrap_grades.yaml grade_factor_taint_tabor note ('run a +0.10 sensitivity')"
+  verify: "N/A — informational sensitivity; no retrieved evidence supports the spec guide"
+  note: "Tests the spec's view only; it is not part of the required §5 band or the §5a rule."
+
+metal_yield_sensitivity_frac_zorba:
+  value: [0.92, 0.94]
+  unit: frac_of_aluminium_to_ingot
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml metal_yield_frac_zorba source/note ('0.92–0.94'; 'P1 recovery sensitivity: 0.92–0.94')"
+  verify: "N/A — sensitivity range from the Phase 0 note"
+  note: "The note's range brackets the 0.93 melt yield (not the 0.866 recovery), so it is applied to metal_yield_frac_zorba."
+
+metal_yield_sensitivity_frac_taint_tabor:
+  value: [0.90, 0.94]
+  unit: frac_of_clean_metal_to_ingot
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml metal_yield_frac_taint_tabor note ('P1 recovery sensitivity: 0.90–0.94')"
+  verify: "N/A — sensitivity range from the Phase 0 note"
+  note: "Brackets the 0.92 melt yield."
+
+metal_yield_sensitivity_frac_tense:
+  value: [0.92, 0.95]
+  unit: frac_of_clean_metal_to_ingot
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml metal_yield_frac_tense note ('P1 recovery sensitivity: 0.92–0.95')"
+  verify: "N/A — sensitivity range from the Phase 0 note"
+  note: "Brackets the 0.94 melt yield."
+
+heavies_net_value_sensitivity_frac:
+  value: [0.4, 1.5]
+  unit: frac_of_lme_3m_usd_t_per_mt_of_heavies
+  flag: ASSUMPTION
+  source: "scrap_grades.yaml heavies_net_value_frac_of_lme_al note ('P1 sensitivity: 0.4–1.5')"
+  verify: "N/A — sensitivity range from the Phase 0 note"
+  note: "Only Zorba 95/5 carries a heavies fraction, so only Zorba rows move."
+
+# ---------------------------------------------------------------------------------------------------------------
+# SPA quality settlement (Table 1.6) — numbers stated in words in commercial.yaml rejection_penalty_schedule
+# ---------------------------------------------------------------------------------------------------------------
+spa_moisture_deduction_ratio:
+  value: 1.0
+  unit: mt_deducted_per_mt_of_excess_moisture
+  flag: ASSUMPTION
+  source: "commercial.yaml rejection_penalty_schedule row 'moisture above franchise' → 'weight deduction 1:1 for the excess'; franchise = standard_moisture_franchise_frac"
+  verify: "N/A — contract-design assumption; tests/test_parity.py checks the schedule text still says 1:1"
+  note: "Payable weight = contracted weight × (1 − ratio × max(0, moisture − franchise))."
+
+spa_contamination_discount_multiple:
+  value: 1.5
+  unit: frac_price_discount_per_frac_of_excess
+  flag: ASSUMPTION
+  source: "commercial.yaml rejection_penalty_schedule row 'non-metallics / attachments above ISRI grade limit by up to 3 percentage points' → 'price discount of 1.5 × excess % on the whole lot'"
+  verify: "N/A — contract-design assumption; tests/test_parity.py checks the schedule text"
+  note: "Intentionally punitive (commercial.yaml note). The contracted limit is the grade's registered contamination_frac_<grade> — the composition the grade factor and recovery already price — which sits inside the ISRI limits quoted in scrap_grades.yaml."
+
+spa_contamination_rejection_excess_frac:
+  value: 0.03
+  unit: frac_of_dry_weight_above_limit
+  flag: ASSUMPTION
+  source: "commercial.yaml rejection_penalty_schedule row 'non-metallics above limit by more than 3 points, or wrong grade' → 'buyer may reject the lot or renegotiate'"
+  verify: "N/A — contract-design assumption; tests/test_parity.py checks the schedule text"
+  note: "Above this excess the lot is rejectable: re-export or storage costs are for the seller, the desk loses the margin, not the cash."
+
+# ---------------------------------------------------------------------------------------------------------------
+# LME term structure (Table 1.7)
+# ---------------------------------------------------------------------------------------------------------------
+lme_cash_prompt_bdays:
+  value: 2
+  unit: business_days_after_trade_date
+  flag: ASSUMPTION
+  source: "LME market convention: the cash prompt settles two business days after the trade date (T+2); the 3-months prompt is three calendar months after the trade date"
+  verify: "PENDING — stated from the standard LME convention, not re-read from the LME contract specification in Phase 1. Next step: LME Aluminium contract specification page (prompt date structure)."
+  note: "Used only to place the cash price on the day axis when term_structure.py interpolates the forward curve between cash and 3M; a ±2-day error moves the implied M+1 average by < USD 1/t in the window."
+
+mplus1_bl_month_offset_months:
+  value: 0
+  unit: months_after_parity_week_month
+  flag: ASSUMPTION
+  source: "Desk convention for Table 1.7(a): a cargo contracted in the parity week loads within the 15-day shipment window (typical_laycan_days), so its B/L month is taken as the parity week's month; the M+1 quotational period is the next calendar month (exchange.yaml lme_m1_pricing_rule)"
+  verify: "N/A — convention"
+  note: "A contract fixed in the last week of a month would often B/L the following month; the term-structure effect then shifts one month later, not in sign."

@@ -59,7 +59,7 @@ tests/                      pytest — one test module per stage (test_<stage>.p
 ## 3. Calendar
 - Panel calendar = LME trading days from the Westmetall LME official price tables, `HISTORY_START` (2018-01-02)
   → `PANEL_END` (2022-12-30). Headline window `WINDOW_START`–`WINDOW_END` (2022-03-01 → 2022-08-31); engine horizon
-  runs to `HORIZON_END` (2022-09-30) so trades can settle. All of these, and `MAX_FILL_BDAYS`, live in `desk/__init__.py`.
+  runs to `HORIZON_END` (2022-10-31, see §7) so trades can settle. All of these, and `MAX_FILL_BDAYS`, live in `desk/__init__.py`.
 - Series on other calendars (ECB FX, US Treasury bills, weekly freight) are aligned to the LME calendar by
   **point-in-time forward-fill** — a day only sees values already published on or before it — **with a `*_filled`
   boolean column** (max `MAX_FILL_BDAYS` = 5 business days; longer gaps raise). Weekly freight becomes available on
