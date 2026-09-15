@@ -22,6 +22,8 @@ STAGES: list[tuple[str, str, str]] = [
     ("P0", "USD/INR (ECB cross) + rates / forward premium", "desk.data.fetch_fx"),
     ("P0", "Freight proxy (weekly, per lane)", "desk.data.fetch_freight"),
     ("P0", "News headlines (Google News RSS, weekly)", "desk.sentiment.fetch_news"),
+    ("P0", "MCX third-party mirror extract (PROXY evidence)", "desk.data.fetch_mcx_mirror"),
+    ("P0", "Grade-factor and anchor price evidence (DGCIS, BigMint)", "desk.data.fetch_price_evidence"),
     ("P0", "Daily market panel (+ MCX manual/proxy)", "desk.data.build_panel"),
     ("P0", "Data dictionary + assumptions log", "desk.data.dictionary"),
     ("P1", "Import parity model", "desk.parity.run"),

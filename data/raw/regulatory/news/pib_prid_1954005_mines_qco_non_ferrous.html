@@ -1,0 +1,946 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1"><title>
+	Press Release:Press Information Bureau
+</title><link href="css/style.css" rel="stylesheet" type="text/css" /><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="alternate stylesheet" href="css/change.css" media="screen" title="change" /><link rel="alternate stylesheet" href="css/green.css" media="screen" title="green" /><link rel="alternate stylesheet" href="css/yellow.css" media="screen" title="yellow" /><link rel="stylesheet" type="text/css" href="css/prtint.css" media="print" /><link rel="stylesheet" href="css/style3.1.css" type="text/css" />
+
+
+      <script src="js/jquery.min.js" type="text/javascript"></script>
+      <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="true" /><link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet" />
+
+      <script type="text/javascript">
+            $(document).ready(function () {
+                  function getParameterByName(name) {
+                        var url = window.location.href;
+                        name = name.replace(/[\[\]]/g, '\\$&');
+                        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                              results = regex.exec(url);
+                        if (!results) return null;
+                        if (!results[2]) return '';
+                        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+                  }
+                  // Get the IDs from the current page's URL
+                  let prid = parseInt(getParameterByName('PRID'), 10);
+
+                  if (!isNaN(prid) && prid > 0) {
+                        $.ajax({
+                              type: "POST",
+                              url: "AjaxMethod.aspx/UpdatePRHitCount",
+                              async: false,
+                              data: JSON.stringify({ 'PermId': prid }),
+                              contentType: "application/json; charset=utf-8",
+                              dataType: "json",
+                              success: function (response) {
+                                    console.log(response);
+                              },
+                              error: function (error) {
+                                    console.log("Error in AJAX request", error);
+                              }
+                        });
+                  } else {
+                        console.log("Invalid parameters:", prid);
+                  }
+
+            });
+      </script>
+      <style type="text/css">
+            .table-responsive {
+                  width: 100%;
+                  overflow-x: auto;
+            }
+
+            .banner {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  background-color: #000;
+                  color: #fff;
+                  padding: 20px;
+            }
+
+            full-width {
+                  width: 100%;
+            }
+
+            .logo-left, .logo-center, .countdown {
+                  display: flex;
+                  align-items: center;
+            }
+
+                  .logo-left img, .logo-center img {
+                        height: 70px;
+                  }
+
+            .countdown {
+                  text-align: center;
+                  background-color: #444;
+                  border-radius: 10px;
+                  padding: 10px;
+                  border: 2px solid grey;
+            }
+
+            .firstnumber {
+                  color: #000000;
+                  position: absolute;
+                  top: 50px;
+                  right: 90px;
+                  font-size: 30px;
+            }
+
+            .secondnumber {
+                  position: absolute;
+                  color: #000000;
+                  right: 45px;
+                  top: 50px;
+                  font-size: 30px;
+            }
+
+            .countdown .days {
+                  font-size: 35px;
+                  color: gold;
+            }
+
+            .countdown p {
+                  margin: 0;
+            }
+
+            .countdown .text {
+                  font-size: 16px;
+            }
+
+            a {
+                  word-break: break-all;
+            }
+
+            iframe, img {
+                  max-width: 100%;
+            }
+
+            @media(max-width:1199px) {
+                  .firstnumber {
+                        top: 40px;
+                        right: 72px;
+                        font-size: 30px;
+                  }
+
+                  .secondnumber {
+                        right: 35px;
+                        top: 40px;
+                        font-size: 30px;
+                  }
+            }
+
+            @media(max-width:990px) {
+                  .firstnumber {
+                        top: 25px;
+                        right: 54px;
+                        font-size: 30px;
+                  }
+
+                  .secondnumber {
+                        right: 25px;
+                        top: 25px;
+                        font-size: 30px;
+                  }
+            }
+
+            @media(max-width:768px) {
+                  .countdown, .days {
+                        font-size: 12px !important;
+                  }
+
+
+                  .firstnumber {
+                        top: 25%;
+                        right: 8%;
+                        font-size: 30px;
+                  }
+
+                  .secondnumber {
+                        right: 4.5%;
+                        top: 25%;
+                        font-size: 30px;
+                  }
+            }
+
+            @media(max-width:475px) {
+                  .countdown, .days {
+                        font-size: 10px !important;
+                        top: 20%;
+                  }
+
+                  .bannerimgdiv {
+                        padding: 0 !important;
+                  }
+
+                  .bannerimg {
+                        width: 108% !important;
+                  }
+            }
+      </style>
+      <script type="text/javascript">
+            $(function () {
+                  $("[id*=printPDF]").click(function () {
+                        $("[id*=hfGridHtml]").val($("#PdfDiv").html());
+                  });
+            });
+            $(function () {
+                  $("[id*=printPDFEvent]").click(function () {
+                        $("[id*=hfGridHtml]").val($("#PdfDiv").html());
+                  });
+            });
+      </script>
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-112591026-1"></script>
+      <script>
+
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag() { dataLayer.push(arguments); }
+
+            gtag('js', new Date());
+
+
+
+            gtag('config', 'UA-112591026-1');
+
+      </script>
+
+<meta property="og:title" content="Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items" /><meta property="og:url" content="www.pib.gov.in/Pressreleaseshare.aspx?PRID=1954005" /><meta property="og:description" content="Ministry of Mines has notified three Quality Control Orders (QCOs) for seven items on August 31, 202" /><meta property="og:image" content="https:/pib.gov.in/images/indian-emblem.png" />
+                                <script>!function(e){var n="https://s.go-mpulse.net/boomerang/";if("False"=="True")e.BOOMR_config=e.BOOMR_config||{},e.BOOMR_config.PageParams=e.BOOMR_config.PageParams||{},e.BOOMR_config.PageParams.pci=!0,n="https://s2.go-mpulse.net/boomerang/";if(window.BOOMR_API_key="C4E7H-KSCMC-422L4-W3EM5-U36MF",function(){function e(){if(!i){var e=document.createElement("script");e.id="boomr-scr-as",e.src=window.BOOMR.url,e.async=!0,o.parentNode.appendChild(e),i=!0}}function t(e){i=!0;var n,t,a,r,d=document,O=window;if(window.BOOMR.snippetMethod=e?"if":"i",t=function(e,n){var t=d.createElement("script");t.id=n||"boomr-if-as",t.src=window.BOOMR.url,BOOMR_lstart=(new Date).getTime(),e=e||d.body,e.appendChild(t)},!window.addEventListener&&window.attachEvent&&navigator.userAgent.match(/MSIE [67]\./))return window.BOOMR.snippetMethod="s",void t(o.parentNode,"boomr-async");a=document.createElement("IFRAME"),a.src="about:blank",a.title="",a.role="presentation",a.loading="eager",r=(a.frameElement||a).style,r.width=0,r.height=0,r.border=0,r.display="none",o.parentNode.appendChild(a);try{O=a.contentWindow,d=O.document.open()}catch(_){n=document.domain,a.src="javascript:var d=document.open();d.domain='"+n+"';void(0);",O=a.contentWindow,d=O.document.open()}if(n)d._boomrl=function(){this.domain=n,t()},d.write("<bo"+"dy onload='document._boomrl();'>");else if(O._boomrl=function(){t()},O.addEventListener)O.addEventListener("load",O._boomrl,!1);else if(O.attachEvent)O.attachEvent("onload",O._boomrl);d.close()}function a(e){window.BOOMR_onload=e&&e.timeStamp||(new Date).getTime()}if(!window.BOOMR||!window.BOOMR.version&&!window.BOOMR.snippetExecuted){window.BOOMR=window.BOOMR||{},window.BOOMR.snippetStart=(new Date).getTime(),window.BOOMR.snippetExecuted=!0,window.BOOMR.snippetVersion=12,window.BOOMR.url=n+"C4E7H-KSCMC-422L4-W3EM5-U36MF";var o=document.currentScript||document.getElementsByTagName("script")[0],i=!1,r=document.createElement("link");if(r.relList&&"function"==typeof r.relList.supports&&r.relList.supports("preload")&&"as"in r)window.BOOMR.snippetMethod="p",r.href=window.BOOMR.url,r.rel="preload",r.as="script",r.addEventListener("load",e),r.addEventListener("error",function(){t(!0)}),setTimeout(function(){if(!i)t(!0)},3e3),BOOMR_lstart=(new Date).getTime(),o.parentNode.appendChild(r);else t(!1);if(window.addEventListener)window.addEventListener("load",a,!1);else if(window.attachEvent)window.attachEvent("onload",a)}}(),"".length>0)if(e&&"performance"in e&&e.performance&&"function"==typeof e.performance.setResourceTimingBufferSize)e.performance.setResourceTimingBufferSize();!function(){if(BOOMR=e.BOOMR||{},BOOMR.plugins=BOOMR.plugins||{},!BOOMR.plugins.AK){var n=""=="true"?1:0,t="",a="eqcqeaoabi46cjafaiabmmakafvktm3a-f-cd8ed824a-clienttons-s.akamaihd.net",o="false"=="true"?2:1,i={"ak.v":"41","ak.cp":"1825201","ak.ai":parseInt("1215205",10),"ak.ol":"0","ak.cr":6,"ak.ipv":6,"ak.proto":"http/1.1","ak.rid":"d7fa9cd","ak.r":34651,"ak.a2":n,"ak.m":"","ak.n":"ff","ak.cport":60551,"ak.gh":"184.84.221.28","ak.quicv":"","ak.tlsv":"tls1.3","ak.0rtt":"","ak.0rtt.ed":"","ak.csrc":"-","ak.acc":"bbr","ak.t":"1789506400","ak.ak":"hOBiQwZUYzCg5VSAfCLimQ==b/sOpOotwFjz1F/5o9zbAVlZml5TC7kZA/sDe7bj/izB54jIDCcgTo2F6qS8wo+agGCCMCH0CoWDZkAKcxoCiEQR0i36R/NTUblTrUx49JhRcXCrW150P3dEElGuySXQymHQ8rUnRe55z2BUcMvEK2n1gL8CaKwHfuJuZoXb46DoBSVCWUZGzpd+AiuVgrAObYjbU7AGgjnBL1Nxz1kA3uBIf/8WF68Oi/uAcxEk9EGLvICvf/oQT3rah+wVuy/C8FXMYhmhrYk5QOZ9x9JZ7aSkBYrrme0ZQskUpEqptmZk4Z0kGDteKkdOPXgKTOMg3P2sBJJ+Bhwn7AJeWvwp0ssW8IXOxw8ANRr0Tgip+m/cIQ9Q65T5qMDENbK4Me0O2alKZGYWkdjF4o64Pk8aIcuYVHqcIGdc1nD+3OBIvMI=","ak.pv":"9","ak.dpoabenc":"","ak.tf":o};if(""!==t)i["ak.ruds"]=t;var r={i:!1,av:function(n){var t="http.initiator";if(n&&(!n[t]||"spa_hard"===n[t]))i["ak.feo"]=void 0!==e.aFeoApplied?1:0,BOOMR.addVar(i)},rv:function(){var e=["ak.cport","ak.cr","ak.csrc","ak.gh","ak.ipv","ak.m","ak.n","ak.ol","ak.proto","ak.quicv","ak.tlsv","ak.0rtt","ak.0rtt.ed","ak.r","ak.acc","ak.t","ak.tf"];BOOMR.removeVar(e)}};BOOMR.plugins.AK={akVars:i,akDNSPreFetchDomain:a,init:function(){if(!r.i){var e=BOOMR.subscribe;e("before_beacon",r.av,null,null),e("onbeacon",r.rv,null,null),r.i=!0}return this},is_complete:function(){return!0}}}}()}(window);</script></head>
+<body>
+      <form method="post" action="./PressReleaseIframePage.aspx?PRID=1954005&amp;reg=48&amp;lang=2" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="sc_HiddenField" id="sc_HiddenField" value="" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="KiA8gwwEQugv9XPtTLIFzRlHAfhop36ofD65Fn33u/cDbnLioXkNNltM9i5qiI3iDrTsmFeI9lLCq18uRerM/jkWNKP+fxcXt64goduV6wMAsk4vESqOpfvRq+GEDKIxYSX6oJFvyfwo+rx4vzEtVpjHRfaVs7IPNumnUPuRMWdZ6IcQnbJqoPaSKlNxYOlA6aU7oFZekYR0JLrHaVU7Yo9cEg6wxkD8WUE6lXzWDHNKb8FYd4EcnJoICY00HfSE31otSOgRyjWtbpn5hiwqwxaWd394XwE6XttVqqPcjP7x60scmDmgMfAcvB1lLm9nmKbpurH05Bld8MZt2WUjVBLDNIAYY4S4FBGEqcbs/KQF7XVmpHW4yo8GRpYLuR6HZuK2GSUnJsq/vw08XXjUKf/Zom7AQq21MhGPFxg4tnnSZhlWg/iAxrQlMSqPvoS0ncZBemPyQ3jBpyULMGVi1gIsHFIHrshVc4E/Essf+RZxPsAkCywpcJ1nVP/hjK7VUXtP+R/xPAGhMDZCjLO4H+rvs8GwIdu00ANLhPUwj1vaJWThHWblTItR65DJxuKN0sfTWjyYYfpgMR76PWubmTNB5g9VdGmOyDIhZ6bBBA9bHnzfx3lZSOAkw/lbW8CjZaq7h5uHOtBpG95ei85n+FxdAUqqKOKXPljvg3wEWwZM/CaDroU21YYa4Rl7fca8yZoECgko8wBniXrPH1AloClWMB9OkU02vX7XJ8lNTXrl7D5mKvlFpPCrlL66cMKa1LtKuSCIpyUj2vyHVvt3Dhp0MSvbUcBCEDe7bpZSLH0/LxAMPwRKtipHiVRr9Mhx5wpG9KvJrV61fwesgVrS7XTljAQrzeEFFg6bQKr8rM0STIRS0t1lgWUU8nka61pTqFkQGGoFxoPsTrvSAk51pgs96GtKZRchAyFiz3S+hZ3RnXxAq0k58RCRJU9bA0uZD/RRkPSo5ViEXuphZtHQWLe2AHEmh34Dlw3YebvGF843aO13VHqFeF2183bWvTTQxnbMyq3iDCoMM8RMMgC4QqQDjfSiFly2aTLB3g8pmoSXSpfJ/yP7zMUISKKKVkkj3hjzZQ551yB7mT8kxcgsIzE+L/XgpGbR9+zS8HULE2DNhi/15bg8NdO1CCH1cl3QoAiIwAKLocDUW4+2kZEyN4HOinI5XfGv+DG8UFJLucelDBQoRWYp7D/yei3x0ZMAsbBxoFb7TxnU7P67v2XtM4qj8HoEHzKEYeASv8SedvwCsk0Z5yQUIsNygih3lXxfJFzPApehrjM1Mvq3cJyIU1i5hOQbUeG+3DlrCxCglqkJqCEDHFLEew/rLkbKQ38e69aAqLhs49SCN0AWufyjNDLc+EzHfc/N6pdRFcYhhU+oSdXDfZnqLUEOI45uHyra3b5OC2Wlf5LyjDmZWhls2/xfN7A6kfZx5tfcRmUq5rXPbCH7ZzKgDjyn1ymi7NTHEv91pA/xoR03pV6IAhFMuklkDyJ3Ul0NJG6PlQbv7cBDL5+3w6C2PWmtUD88yE3BFbIlkdV9O5rML9BRzkmzX2AwByk/U2NO7q1X/Eql4SsM25qlc3/UdsLEejnskK8miYdZarNZYyW1tuJhiirwtKOANTd7cs4cGoQyOnhvaKqyuUrZxn+0Mdk1q8AQLPEKsGQFrmzUt3ZQRLkq8o9pQtOsUJhJeFHLAeGyT3ZmiRU6Mjs4XVtfqCZL2HPnNsAw3o7wJTj7UFROvvg9WRvvxXSG7CzoJTDTOQsoHzjD9qy55VwrPmR6miaU/ESBOtT42GvyS4DUYViSdZE61wPyNLdUgtcUo4w6rqZWu/EOty2EfaHqa9lo5Q7MO3GQUk49C4dyvAKbbQ+nKcPpb8asIQ8jOpXy6G9V8jLGQeiZWae6JhZDjgrm1K+ZnYOfQJINx7s7SxzrlvKOdCwtDuAp0t9dWWFJdlc/xHos9y7aSxLGXjmxFGEdu3Og0B32oxV/HQlQxVcg41V14dFTJAGSBHxRLRH9b7ikponZ/7B51VhNPpVvKymJbQYD2nUFGFRHPMlO8A94TDC9spcyfz4TwwzxkpiZOqrZvFBUMcg/gu9pKi9ZkYiEe5m+kEjVl/BZyCXd5qeCx98Ef1afxFPiLADDhX2oAXdx+GrE5Sfdb6eWO8f1yQameooIwygKVLu7COUF63e6KfdlgSCKT4+L0d4CKPSikOA475zJkRuCwMQ3s73acxyBOcG45PvYMIXxGttpuptNSVMSNCYoYZ7HmqnUd1LKs5sGsY0J/5fU7bT5rqNYCTaokko1Aibg7mjRzo86GKHrUaiPiNS4ihnD9T2tLKZPY2CW0RmLIEnjdkCneLVI43G0rv6oEMHTLS5DUwJihxeUf4nj4gf/HgHs1sBT017KvmthpAgm2+uHn+oixkl0g0mN//kek5w5haKixHaP/6sKp2vl3K9G88hSu/kYK9pFQgGBW2D0U7NH1fnXo11FPgkV2FyKonunPQs0+fg4hsyRyh+ng6JbVG8ScRjRVbCg2twYXMSpdYvbR75kbyqLBvJuIZHkbbmFQSSMTvPQaZ+gLfTfK5mL2W8CpFKsiJMJY2W1/+jDNVY8ZE4/+XCMrZ76IpyOi1fCE4z4lCrAwNnJMpULNdVvyELJGZmLMYWmzkBqkBissZV3FoQNxEp1sthcTCOjVc+cdnzhkLuOMRP+yK11HsJ0R56X72anunikyOl078iApXX8QPE4tElW/skj13DK/lUo3mqRH9yV0FWlFpqTQSBUKq7d8a3wAmihXmpjs6mAQ2AmkxW8nvhULf+U5NMA7Yz3KOpBsrPgP8aUQvBbMOM5CqYmGcgiclTBlyF8VeBBmeFScWUUXb6dEJ1PbwjbmeTqqWsoRLQVgBWX7I7+j+clF/ELWjUwlqMdiNvFEN7An5CE9TlHmVVD/XCmwEwi57FKXR//rp6mtKsg3vsUV+Bvk/z+GuizGG2Zk/lVvtQvtMk0jPRQ3/I5hpjexnggn/pum1GCZzgtt7Wh7bIS0v1xAePJZBBSHj/wWz9lokvskelBdwh+CwpfQaUTDUVQ0rm4HUICJHOfubjfsDPQuWm9xNmVNnMyCcedHy9Iy9Zlh5lIkgPmZNvpJM+Shx5GuTcurv1EuN9T+aVOOOhYEkp10yuc0z9kocOY3AKE2Yu0O5INFEuaOXpPg/HT+9NUfOXMzaQousCKMaz2A8ZJfJaF3RMWAFlOjitRLEk2sjHeqCuO3qnAb8zPy8BgHukFlxEJzT6u64o+jEz3+Yk2lUaW8ZUEEEsL95MNddtVjRFstz8i7RYpeoZpfnWXl0UI1jmkPtZw8If82bJb1dP6yQFoI+bqsHw/kZyHT17/jzwWopik5oBQqe0VfVELzknTET4Lqx29Gv8B1TMBUOtnnuDs6MdkPyIrRUl+LB8QDZSZOfMU41wDWeNFfcHtTTCCWv0/Rxqu7Ky8DhLseRirzdBXgNH93WogbyEZcGdX0bBOvpyyVIrU47LSrcmDkItjPUfrr3lH8mwFJcCd0RhohZoOVq/wSzafWruN2wKfxL72uJJJIJ6d/RjNnqknX7xMAK9EnUTsqdFe77fl++wCNxeBDyEo/awVZvug+jgt5+EsplpCXztf5pfrqP6y4sFuBdJDpTMi5v8ol9bMnYWQfobVZ8AmzyaCzxPObeWMqGnMCerXbgOfLnUrgHMvUxz4L9J5rhOVBvaSSzh5Z4nZDe5RXKByUpCzIFel8BG3MlMbsCa7NjBIaUn3WqsGDHgxSY8XKHYAE9T7joopBIyux9OmXm1o1zjIrsQM4yt9OfpLzxWzL7GLCpL9DO62bTvbyK28F4b+nLLuvy3dswx5jvdiljk/mhPogHr2uI1IFnxsnxeo7KK/KqR/LKcnKZnRwHqz/3Z8L20e1hgnPgZ2zC856YG8Yt3Dt+u/MgV0pUhaMxFI/hQrbQtIGU7FMZV33DeFdjgSYsJytH97J4QqMo+hKAQPv2jIWEJzi/LEWdbyAsHKeOd18UXoNLXK4lfok20JVccaDGa/r1gvB9TMFc+sbcjssq4RWeePWxmMprDSjMi/gv1mWLyB0Rsjhx+pRxonj1RyGnQiesFk7QKUvthZR8TJDMQ8rIonwICGWqyGcYdKF69PAw4HAvKVwp3igXgkd4wCriS0iqS+hH8aSF4UbghXvtsezvvN0qifpJd/XisjI01qrD6r47nsn4RY/yTM2Q9D8ZGxsejY0fXPJHdhwV4YqldP+2UVs6RBmpqNSI1Qb1yF4YnqROUTX0/uMIN3sVv4xnhxNsTdvSxkVuVm/KxCUEdp3W93/x+WWjfWFu9/NxspamltAlDFBBLkq4JAqpnM1A20lQMTCB4B97fZ/B10dt2+mceHmhbs3t+dZDE8KWoVLMv7R0VdPrVL+8lrFvfDpBgvjp9Bw/6xY8rF17etNZnDO7b3HBa8Q+CR5lC1ZMMej11uN3xS4JYiuO5lU1Pa+JdUS4GZcTUU5rvykq1q04E8mCmusYeLvqgW6jxMDyWvL8dYT7VQk1PziWsxth1B0ZK3d8mmu86rsUiFFVB5H0AnuhDLlLmOtXFOplLi1yJPToWOX83pkWdDVt5huy2830g0VrZ5aZy6E+/bvlkG8ZXu7HIsamiQ8QqsL0FHlYPuCYEZueMj9aKNUXn0nokA3n/JOU7I5rQtA0lZMRTp6tuwFOUXOGrGJJ78boqRkmM+GpE1au+pyMHXAvJEsEpYyIrCY3TrRmS8SeZhYqS41aD75Rb5ILJ4o+irFUw5BYoYzlF/V+PpWrLHYBF6cBns9K7VVYAtkNlvm74k0RY5IuOpHUmx/riVZRwb/clZK8kUArrg34R1MwuztOPBcb66CYgUreVL/vKrpyxFYqyf2PxKJWQWFm2BRUex/+ggYfqXOVxx+36QFD48sj1cBJgWhC5Rbs2yezZQhwYMAF7cXhyFumHRb8L8OZG3+eerffwo4tRUR3GbQADiTU1wD+kcCogB+DiF7nvDVNP9+Qo1szq2aFNWPNwrt1DyOygbXpkLFnVFnmGZtZ3UMCJ1+vohshHs18k7lVs4LkqBLMINfOBbv7jrHHWSCo93exqEz0Wdp5SLp0UJ5XbIFyvs/NSKXhgfSbdBGv+NZsKFETbMTSSxpkYnZqeaSfwcavGg2NrUEA8+/aV8naC0wunMsY1GHpA/uBXhIBy72Brlbdb6Ni7ZF6RuqZXShQKhBSbmUuvJ2Jz2zlurpS15lPSr1SPmx+BdLZNJvkMKPHgzeytV3e+r3CZNaZJA7w6DAoTsE07EFvnTdnaMQYC25PGDxbRJEaJmYUvBWCMcyamMUfJPRY55j0OgqLssTlH9P1ZCMcEya5VscBhFR15lGy6nQolwI+WJg+QotIk70C4P1TbDBCNEAsosthUyysVNudathwnmUVcAq4muSh36EYQnAbs1DcOi3RvgK7oDPSp25BQmMC7/QEIDp7w/m5VpmQ7yYtRC1DlbY+Z2bvB3SRyoRT5qTXeAeiIeUIsZ8bAT6kFQEyDRSJ7Gd+k3EkzwngPbsZy8bxWrM1QfoulplmuJBV30oaCIedQiLOw92gMhscjdC8I8eskkreikPeNEs1anFJct8G2t4i1rfJR2suaZ6f4/KaRcljPLsbuWN6y5Kve7dGtvbbAm8fXXG1Jrh8LuHkmPyKCh1BpQcvKBUNam8SIgPer5GiGAMQJ5H/wIY8UHwLU3lZyxgCTF0OkBtudf+O5oUcVRVqkunnXto9AuL22GGMHY2s+KSlEzxl3DWx+O1bCv2ocsiNUby1rWI4M6/b+HjUKFsVMU0K7keobDrLzwO7Po/Xa7wAc+MpZt55R9QenvHDOBnvrZ7eWP7u/KZj+fR62gd3zFczyCV5dIHM4MCK291+KWXOeCZn7irtpJRvqCYFb+2t5XBDZG1ujmowW4E6RZ5zYuQlrbOaTq9jTQREjw/9CzKpHffnOqHmW7pYtw/QaiX5SRc4njDGjhjN2IMB5fhO4Kosv/mEPtrnXebqKzJY/3i6xhRvLU2zv57oYyhc5tGzjCLoo1npldGmLwxcGzsxSC3Jv7+TVi9tIbwg7mBFWLjTHpP1Z3Bt1iHG/XDddpzPpYLmf/fyDzma1hfF9/yCSuw4EGQ5XB3UFf6s5AjAKNaGil4481RDyJrjT6kMoa/ZSgGfTe4QEKRNQt3223hgRqUlE2ccX00UEXCVl7R82yg7AhH1TKhbiQL3o674Fuj4ow5CS/I/goZflGtlYgh2ySdWLe+4QXQKa8csJ9DXHQQmIBOcXPQTYs5mT/2br7ojl0BO5kixztQJF6rLRxvfuWRqelqCKUbnXcEYpaNLACr8hYAQpX4+8t+YtouDq5qutZ4L6/WJohNP8EvruOTf2hRJOEkxt0PsqI+7J+vKNOBFY6KDBnl/O1Oh+cLy+WVXhbjnmzH0+peChzaU6bazRl6kyE2ZdPy5XdKo4+fgwfMU6qOCMJG2LanaBPPOHjHJXsoGghmHMO4MxHpGk5KU9vpjmjiphf45CfSLT+6qOj6WNmibbW8vv5MQikG4Tik8XOetOXR9ce1wQwiMXEtZMFfjeQk7yqUS1sP9QipoUOzDl0poN/gSfME28cEaaqXRys37qphuWfpsvTL/xyJl3AOlCXCCbt5WeD+g/VO1n5L6oWXuQxFvoW9u/Km7tiYq1sEMjrp2UMDkGrqtZLHduIccJVqprZCHJi46+vruGMZ/aihaSHjFGNwElJ/HohEL9rXcLC0en7MtvEHm+ubF5Fkw0L2bEXPFrIEiKMlsg76uc7bfFn0P7HdclRwBVg6C9leZ2Y2hkXLcp/NC54c1+2KtcOa9JCmXLPSCkk85btn7NEuyxi+VOQyiL1HPaoB/Pohy/Lv/cG2sd5ZHv+1CkoC5Rn6ftoNojFfZxDz0+pGf4l0MMm0VeXcKGCgYJzcCv9rO5XhPsVOG4p4Bl9DZOMqEJ/TV1ZgECQ8P8s7r7WSqxomLzwfl8BDt4ylCGl23Szj7uGVz0lt0gmJqhMp+7aQG6AWQQQgBoNq/MOGrJOqwRkSpOV1Gava2cRNvX7mZEWU4wdyAYDuMb9OlTgwKBl0AN4KslyciVBO9dmm294Wn4NQHgvHHxPlb3TsqUoofDx+DHdPt739NI4A6swsz93efusChzZr6/th4wYstJNC+zTYeol+m2JvKFcw/IdF7dsXUuIFFMT8+9GfpFvnPp5lPyNphetUf7koJq0g4NlsQcXiLkA//rPMQ1mlS9KNNesLHvR8YxA9kKYiryhTeUHTpoEccCjfFe32+Od0X8T0HSLOCVO80UYdqlGqOnpJ4ZvXWrzVNjx+od/pYSwIEemaCNy2Zh4S+EZARgom2IkYGh3CLMnEMYD3FcfCA7GpFVlEJUTl4VUipJM9IYW31Tbrn2qmQePewIhAKb6jvujqLla6Xaaot68it0/kKSQigBkOjd3DLTVDdjHOhjFsqUoEf6o1uqAQgKYoLrvSAdIER0YDq4+DbhLs4klng4p2sXEXjeVzGuj20jp4DliwE+2preozLXluRNskrttAHQ11lADSa6e714qW6zv7rliKDoTYv7YoEBp4EpH+emsWwiFlYatxxBUvQadrS/roRa0fmoLi/uT6LwYWpgLRsuYMLctOPCG+BAvEA4so6Iz1/6adc8mNYBj07TKqMbncVfZmIBvWI9kczCymGaUhbuG1vcY4rYZtwrCZPyPjfiTd+5EuuywwlUOR0CagD50FEKZsBwxz712xZccgIyRxYqcPeaiHHkpic7TcTnkKWQEN/+gyC/DyRYmsmn0SRL6vvlH886WfGxma0S7QwBhwUqDce5oNwiz6XJRteWJL7fhnDyGQ4UStO94q4F73NJyXfBxonGSjqZT5m8ZcMumxGA2FulJRvxFkp2a5FquuqB9WwbtV4hEfNJjq3hvzgZeY+Uj71Z8Fkjlpx0RhPd5hPLnQIwQT150C0CRysjbFWdy+qbMoUTRdLwmH7ZQKbSeXxMhUxW4ijX7bGzGHeUY79Yis7ptA8BrZqImPgMk0yULwzqU+pijQHaxpSbtZWil8UrLIHYS1ALfrNmQKh29NTM5oPE/3y8itdPc9y3zURuubAbzJucY95ek7WO/EVfncq0s0NnmorA6u80qxfJHU4g8ji1YtJwXDQPZEubwl/4WCGWdbOGKIdMYMRpp8DX2Vddziu4EZxn4mQRsZVpWjQ7c+FEXY5ylwb/FL32hSPKg2IrQY3/GAvK2iD2EUTeeZLE2aXH9tQGrC2ToOinxhGTnWQTAHu02bFElbO8JI1xDDvy7nJyXnh5Nf2thyLxTbE2l+ludHjFHoT3URGJwQ5yCDzJAbY5eVPRbPlgAICsLV6XSUPK+XXJyY0dY4jE6zrIzV3hGTdHqPMB7JzDbYk4RKWCfZ1yoEmQba7ppxqH6wiH9eEx+i9Kx4p0i8KUjXeJlaGRo9US0HoXtmTjZQDOtYbp58AcKILsfT52tJ/NbhzPRLHG179OXNQrpxPYH115LvSCSeEhgw1YJN1Q4FfslRHvuq22G2ydY+3qr8+3jVywp5K7egpMomgS0ZJVZQOi6bv4qQA5OiuKlyEOJ6M96R2k9ZCj52bHZnn9zZUyWWwTH7bsplpVUKmrwvEysVD0xb+fA7inz04p92SdbdMHWYC0VH2dqjQgfFizHwNiLFgGFs3OJUnMr7f2nkh8zbJLTHiloCPbu/RHjZTVNozeVCkza6WCu9dMKfJCk1gkIPrh9Y6OBaIIUPjSTP3nxVzEM5L0BqvcuHGn7a6wsJh/Swxk6EussQpqhTTvcxpsIawiQaBkIOJgxs2B6hpsM89KxVXT1uE2pjljHHdvNoFJxGFhMkk9/iVtzi2xSIKCJ57UtiCfkzg/2voM34a7WW/tTNhMJDfT6blprG2BzGfQgpF1EK/md1cQHUtmZHAVE1QIVeOzl/QAqRGWhwCIuMfgY7JIhbDdx8p9V/r6kYTp7pFdjzNw8enSiwGY8kS/GzgVYkj9zK9LnKPqjVx7mw3xFLjcqTZg+4adFSCf9P2I5KuzNHr4QLIdkcwd3vd5BqaXGLojZpROPTZEdf7xqgyJtjeAw3UmEEc8kC853Ad5tJfNPrle+f7u/+IMOSHI29aBEs6ddrKyLZQxKniLfhB1Qyf23ABfbRmRbpWQfFAz8OBonhux2mF5OIPss+Tu7rAPkftGuj3/haUUaljW54qkmRnXMICpbaYq4VlwNeQ5HHj+XetAQ1+LGyuxNaZslyLfhH1uEoav2l3jq+sgie+VDU3n1hJlYq8cpKjlNaWpnaVH5K0daXQeIRFJO8LgaNF4fCpLfWcSGA6Uv4a93bPa6GDV9VNDs6uEAlqUS2b8RR0u0f3n5RoILHG0HQbaC3YeADPTrN7Kiu2cMSzQnpq00xQv1R4YhFv/z4L3r7vtECqar2IUyTEjaXtepoI+zfOOrvBztT7M89sDA781KJQA8xJlnFzPJtiDDqRBoDM9XR64owzIFXQVxVPGRTQ4DK6fifp59oqZK8f6QlMCesmIuNfYuvxaprejrEpaylUkUzC8431GMLs71L3IYE/kwrG+3TGv7LrGkiqtS6ogU+7T8xPqOKv03HL+BoDdc1m96OLlPQS8krLHh9mOqK5Mo/k2diiOE0Fd7Y8kH5nCn9N6/4XxcG2lgYj6Qusk5GnLMSV+ZM6v8wv6efeIb3Zzr89yzEW5+fxXCWwWn4jH+qO9NV+smtqy8H8UBkzMTkxAuzMT5D75F/gbdRV2F+Hzk8Qwnf1R4yMlbkF7Uaq16pA2v9dA9iO5GDlH/zMv0qyR0I0fTGtZVU6JzUVOeWbkjAcKm0HSv1guwmkGI1KC68ggBhMfOKH7XkJQPI+tUOF4VmV2c5wUiFs4FxXmP53C2+wmAGU6WVBTrko7ByNVlYMiaZuiF6pLAvbRITKxAxpHcGLG54zCYzA97MlQK3KyzjKM14aAxc0AvPMmvL6cBbhr975BYE8QxCIZNhXnK+eiwGo9DtVGjKIeMXCgWWO7leCUyMb/IuHvg20DJsao4o8AYExgW8jvBI6j8jGloHfzbAGGewWp15LLBrqg6mwzpvnueNIJTJuGbH7AL7UosWw9JwVEVOsQelNYKYscS45mVJY83viUszBOpaHxsVTxncFXsncsEvv3iVJXqJ0Vvvxg5hZNdFA1x94FM2jEKE3nlXhwnVCQk+8WJHX/b7/UKEizAlOL6wdo9/6q/wZfDvZQPMNdDNmAhNwEl3H3krBLWB20j35OmFu1MdKhLZbuPybmDnEDup6ith9WHP83bi5Y6hi8uRJs1k+6Yu4EDTPhWnxBEZ92aLgMRP/63q4RTY1fea14RncJOEDAxU0ODYAiyEWX6qMbT6lctl7aeclp4hbe115HKttFr6F72sCoSCCziTTNJVSCvYT2Kc/xlSu+w0K660YJusBTZV/8gkho7+9rVOCJdagmPXO8TJKvufQ5Ege6kArcFpsfEyUdPnrVpAP1qJEjczmgvShgGCGGXEAyD5cDiC0n8wA8MWVoqi+dpPFBUg3eA4OjZfer8c1dCaOyIRQSwH/tG046CFfLyP4y7XEjI6FCa6/FRtdlR2v5EcrPduheMxAEF0rZkgX6R1lDCwXmY2E07otI0m5yMYn4bB1OVBxdEEULYhgTpLi9mxSQdENQalk/Oe8PnqzHAhPxJr/rPpbUSaYcH7paKNBWS2kJ5DcN5M5XHSd/xafNwatP148hMg+C9Mrlkz+Bggxk9O5+8+/4Sy0ugXsd8dXJkymAW7nFEo6kVvvaLNpS79KuiKaTbDnPjd2+Xm5eVcR+W/kNwLsi85w658cvC1BZxK62xu20WiikeBhRMtnhKP0KqdGRSebkIpcUtWgispTq53yMFIpRF80tAzvtlxTqv/wKiri8rZlcy0dmRJRk/qtSpdkk3E+Ce3zLe+aZfcPUa7AuR7emnGxL9mjVPyOgBBhREtyxo3bGZ/ktaouxyOHeKAXygq1D4TVD9Sce9kpeQUerZwwJCScdQOC9Rh6P/uVXBV5XFcLwKPSp86T+s9QZBiOOjks6aas90dVt3sae7J0BPodrIpQLjpd9a3RxqCY5pYdGxADfKIMPmQcJXLK0xOuLJWC7WAhYc5rNE5gQi3h33St7SFJzZl7Xy4DcRMsiFWucQ8cyipnuoFwwzr3M/EMO+N3dHNznoCLnTDN62GXw/0GuiPGxuj7SnGBEjYHB6ylscBTDMlCjBOBkqXtzjnBTteb2AdOTkqR3J/VSRhmAQToFBS/PBvpi6ek+MXOxlLnL5jxNdjtVzJQ66NA6HelKy4e7AsVGDrcrs56yjq+2/swRh12leA1ji+4n/JrekFTkyei/5riv2qJ0Cxln2ynGX1hrQHyw7Ov41kaVnje1POG500iderhYVybWychUxTX0bRx7EmrBtnWq40BEdQB1LEXZhYhDmTZJK+uVfNToiEeRUPRYBQJljsrXDTaIDroiqg5in4eDCQI4Fy89HiO/ejJVlQ5RULlIsyHM0xJALT7qN8G5D8rE1JYA7n3eLUvyXedKyVs65CkDFlZrJqHIowC1xxRYU+JszIsyVLGINDEEqa6Omm//dVygBIY6kbpCGzP5gWlZA2uLUSEAjqXcYl/Wz44D/MnTvI/sxYzVNSFZkrCeuSO2JXVdydLkaLLjmCp2FimLnHIH+BPrsMcAS5DuJBE4jvK1jokQaFnf9OhcxnAVkVI1cn07QIRXwuB+r6fB9YmR/mLZ+NPgOrkr2B/p8ccfa0rLLdrZwZbXkObOdaIq4Jy/QjJvVCEct/w7vPAHieNkiRMHmAW52JdY5hEL0YLibjxlDHB6mY2o5UY5cr0k7igo+InpUo7NlwfJZakaMm3vn2C3nR4nwbD/AJfLUoVJOpW3/uDOT8SKX/kbyge4mQAUabYAaCIeH9O7ihlioM4SPGPKMFUbB/Uv3QvWA1YpF9g9dnkvHMCoh1IcbPQon9/seySWGZdfyj/8MAIm6OlbYFsX5P/P7r0NGDSuQ8a/pKyvMU9vRHmpGqiCts9efJvL1jote0KsEavkJp5TQMsuzRckhlBjtg6QolcZHQoVeBqffGF8SuLRRXHZmbeWc2NUF5lHcctl7bebEj2CHDJ9rWuLCm4IswDSH1lr5XuiA1ac/krH0B4nKaSdobH1n/im/JkFo5HFHbMK8bz9zvDZKEMxC94dDHF/dPCYUIeYtqqGUFYLIRcF+vdgexARkZCjcweCo8QkYaCRRO3Nz5Fq2Mj6vQ4BXTe8koo2nVIMYvmmKjyEWMqZ7A2FW/vGcSOz6NKype3xoRcYkWrfXBbdgqrWNUzZCTc+g4PDlytidfv+JgLqC9OyyYv8rdrcdoF1oHhk/DmH0tIrmGiA39CZf4ZpRDhNAhm/xFEn2kk6NFm1jyJcUkrzLhcz2r+RneWAJkljNcURJN3+1RgZcnVxrOz6gc/6zTxdORsaQVNV+YSEeFzlFJfQDT8l+JugfazGV9BoNFtNUQ23/xddoCwBnwehZMR2K4EN5jZHKydldcrXBkImtY6GDKtVC+Tbgz0wffwLKw3JZlQ6H8kVs+FgKgqjbeFGQNPM21odrX8sZqB5uDDvCOJyae1OZ01tbOFyIc0gFtQsW4yCjaI8cJ7KJw+hfZmA9S6XPZzHq8ZES1E8po96EOB0fOn5yZurNdZXJBy4fXMecV7S6VJBfOJOE1mllhlYU2dV2P2hn1wVwP4uFQXMnpdJcMb7J0jydv3Odl4KU7RWy+9rKiYjBVpl4PtIgSx/y+D7DfjMUq/LoERquK/P+j75aSzZWvSyJM2XGIkTeWb+VaMigErNdhDIX+FgVD00hUhW0lQbk76PIEZwXE/TyLTYo8EHkgkisnGtfurES7dqDRmTkav90qfFgRVIcpWq7iEFcsCfQ6D1fSFTfezV9CgW8QqqGyTQ6f3kE8T0cg/iiOidTqA9olRsd90PJlaf+NEXCQ1izroWCzQb1+TdYrJSBIke0nxXEHVtD6bzIFvwzi9Vu4iOvwxGIPa/8eXLsdRzMp0HRipt24x7ngkgJvjuac5RGYn5m1Io/k7C5d8ZcWpaShS89i/RgYCXkPJp5nT5RFUkhIV6EYxA8jh55FDgcEKHid3kwsHCsYgzVc+Ab7yeXUwCE2UvKBHeO9D/CqF3XXP1xPbdxu+VBdC1RZMk9gIsWwY5aHU13i7EpksqgqrFz0owsFdPn2RK/7NZPCYZKPJrPYy3kicVQ9OnvsQgOTsDNU+O+qUPWibcAHqnw4fgpe4gFT1ZYSbjW61KSjQOZBO06FG0dzqzPN8eiTedneq4wAk3yePTKqVHexZijyKEshr5eSUMa4p+UNza/cViuM1YPPrU7+9IFHpYApMrFnFdM1cAo2za9v4vb/I5+nOgmbfViYEqQvtEG7C3QOzOas/4GQttSx2tpGed9t7X/CxjWnl6i4NWu4xsNdblwGKgT9frSF8b7aI5Gi1LcxAsUMcpi0d5GEf1gtLoUJI7TGLxwVzeZC3s1yRSKmv8n3zNVuvOZFuXAYXhUKX0PGtVevUtbdySUyxHBl4eHNyd8h5iSqVTtLp8pam22A+teAhWD7ou0LhKZeM9K6lbycCmflaxBLerv+F50XW3d6dVJnyWRodLAGPBrAkFbns2KPRDKTGripX23Ie/wylyZQq1IHKGYR2FsSIslH6RkBRNkBrekfL1sbHk+72j1kTeivI534YqvC8aNhxgMv5lt3RPhigROdyrB1BejSByAQ6yD5rpUPc0CzayyOmJi6NpCP82egu/MVqvtwULdQq1NoD0TLWbE23DIXQ5/nIhmTm7S7xSviaJJQ+rgLKZGHZbnY2fC7d1PO2bxEHIyRQnhLIwgbVzFFiDRe10DPy0/KSwXHSwIARbMmWYBKVa4JdNZJNP+OyCKIW9W3ePKIserjWjf6oGoGgJi1H2oJWYiKY66AhJTd5vssjRtfxA0pBAVQyMJpPwToZFfeb3YpANnnu1hWHhlczArGCBjcdh/ODf7kSXTrWzkIyMeTlsdChPQ4TFOLDQer4FdLVXYvElsYMGNT02GUmR3DWTqbDlGiPiE/UG+0fJHpghHFiSidabjDLx71wqxTKx9m0al9pt/yzwwhLBsjV2/7/iL+JhVJYBzYG4W2Zf1XixVX0bQK6Fzwvbah/1C89hn6xnbEXIzhQu8KKhSkdadV1LdBj52vCFjYpmTr8vhtrPajzyQpVFsL+/DWDOR7LjbUHsx0cAV9AiBsd5ifxxHUxdiQG0keEqa6oNp74VT4tRdsyCPySQB9/4To/IdR/oQwndJzuC2xPi/DNjyEBtJ8VYT/2qxmFhbZOzn/uw3/e+bZg5iD+OuxQxS3pZzKM7cHv3FkBMbqrf1E9+AGJKumBx9fRyzgEfJuvmOfE0kt18P2nzfSjxS+Kj7g+QfIALiCuSPtCS4X8eqNpnVHFZfXZKtrNgUl5aQdEKeAi9VtXiNCx+eOU7Z8O+JUNbAxIS2e2UQMRx2Uq5nHm3Gp3wLEGFUuOj7/WyQ/kvgF9blPqlhmDbHjaEqnn94HZLp1UcckfvT83HwwgKGfHyElJ8t/DJsm6zqKqMcXgASvM/vy0TBmuJ2LzKJZU+M6VP1iE+9b5HECjJhY1sxZ+d7b17gp60mFz+w9tlvDhxks4aE7YZ+f/i8bMuIcFTqyHgRDlYfiVHD0HW5DxbNes172PiVC8p2oDJp1KH7wQ9ziSOC/btDYXeTMyzZIJNEVf7uOaaZOyGerJc2YH/xQa0nNwnT8FQm74nGLjdHALgYUz4QQPG469a2TJjyKjR9WJB1V3TbFOWMw/4Udh2fr9TR4T7ILUf5l4hQ1UlE8RiTsVp7RSf0G2wmiY08/RN/QK3m4wbYMNaLNsw7C7ukbf9f2Xp04XAL0dOaw7lIFYUCFOqw8IWwBgRd+aJyUYL9FRhwDZrWnTU6AMWq/Y2Gt0N2QY4QEbTzEX+lOzzUpKoHDgggQ1oU2fZBytSiNFTA+7NkeOSsC/MVc1La24g9WhNmnTlcB8nd2pS06jXsHxSsi/QImfks0Y/uma2TSHdetCZYR6UG4K+rDzznvIHSRErBBr4LBhJRzsFvrbxEvoYaj2p7zKgiQHsxxoVCqMRaU/dUc2Xnl2gSm3482VqmCh4Re75tVjeL1fUZZZCb/NqwTrsP8C6R/KYuUxtKX77VwazNOokZVG5JBNhRGqT0W56tddld223IB2zNQAFzsdsIyeCpltTmZ3k+/2tjwtUaKE2E+0rHb1wd4biWVFEdr/bMac//gXtedch5usc3Wsq6U4lmWSWklufdnSkCLnp86Oo7ken5YsE7lBixjC6H6af3/7G99Xu9X720PWMm+yeObwwgwVIUfeiuyvCsGrdqd/LgC85L1bjagxBZRpRAHes54nUbNIuwcbXNIJRLJxfspRlcW5vbSn+wDCLvsEKDL2DAGPVbpqgcPMJNIZEg8qjiWlKbTfLD91L9obYkjjSpnvm6lN/564MH1AR0tZauGVXKhZgC3IZLGgMk4lw59mtSRnS/O7D5eMfrJggxbIYdhppVLAu47Hrih+j9u21pN04JYV4k0A30I5wzRrTw0yrfk+K5fi9bVuRBLedpA9dIC9wxbgZjKajnHFl+95Y4U9ro1xPPcF41A23/IW+1p5N4E6VSYtptG1E5LWiNnUaABY9pbeCw3hTghQgLek/aeQEUqtxstZa+dSjsLrrScMElJiCcos9gbQds/0oC6FxCOptiHSy5PiGHcSpkuCVG7a+F5drdu4MOvix89E6yyQoeG93Tq/xGBQkOInF/wH9bNkwS9rD6DqJppq9efgaOQv4tGdpsGiXlRaV8TPp0jA+Tzv9VDosn0PJzLe8WdjrnOHEMnHaYodFrHpwLCS6rJ9EDA/K87IKH0XMNth+WYkiR4hc8nk74Qs4ihsgOGNhNz2QYwrIv170kYZ2y8ZwDCIKQd0zApzyDGdbUs+Vr+vFq4QAfZwSOUjEX7v9hfAMnVqb7Bi86XrTVig3i+xefuCSdX2GSDD8+Ii7GKi/DSyB7aMiqDqbOdMCBJ6l37R8hqSZlMSUQG/dawaL10OxRBzVKOhB5rtmKaTgQkjKhJ62slfGtBAvDhi4T7iIaP0j05A/OuOqagLk5f5Yfc+jrBAyH/0O2AbUqbwWwGloiEBPr8m6d/P1P9yvbmilQcKayZxNSUEMY0FnfUFzGG68SuuUaGyHGLcnhaZiKZSGp/5SGuWmO3NHGeV8KncXehb2q9JpybXmmzbRPZ/pCi/xfeBgl8Kwk4U7IpaVWYnnyym81X0oLSz5EL9mDe1ahETxOcf8bvG6QCvadEX8jM58xQ7gRTROGeZH0RKuNKUQ4HqXxgccljZv0w+DTvf8no+1KL3irkdU2EBSMfPZDhvjkKElSJRB01qlc6oGDwmmKDmNMhnOFt6dnvHpiHSGOfkvA53YDM/o2i+clmjEG61RJr2lAl0DUF6nmYxSkmX7GjD0nRnGgTUtLRUjUyPmK/1dcxm7NVqPSkBFNQsLQX1wcFo3gn3wcHtdSHZxWKJeNqNyaddYu0NtFpw+q31BqIQ+XJqz0LhyF2NPT6YjDszB6eF08RfmkhbcC/OQGdq/Jg+oqsF0qXxlapirGh74w56wbtTx2m/6bl8b51OU7mh97kVYQ89iShYnGwfDDKARTvIYGZTk/pFn84bMjmgbYqJNkavMVJR1GVAnMqgQR1GRa6aeZNbMkdv0ITDYD7AFNdCBAiM2YplQBaYxCE4NubsYAFWdtKCY85wHjuRGX3Jx0bdIv0EZvj7dQGuHTj6aCZKkmOStoxzWu5CTGRqoWO1DMe8rtc9/vMUXD+hwDXSYz/1E1SNoAnD4pgHyCDzHeigKBISXhjB19TPAUJOBKzT3nPF3jgIgKt1bWszdXXiqAb7ZIwOqrSvPhyMSz5sNDOK0SYJqtUcFeufQx59Moxo90nmXajdLsFjVODiCGG+A4v+VSL8SuZgJHC2m9Dl6AFuMEVjOuJmQnypybDpo7q8ZcYp4q83ZU6cQWacRyw6qSNujfyZmb9kROFc5hrceMlzQALAajEerQCjG4LuKXNcp9/+zlFRaVPs+sV9v/6jHTVUs7QFly665GkBYbmt/MybeJKNM1/lGOyCCJFGuq8LH1Mkf8Q4QGKP7pl3bUl1eIHDa+UPK9nKPXlZsYCq7X5/7Qpsm7Yilf1Ir5GwAvH/bgqSI5kUDqMpCF4VMaA2+0KiB1BccP+tbKFWefg2TyssyUdmmwFFMpVBq4K9I/cSpuTKGhIaxcrLw7wfyS4+ZWFlk/+GrrFsDPOMTaUnIaFX5Kq5gwP5mKZ6voWOhVAUDBF6glDisd9ZcUtf7SaNUc9+0wFSoxUllzShW+IKHXme51/RsBeGIfCTlbTMwlEr17M4HlKzDRxf8qdlfsl+BsgfLY2Xgdb120wx2tzsWYSZmizTC+fd6LjmTCvZJNU/tRGgzOdBnaiezoxn68rUsEjk3kx821NPDKJV0F74KKNAdYj+tVNam+SDVteWXVshH1C9g/lWKHpxFcsBuT4OAR1WZ1FVjIq4+iM+3iTw4sn1/+Xdy0eN6+JUXwaUFZ2lw+tTtUi1khvSts0euIFAzCuiP69ShszYWIeFcteGk36XER8Ea3WB0hkntjb2tvBINoPi3ZK0z9Eg4DEQam0K0NzYNwjv+8A+T1/OmON9PJ23BWGHd/JBkQixSBjK95Fr3B0CafQI8=" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZPQet1wIx1Q48y3xJY2k25Y7qxH5RrQ9qQcN-OiTC9guZtri9w2&amp;t=639246310055090729" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=x6wALODbMJK5e0eRC_p1LdIxBJXt0U_WW5GWfJqHAqo6frgCmGRfEywglicTersO2OKrFhK1gAIp0Wk2al2YrpdR3uWqH6f4nfjBsCyRUfTUUVmb0&amp;t=ffffffffecf8d3f2" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=P5lTttoqSeZXoYRLQMIScH645UK3RD852IErF2548Wz9Ssv0rLjB4fhVKnHcMpqkaMHpNAGOeWY02Lf4aBYN9-dVBme_SNK5KJwmFQNpMixYDZ7M0&amp;t=ffffffffecf8d3f2" type="text/javascript"></script>
+<script src="/PressReleaseIframePage.aspx?_TSM_HiddenField_=sc_HiddenField&amp;_TSM_CombinedScripts_=%3b%3bAjaxControlToolkit%2c+Version%3d3.5.7.123%2c+Culture%3dneutral%2c+PublicKeyToken%3d28f01b0e84b6d53e%3aen-US%3a5a4df314-b4a2-4da2-a207-9284f1b1e96c%3ade1feab2%3af2c8e708%3a8613aea7%3af9cec9bc%3a3202a5a2%3aab09e3fe%3a87104b7c%3a720a52bf%3a589eaa30%3aa67c2700%3abe6fb298" type="text/javascript"></script>
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="8166A38A" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="9MFIJgd4vkuoPGUZGZ//d0DwsG1+bnQMmBX+LMrVjBgFOrQvd7z7XWhWGJ0a227qOQWBI4Bk7exxtMUH7zGPDOl7bEQ1vXjvCisJS52ku8KyeV5s7DzLXH6Scc3B1WR8rda1vuVpvlgoFbkE3fYLTevnCqdn3dU4+Q6zEuWiVwdH2P7BS9H3o2r9ZDOX7vYAvwdXIajsIfB3nT4gsjzokk/L5fqbDBm79AHqEsME0Mq1Uv0X/A4F6mcVgglxHpVNLyEIdJ0L/RmBoZ7lfPkGWPvqRuI=" />
+</div>
+                              
+            <div id="templateCss"></div>
+            <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('sc', 'form1', ['tupdate12','update12'], [], [], 90, '');
+//]]>
+</script>
+
+            <input type="hidden" name="hfGridHtml" id="hfGridHtml" />
+            <div class="container" style='margin-bottom: 50px;'>
+                  <div id="accessories">
+
+                        
+                        <div class="pull-right" style="display: flex">
+                              <div id="voll"></div>
+                              <div id="vollDT"></div>
+                              
+                              
+<div class="print-icons">
+<input type="image" name="Print1$print" id="Print1_print" aria-label="Print" src="images/printer_icon.png" alt="print page button" style="padding: 5px 10px 5px 10px;" />
+</div>
+                        </div>
+                  </div>
+                  <input type="hidden" name="hydpermid" id="hydpermid" value="1954005" />
+                  
+
+
+
+                  <div class="innner-page-main-about-us-content-right-part">
+
+                        <div id="MinistryName" class="MinistryNameSubhead text-center">
+                              Ministry of Mines 
+                        </div>
+                        
+                        <div id="lg_g"><div class='log_oo'>  <img src='https://static.pib.gov.in/WriteReadData/specificdocs/photo/2021/aug/ph202183101.png' alt='azadi ka amrit mahotsav' /> </div></div>
+
+
+
+
+
+                        <div class="text-center event-heading-background">
+                              
+                              <h2 id="Titleh2">
+                                    Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items
+                              </h2>
+                              <h3 id="Subtitleh3">
+                                    <span id="ltrSubtitle"><br/>Ministry of Mines focuses on BIS compulsory certification by notifying QCOs for Aluminium, Copper and Nickel metals – aims to ensure user benefit and industry competitiveness through a quality control eco-system<br/><br/>Move to help curb import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the consumers <br/></span>
+                              </h3>
+                        </div>
+
+                        <div id="PrDateTime" class="ReleaseDateSubHeaddateTime text-center pt20">
+                              प्रविष्टि तिथि:
+                01 SEP 2023 3:00PM by PIB Delhi
+                        </div>
+                        
+                        <div class='pt20'>
+                        </div>
+                        <input type="hidden" name="hydphotoUrl" id="hydphotoUrl" />
+                        
+                        <p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">Ministry of Mines has notified three Quality Control Orders (QCOs) for seven items on August 31, 2023, following the due process of notification of Technical Regulations. These QCOs will come into effect three months from the date of notification. These QCOs mark the first technical regulations from Ministry of Mines under the BIS Act.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The QCO for Aluminium and Aluminium Alloys mandates compulsory certification under the appropriate Indian Standards (IS) for the domestic production and import of aluminium and aluminium alloy (ingots and casting); high purity primary aluminium ingot; aluminium alloy ingots for bearings; primary aluminium ingots for remelting; and aluminium ingots, billets and wire bars (EC grade). The remaining two QCOs provide appropriate IS standards for copper and for nickel powder.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The three QCOs have been notified after an elaborate process comprising consultations with the Bureau of Indian Standards (BIS) and with relevant industry associations and stakeholders, including hosting of the draft QCOs on the website of the World Trade Organization (WTO) for a 60-day period for inviting comments from member countries, and on the website of the Ministry for comments from stakeholders within the 60-day period, followed by finalization of the QCOs after their approval by the Union Minister of Mines and vetting by the Legislative Department.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The Ministry of Mines is laying emphasis on strengthening the quality control eco-system for non-ferrous metals sector in the country. For that, the Ministry is in constant consultation with BIS for preparation of more QCOs on upstream products (refined metal) in the non-ferrous metal value chain.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The development of mandatory QCOs help curb the import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the domestic consumers including industrial users. The notified QCOs will ensure the standard and quality of aluminium metal and alloys, copper and nickel to the benefit of the user industry. At the same time, the QCOs will ensure Indian product quality in these items akin to global standards, and enhance the brand value of &lsquo;Make in India&rsquo; in the international market. </span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The QCO notifications are among the many initiatives of the Ministry of Mines that are aimed at realizing the Prime Minister&rsquo;s vision of <em>Atma Nirbhar Bharat</em>. </span></span></p>
+
+<p style="text-align:center"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">***</span></span></p>
+
+<p><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px"><strong>BY</strong></span></span></p>
+
+
+                        
+                        <div id="reel_pic">
+                        </div>
+
+
+
+                        
+                        <br />
+                        <span id="ReleaseId">(रिलीज़ आईडी: 1954005)</span>
+                        <span id="lblViews">	आगंतुक पटल  : 4981</span>
+                        <div>
+                              
+                        </div>
+                        
+
+                        <span id="lblRefPhoto"></span>
+
+                        <div class="BackgroundRelease">
+                              
+                        </div>
+                        <div>
+                              
+                        </div>
+                        <div class="ReleaseLang">इस विज्ञप्ति को इन भाषाओं में पढ़ें: 
+                        
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1954047' target="_blank">
+                                          Kannada </a>
+                              
+                                    ,
+                              
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1954322' target="_blank">
+                                          Telugu </a>
+                              
+                                    ,
+                              
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1954050' target="_blank">
+                                          Urdu </a>
+                              
+                                    ,
+                              
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1954633' target="_blank">
+                                          हिन्दी </a>
+                              
+                                    ,
+                              
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1956264' target="_blank">
+                                          Punjabi </a>
+                              
+                                    ,
+                              
+                                    
+                                    <a href='https://pib.gov.in/PressReleasePage.aspx?PRID=1954150' target="_blank">
+                                          Tamil </a>
+                              
+                        </div>
+
+                        <div class="RelTag">
+                              <ul>
+                                    
+                              </ul>
+                        </div>
+                        <div class="clear">
+                        </div>
+                        <div id="RelLink" class="RelLink">
+                              <ul>
+                                    
+                                    
+                              </ul>
+                        </div>
+                        <center>
+                              
+                        </center>
+                  </div>
+
+                  <div id="update12">
+	
+                              
+                              <input type="hidden" name="Hidden" id="Hidden" />
+                              <div id="P_CategoryManagement" class="ModalWindow" style="border-width:0px;height:60%;width:60%;overflow:auto;display: none">
+		
+                                    <div>
+                                          <input type="image" name="btnClose" id="btnClose" src="images/close_flat_icon.png" />
+                                    </div>
+                                    <div id="description">
+                                    </div>
+                                    <div class="text-center">
+                                          <h2>
+                                                
+                                                <br>
+                                                
+                                          </h2>
+                                    </div>
+                                    <br />
+                                    <div class="clear">
+                                    </div>
+                                    
+                              
+	</div>
+                        
+</div>
+            </div>
+            
+            <div id="PdfDiv" style="display: none;">
+                  <table width="100%">
+                        <tr>
+                              <td style="font-weight: 200; text-align: center">
+                                    Ministry of Mines 
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="font-weight: 200; text-align: center; font-size: 30px;">
+                                          Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="font-weight: 200; text-align: center; font-size: 30px;">
+                                          <div style='height:30px;width:100%;'></div>Ministry of Mines focuses on BIS compulsory certification by notifying QCOs for Aluminium, Copper and Nickel metals – aims to ensure user benefit and industry competitiveness through a quality control eco-system<div style='height:30px;width:100%;'></div><div style='height:30px;width:100%;'></div>Move to help curb import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the consumers <div style='height:30px;width:100%;'></div>
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="text-align: center; font-size: 14px;">
+                                          प्रविष्टि तिथि:
+                        01 SEP 2023 3:00PM by PIB Delhi
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="font-weight: 200; text-align: left; font-size: 16px;">
+                                          <p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">Ministry of Mines has notified three Quality Control Orders (QCOs) for seven items on August 31, 2023, following the due process of notification of Technical Regulations. These QCOs will come into effect three months from the date of notification. These QCOs mark the first technical regulations from Ministry of Mines under the BIS Act.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The QCO for Aluminium and Aluminium Alloys mandates compulsory certification under the appropriate Indian Standards (IS) for the domestic production and import of aluminium and aluminium alloy (ingots and casting); high purity primary aluminium ingot; aluminium alloy ingots for bearings; primary aluminium ingots for remelting; and aluminium ingots, billets and wire bars (EC grade). The remaining two QCOs provide appropriate IS standards for copper and for nickel powder.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The three QCOs have been notified after an elaborate process comprising consultations with the Bureau of Indian Standards (BIS) and with relevant industry associations and stakeholders, including hosting of the draft QCOs on the website of the World Trade Organization (WTO) for a 60-day period for inviting comments from member countries, and on the website of the Ministry for comments from stakeholders within the 60-day period, followed by finalization of the QCOs after their approval by the Union Minister of Mines and vetting by the Legislative Department.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The Ministry of Mines is laying emphasis on strengthening the quality control eco-system for non-ferrous metals sector in the country. For that, the Ministry is in constant consultation with BIS for preparation of more QCOs on upstream products (refined metal) in the non-ferrous metal value chain.</span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The development of mandatory QCOs help curb the import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the domestic consumers including industrial users. The notified QCOs will ensure the standard and quality of aluminium metal and alloys, copper and nickel to the benefit of the user industry. At the same time, the QCOs will ensure Indian product quality in these items akin to global standards, and enhance the brand value of &lsquo;Make in India&rsquo; in the international market. </span></span></p>
+
+<p style="text-align:justify"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">The QCO notifications are among the many initiatives of the Ministry of Mines that are aimed at realizing the Prime Minister&rsquo;s vision of <em>Atma Nirbhar Bharat</em>. </span></span></p>
+
+<p style="text-align:center"><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px">***</span></span></p>
+
+<p><span style="font-family:Times New Roman,Times,serif"><span style="font-size:16px"><strong>BY</strong></span></span></p>
+
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                                    <div style="font-weight: 100; text-align: left; font-size: 16px;">
+                                          (रिलीज़ आईडी: 1954005)
+                                    </div>
+                                    <div style="height: 30px; width: 100%;">
+                                    </div>
+                              </td>
+                        </tr>
+                        <tr>
+                              <td style="font-weight: 200; text-align: center; font-size: 24px;"></td>
+                        </tr>
+                  </table>
+            </div>
+            <div class="clearfix">
+            </div>
+
+            
+
+            <div class="section1">
+                  <div id="frst_t">
+                        <div id="arr_rm"><div class='sticky-social_mb'><ul class='social_mb'><a href='http://www.facebook.com/share.php?u=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005' target='_blank'><li class='fb_b'   ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/facebook.jpg' alt='Share on facebook'  width='40' /></li></a><a href='https://twitter.com/intent/tweet?url=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&text=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items' target='_blank'><li class='twitter_r'  ><img  src='https://static.pib.gov.in/WriteReadData/specificdocs/photo/2023/aug/ph2023818240601.jpg' alt='Share on twitter' width='40' /> </li></a><a href='https://api.whatsapp.com/send?text=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005' target='_blank'><li class='whatsapp_r'  ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/whatsapp1.png' alt='Share on whatsapp' width='40' /></li></a><a href='https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=&su=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items&body=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&ui=2&tf=1&pli=1' title='Share by Email' target='_blank'><li class='fa-envelope_r' ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/email1.png' alt='Share on email'  width='40' /></li></a><a href='https://www.linkedin.com/shareArticle?mini=true&url=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&title=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items&summary=My%20favorite%20developer%20program&source=LinkedIn' target='_blank'><li class='fa-linkedin_r'  ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/linkedin.png' alt='Share on linkedin' width='40' /></li></a></ul></div></div>
+                  </div>
+                  <div id="second_t">
+                        <div id="sndr_rm"><div class='sticky-social'><ul class='social'><a href='http://www.facebook.com/share.php?u=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005' target='_blank'><li class='fb_b'   ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/facebook.jpg' alt='Share on facebook'  width='35' /></li></a><a href='https://twitter.com/intent/tweet?url=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&text=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items' target='_blank'><li class='twitter_r'  ><img  src='https://static.pib.gov.in/WriteReadData/specificdocs/photo/2023/aug/ph2023818240601.jpg' alt='Share on twitter' width='35' /> </li></a><a href='https://api.whatsapp.com/send?text=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005' target='_blank'><li class='whatsapp_r'  ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/whatsapp1.png' alt='Share on whatsapp' width='35' /></li></a><a href='https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=&su=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items&body=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&ui=2&tf=1&pli=1' title='Share by Email' target='_blank'><li class='fa-envelope_r' ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/email1.png' alt='Share on email'  width='35' /></li></a><a href='https://www.linkedin.com/shareArticle?mini=true&url=https://pib.gov.in/PressReleasePage.aspx?PRID=1954005&title=Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items&summary=My%20favorite%20developer%20program&source=LinkedIn' target='_blank'><li class='fa-linkedin_r'  ><img  src='https://static.pib.gov.in/WriteReadData/userfiles/socialmedianew/linkedin.png' alt='Share on linkedin' width='35' /></li></a></ul></div></div>
+                  </div>
+            </div>
+            <input type="hidden" name="ltrTitlee" id="ltrTitlee" value="Centre announces notification of 3 Quality Control Orders for 7 non-ferrous refined metal items" />
+            <input type="hidden" name="ltrSubtitlee" id="ltrSubtitlee" value="&lt;br/>Ministry of Mines focuses on BIS compulsory certification by notifying QCOs for Aluminium, Copper and Nickel metals – aims to ensure user benefit and industry competitiveness through a quality control eco-system&lt;br/>&lt;br/>Move to help curb import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the consumers &lt;br/>" />
+            <input type="hidden" name="ltrDescriptionn" id="ltrDescriptionn" value="&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>Ministry of Mines has notified three Quality Control Orders (QCOs) for seven items on August 31, 2023, following the due process of notification of Technical Regulations. These QCOs will come into effect three months from the date of notification. These QCOs mark the first technical regulations from Ministry of Mines under the BIS Act.&lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>The QCO for Aluminium and Aluminium Alloys mandates compulsory certification under the appropriate Indian Standards (IS) for the domestic production and import of aluminium and aluminium alloy (ingots and casting); high purity primary aluminium ingot; aluminium alloy ingots for bearings; primary aluminium ingots for remelting; and aluminium ingots, billets and wire bars (EC grade). The remaining two QCOs provide appropriate IS standards for copper and for nickel powder.&lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>The three QCOs have been notified after an elaborate process comprising consultations with the Bureau of Indian Standards (BIS) and with relevant industry associations and stakeholders, including hosting of the draft QCOs on the website of the World Trade Organization (WTO) for a 60-day period for inviting comments from member countries, and on the website of the Ministry for comments from stakeholders within the 60-day period, followed by finalization of the QCOs after their approval by the Union Minister of Mines and vetting by the Legislative Department.&lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>The Ministry of Mines is laying emphasis on strengthening the quality control eco-system for non-ferrous metals sector in the country. For that, the Ministry is in constant consultation with BIS for preparation of more QCOs on upstream products (refined metal) in the non-ferrous metal value chain.&lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>The development of mandatory QCOs help curb the import of sub-standard products, prevent unfair trade practices, and ensure supply of quality products to the domestic consumers including industrial users. The notified QCOs will ensure the standard and quality of aluminium metal and alloys, copper and nickel to the benefit of the user industry. At the same time, the QCOs will ensure Indian product quality in these items akin to global standards, and enhance the brand value of &amp;lsquo;Make in India&amp;rsquo; in the international market. &lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:justify&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>The QCO notifications are among the many initiatives of the Ministry of Mines that are aimed at realizing the Prime Minister&amp;rsquo;s vision of &lt;em>Atma Nirbhar Bharat&lt;/em>. &lt;/span>&lt;/span>&lt;/p>
+
+&lt;p style=&quot;text-align:center&quot;>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>***&lt;/span>&lt;/span>&lt;/p>
+
+&lt;p>&lt;span style=&quot;font-family:Times New Roman,Times,serif&quot;>&lt;span style=&quot;font-size:16px&quot;>&lt;strong>BY&lt;/strong>&lt;/span>&lt;/span>&lt;/p>
+" />
+            <script type="text/javascript">
+                  var mPlayer = document.getElementById("background_music");
+                  var mPlayAction = document.getElementById("playbutton");
+
+                  var isPlaying = false;
+
+                  function playAudio() {
+                        mPlayer.play();
+                        isPlaying = true;
+                        document.getElementById('stopA').style.display = "block";
+                        document.getElementById('playA').style.display = "none";
+                  }
+
+                  function pauseAudio() {
+                        mPlayer.pause();
+                        isPlaying = false;
+                        document.getElementById('playA').style.display = "block";
+                        document.getElementById('stopA').style.display = "none";
+                  }
+                  //function HandleAudio() {
+                  //    if (isPlaying == true) {
+                  //        //Playing already Pause it
+                  //        pauseAudio();
+                  //    } else {
+                  //        //Play the music
+                  //        playAudio();
+                  //    }
+                  //}
+            </script>
+            <script type="text/javascript">
+                  var synth = window.speechSynthesis;
+
+            
+                  function CleanHtml(html) {
+
+                        html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+
+                        return html;
+                  }
+                  function stripHtml(html) {
+                        let tmp = document.createElement("DIV");
+                        tmp.innerHTML = CleanHtml(html);
+                        return tmp.textContent || tmp.innerText || "";
+                  }
+            </script>
+            <script type="text/javascript">
+                  $(document).ready(function () {
+                        //for responsive tables
+                        $("table").each(function () {
+                              if (!$(this).closest(".table-responsive").length) {
+                                    $(this).wrap("<div class='table-responsive'></div>");
+                              }
+                        });
+
+                        var width = $(window).width();
+                        if (width < 768) {
+
+                              // Extra Small Device
+                              document.getElementById('frst_t').style.display = "block";
+                              document.getElementById('second_t').style.display = "none";
+
+                        } else if (width < 991) {
+                              document.getElementById('frst_t').style.display = "block";
+                              document.getElementById('second_t').style.display = "none";
+                              // Small Device
+
+                        } else if (width < 1199) {
+                              document.getElementById('frst_t').style.display = "none";
+                              document.getElementById('second_t').style.display = "block";
+                              // Medium Device
+
+                        } else {
+                              document.getElementById('frst_t').style.display = "none";
+                              document.getElementById('second_t').style.display = "block";
+                              // Large Device
+
+                        }
+                  });
+            </script>
+            <script type="text/javascript">
+                  $(document).ready(function () {
+                        var width = $(window).width();
+                        if (width < 768) {
+
+                              // Extra Small Device
+                              document.getElementById('frst_t').style.display = "block";
+                              document.getElementById('second_t').style.display = "none";
+
+                        } else if (width < 991) {
+                              document.getElementById('frst_t').style.display = "block";
+                              document.getElementById('second_t').style.display = "none";
+                              // Small Device
+
+                        } else if (width < 1199) {
+                              document.getElementById('frst_t').style.display = "none";
+                              document.getElementById('second_t').style.display = "block";
+                              // Medium Device
+
+                        } else {
+                              document.getElementById('frst_t').style.display = "none";
+                              document.getElementById('second_t').style.display = "block";
+                              // Large Device
+
+                        }
+                  });
+            </script>
+            
+            <style type="text/css">
+                  @media print {
+                        .sticky-social, .sticky-social_mb, .pull-right, #printPDF {
+                              display: none !important;
+                        }
+                  }
+
+                  .f_vl {
+                        padding-right: 30px;
+                        font-size: 17px;
+                        cursor: pointer;
+                  }
+
+                  .log_oo {
+                        // width: 20%;
+                        display: flex;
+                        justify-content: space-between;
+                  }
+
+                        .log_oo img {
+                              width: 150px;
+                              /*width: 100%;
+                    height: auto;*/
+                        }
+
+                  .sticky-social_mb {
+                        position: fixed;
+                        bottom: 0px;
+                        padding: 0px;
+                        margin: 0px;
+                        width: 100%;
+                  }
+
+                  .social_mb {
+                        list-style: none;
+                        display: flex;
+                        width: 100%;
+                        margin-bottom: -8px;
+                  }
+
+                        .social_mb a {
+                              padding: 8px 0px;
+                              font-size: 30px;
+                              transition: all 0.8s ease-in-out;
+                              width: 20% !important;
+                              text-align: center;
+                        }
+            </style>
+            <style type="text/css">
+                  .section1 {
+                        position: relative;
+                        padding: 10px 0px;
+                        width: 100%;
+                  }
+
+
+
+                  .sticky-social {
+                        position: fixed;
+                        top: 20px;
+                        left: 0px;
+                        padding: 0px;
+                        margin: 0px;
+                  }
+
+                  .social {
+                        list-style: none;
+                  }
+
+                        .social a li {
+                              padding: 8px 12px;
+                              font-size: 25px;
+                              transition: all 0.8s ease-in-out;
+                        }
+
+                              .social a li:hover {
+                                    margin-right: -30px;
+                                    box-shadow: 2px 5px 10px grey;
+                              }
+
+                                    .social a li:hover .fa {
+                                          margin-left: 20px;
+                                    }
+
+                  .fb_b {
+                        /* background-color: rgb(59, 89, 152);*/
+                        background-color: rgba(65,103,178,255);
+                  }
+
+                  .twitter_r {
+                        /* background-color: rgb(29, 161, 242);*/
+                        background-color: #000000;
+                  }
+
+                  .whatsapp_r {
+                        /* background-color: rgb(77, 194, 71);*/
+                        background-color: rgba(13,191,67,255);
+                  }
+
+                  .fa-envelope_r {
+                        /* background-color: rgb(219, 68, 55);*/
+                        background-color: #e2123d;
+                  }
+
+                  .fa-linkedin_r {
+                        background-color: rgb(0, 119, 181);
+                  }
+            </style>
+            <style type="text/css">
+                  @media only screen and (max-device-width: 767px) {
+                        p span img {
+                              max-width: 90% !important;
+                              height: auto !important;
+                        }
+
+                        p img {
+                              max-width: 90% !important;
+                              height: auto !important;
+                        }
+
+                        h2 {
+                              font-size: 20px !important;
+                              font-weight: 600 !important;
+                        }
+
+                        h3 {
+                              font-size: 18px !important;
+                              font-weight: 600 !important;
+                        }
+                  }
+            </style>
+            <style type="text/css">
+                  /* === Film Roll Badge Styling(IFFI2025 countdown) === */
+                  .film-roll-badge {
+                        position: absolute;
+                        top:82%;
+                        right: 20px;
+                        width: 230px;
+                        height: 70px;
+                        background: repeating-linear-gradient( to right, #9a2375 0px, #9a2375 18px, #6e2b8b 18px, #6e2b8b 36px );
+                        border-top: 8px solid #9a2375;
+                        border-bottom: 8px solid #9a2375;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                        animation: moveFilm 8s linear infinite;
+                        z-index: 10;
+                  }
+
+                        /* film sprocket holes */
+                        .film-roll-badge::before,
+                        .film-roll-badge::after {
+                              content: "";
+                              position: absolute;
+                              width: 100%;
+                              height: 10px;
+                              background: repeating-linear-gradient( to right, #9a2375 0px, #9a2375 10px, #fff 10px, #fff 20px );
+                              left: 0;
+                              z-index: 2;
+                        }
+
+                        .film-roll-badge::before {
+                              top: -4px;
+                        }
+
+                        .film-roll-badge::after {
+                              bottom: -4px;
+                        }
+
+                  .film-roll-inner {
+                        position: relative;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        animation: flicker 2s infinite ease-in-out;
+                  }
+
+                  .countdown-text {
+                        font-size: 1.3rem;
+                        font-weight: 700;
+                        color: #fff;
+                        text-shadow: 0 0 6px rgba(255, 255, 255, 0.4), 0 0 10px #000;
+                        white-space: nowrap;
+                  }
+
+                  /* === Animations === */
+                  @keyframes moveFilm {
+                        0% {
+                              background-position: 0 0;
+                        }
+
+                        100% {
+                              background-position: 120px 0;
+                        }
+                  }
+
+                  @keyframes flicker {
+                        0%, 100% {
+                              opacity: 1;
+                        }
+
+                        50% {
+                              opacity: 0.9;
+                        }
+
+                        25% {
+                              opacity: 0.95;
+                        }
+
+                        75% {
+                              opacity: 0.85;
+                        }
+                  }
+
+                  /* === Responsive Adjustments === */
+                  @media (max-width: 1500px) {
+                        .film-roll-badge {
+                              top: 68%;
+                              right: 18px;
+                              /* width: 220px; */
+                              height: 65px;
+                              font-size: 0.85rem;
+                        }
+
+                        .press-section {
+                              margin-top: 35px;
+                        }
+                  }
+
+                  @media (max-width: 992px) {
+                        .film-roll-badge {
+                              top: 52%;
+                              right: 10px;
+                               width: 200px; 
+                              height: 60px;
+                        }
+                  }
+
+                  @media (max-width: 768px) {
+                        .film-roll-badge {
+                              top: 56%;
+                              right: 10px;
+                               width: 124px; 
+                              height: 55px;
+                        }
+
+                        .countdown-text {
+                              font-size: 0.9rem;
+                        }
+                  }
+
+                  @media (max-width: 576px) {
+                        .film-roll-badge {
+                              top: 59%;
+                              right: 5px;
+                              /* width: 160px; */
+                              height: 50px;
+                        }
+
+                        .countdown-text {
+                              font-size: 0.85rem;
+                        }
+                  }
+            </style>
+                        <script type="text/javascript">
+                  const festivalStart = new Date("2025-11-20T00:00:00").getTime();
+                  const festivalEnd = new Date("2025-11-28T23:59:59").getTime();
+
+                  const countdownElement = document.getElementById("countdown");
+
+                  const interval = setInterval(() => {
+                        const now = new Date().getTime();
+
+                        // BEFORE FESTIVAL — show days + hours left
+                        if (now < festivalStart) {
+                              const diff = festivalStart - now;
+                              const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                              const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                              countdownElement.innerHTML = `
+                ${days} Day${days !== 1 ? 's' : ''} 
+                ${hours} Hour${hours !== 1 ? 's' : ''} to go
+            `;
+
+                        }
+
+                        // DURING FESTIVAL — show 56th IFFI - Day X
+                        else if (now >= festivalStart && now <= festivalEnd) {
+                              const dayNumber = Math.floor((now - festivalStart) / (1000 * 60 * 60 * 24)) + 1;
+                              countdownElement.innerHTML = `56th IFFI - Day ${dayNumber}`;
+                        }
+
+                        // AFTER FESTIVAL — new message
+                        else {
+                              countdownElement.innerHTML = `✨ IFFI closes but never ends…`;
+
+                              // Width change logic
+                              const elements = document.querySelectorAll('.film-roll-badge');
+                              elements.forEach(el => el.style.width = "350px");
+
+                              clearInterval(interval);
+                        }
+
+                  }, 1000);
+            </script>
+
+      
+
+<script type="text/javascript">
+//<![CDATA[
+(function() {var fn = function() {$get("sc_HiddenField").value = '';Sys.Application.remove_init(fn);};Sys.Application.add_init(fn);})();Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.ModalPopupBehavior, {"BackgroundCssClass":"modalBackground","PopupControlID":"P_CategoryManagement","dynamicServicePath":"/PressReleaseIframePage.aspx","id":"mpe"}, null, null, $get("Hidden"));
+});
+//]]>
+</script>
+</form>
+</body>
+</html>

@@ -1,42 +1,337 @@
-# SEED VALUES — owned by the Phase 0 regulatory/contract research agent, who verifies and refines them.
-# Indian customs & trade-policy parameters for HS 7602 (aluminium waste & scrap), Mar–Aug 2022.
+# Owned by the Phase 0 regulatory/contract research agent. Research trail: docs/research/regulatory_contract_notes.md;
+# status of every check: docs/verification_log.md. Indian customs, trade-policy and compliance parameters for
+# HS 7602 (aluminium waste & scrap) over the Mar–Aug 2022 window (engine horizon to 30-Sep-2022).
+#
+# Primary-source cache (all retrieved 2026-09-16, never hand-edited):
+#   data/raw/regulatory/cbic_notifications/      CBIC notification PDFs (decoded byte-for-byte from the portal API's base64 payload)
+#   data/raw/regulatory/cbic_exchange_rates_2022/ CBIC fortnightly exchange-rate notifications, Feb–Sep 2022
+# CBIC Tax Information Portal: https://taxinformation.cbic.gov.in/content-page/explore-notification ; PDFs are served by
+# https://taxinformation.cbic.gov.in/api/cbic-notification-msts/download/<id>/ENG (anonymous token from
+# /api/authenticate-token; the site omits its Sectigo intermediate certificate, so the fetch used certifi + the AIA
+# intermediate http://crt.sectigo.com/SectigoPublicServerAuthenticationCAOVR36.crt — verification was NOT disabled).
 
+# ---------------------------------------------------------------------------------------------------------------
+# Customs duties on HS 7602 (landed-cost build, CONTRACTS §5)
+# ---------------------------------------------------------------------------------------------------------------
 bcd_scrap_hs7602:
   value: 0.025
   unit: frac_of_assessable_value
   flag: DIRECT
-  source: "CBIC Customs Tariff of India, Chapter 76, tariff item 7602 00 (effective rate via Notification 50/2017-Customs as amended by Budget 2021)"
-  verify: "PENDING — confirm effective BCD on 7602 00 10/90 for Mar–Aug 2022 on cbic.gov.in"
-  note: "Seed. Budget 2021-22 cut BCD on aluminium scrap to 2.5%."
+  source: >-
+    Notification No. 50/2017-Customs dated 30-Jun-2017 (effective-rate notification), Table S.No. 385: chapter/heading
+    '7602', description 'Aluminium scrap', standard rate '2.5%' (CBIC portal id 1002538; cached
+    data/raw/regulatory/cbic_notifications/cs50-2017_principal.pdf). Budget amendments to 50/2017 checked for any
+    change to S.No. 385 / 7602: 06/2018, 25/2019, 01/2020, 02/2021, 55/2021 (HSN-2022 alignment), 02/2022, 02/2023 —
+    none touches it (cached in the same folder).
+  verify: >-
+    VERIFIED 2026-09-16 (rate in principal notification + no change in the Budget/HSN amendment notifications read).
+    Residual gap: ~40 non-Budget amendments to 50/2017 (2017–2022) were listed but not individually opened; pages
+    read on 2026-09-16 (The Tribune/ANI 08-Jul-2026 on the AAI representation,
+    https://www.tribuneindia.com/news/aluminium-quality/aluminium-association-of-india-urges-centre-to-notify-bis-standards-for-aluminium-scrap,
+    cached data/raw/regulatory/news/tribune_aai_urges_bis_standards_aluminium_scrap.html; AlCircle Apr-2026) still cite
+    2.5% BCD on aluminium scrap, so an interim change and reversal is very unlikely.
+  note: >-
+    The seed's claim that 'Budget 2021-22 cut BCD on aluminium scrap to 2.5%' was WRONG — Budget 2021-22 cut copper
+    scrap (7404) to 2.5%; aluminium scrap has been at 2.5% since at least the June-2017 GST-era re-issue of the
+    effective-rate notification. Applies to both 7602 00 10 (ISRI-coded scrap) and 7602 00 90 (other) because S.No.
+    385 is written at heading level. The 5-percentage-point gap to primary aluminium (bcd_primary_al_hs7601 = 7.5%)
+    is the policy wedge that makes scrap-to-ingot conversion in India an arbitrage (see notes §1).
 
 sws_rate_on_bcd:
   value: 0.10
   unit: frac_of_bcd
   flag: DIRECT
-  source: "Finance Act 2018, s.110 (Social Welfare Surcharge = 10% of aggregate customs duties)"
-  verify: "PENDING"
-  note: "Seed. SWS is levied on BCD (not on assessable value)."
+  source: >-
+    Finance Act 2018 s.110(3): SWS 'at the rate of ten per cent' on the aggregate of duties, taxes and cesses levied
+    under s.12 Customs Act, excluding safeguard/CVD/anti-dumping duty and SWS itself (text read at
+    https://indiankanoon.org/doc/20129988/). IGST and GST compensation cess are exempted from SWS by Notification
+    13/2018-Customs (portal title read, truncated after 'from the whole o…'; text not opened). Exemption list Notification 11/2018-Customs (cached
+    cs11-2018_sws_exempt.pdf) and its 2020/2021/2022 amendments 09/2020, 14/2021, 03/2022, 24/2022 contain no chapter-76
+    entry.
+  verify: >-
+    VERIFIED 2026-09-16 (statute text + exemption notifications read; no aluminium scrap exemption). Not re-checked:
+    amendments to 11/2018 issued outside Budget days.
+  note: >-
+    With BCD 2.5% and no AIDC, SWS = 0.25% of assessable value, so BCD + SWS = 2.75% of AV on scrap versus 8.25% on
+    primary aluminium.
+
+aidc_scrap_hs7602:
+  value: 0.0
+  unit: frac_of_assessable_value
+  flag: DIRECT
+  source: >-
+    Notification No. 11/2021-Customs dated 01-Feb-2021 (effective rates of Agriculture Infrastructure and
+    Development Cess; cached cs11-2021_aidc.pdf) lists no chapter-76 goods. 2022 amendments to 11/2021 seen on the
+    CBIC portal (16/2022, 27/2022, 44/2022, 53/2022, 60/2022) concern edible oils, cotton, anthracite, platinum and
+    similar items (titles only).
+  verify: "VERIFIED 2026-09-16 for the principal notification; the 2022 amendments were checked by title, not opened."
+  note: "AIDC was never levied on aluminium scrap in the window, so SWS base = BCD only."
 
 igst_rate_hs7602:
   value: 0.18
   unit: frac_of_av_plus_customs_duty
   flag: DIRECT
-  source: "IGST rate schedule (Notification 1/2017-Integrated Tax (Rate)), HS 7602"
-  verify: "PENDING"
-  note: "Seed. Import IGST is creditable as ITC for a GST-registered trader."
+  source: >-
+    Notification No. 1/2017-Integrated Tax (Rate) dated 28-Jun-2017, Schedule III (18%), S.No. 263: '7602 Aluminium
+    waste and scrap' (CBIC portal id 1001202; cached igst01-2017_rate.pdf). Amendments 14/2021-IT(R) (w.e.f.
+    01-Jan-2022) and 01/2022-IT(R) (31-Mar-2022) read — neither touches S.No. 263.
+  verify: "VERIFIED 2026-09-16 (principal schedule + the two amendments in force around the window)."
+  note: >-
+    IGST base = AV + BCD + SWS (Customs Tariff Act s.3 — IGST charged on value plus customs duties; subsection text not re-fetched). Primary aluminium 7601 is in the same Schedule III
+    (S.No. 262), so IGST is neutral between the scrap and primary routes.
+
+igst_credit_lag_days:
+  value: 45
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk construction: IGST is paid with the Bill of Entry (~1 day after arrival) and recovered as input tax credit when the GSTR-3B for the month of the domestic sale is filed (20th of the following month); for a sale ~10 days after arrival that is ~40–50 days"
+  verify: "N/A — cash-cycle assumption (GSTR-3B due date rule stated from CGST Rules r.61, not re-fetched)"
+  note: "Used ONLY for the IGST financing line in CONTRACTS §5 (igst_finance_inr_t); IGST itself is not a landed cost while igst_itc_available is true. At 18% × ~INR 2.3 lakh × 45/365 × 9.5–10% ≈ INR 500/t."
 
 igst_itc_available:
   value: true
   unit: bool
   flag: ASSUMPTION
-  source: "Desk assumption: GST-registered importer re-selling taxable goods claims full ITC"
-  verify: "N/A — structural assumption"
-  note: "When true, import IGST is excluded from landed cost (only its financing cost is kept)."
+  source: "Desk assumption: GST-registered importer re-selling taxable goods claims full ITC on IGST paid on the Bill of Entry"
+  verify: "N/A — structural assumption (legal basis: Bill of Entry is an ITC document under CGST Rules r.36(1)(d); rule text not re-fetched)"
+  note: >-
+    When true, import IGST is excluded from landed cost; only its financing from the Bill of Entry to the GSTR-3B
+    offset is kept (igst_credit_lag_days, CONTRACTS §5 igst_finance_inr_t). Real-world caveat: ITC is
+    cash-neutral only after the output invoice; a desk with thin domestic output tax liability can carry a
+    blocked-credit balance — that is a working-capital cost, not a P&L cost.
 
 bcd_primary_al_hs7601:
   value: 0.075
   unit: frac_of_assessable_value
   flag: DIRECT
-  source: "CBIC Customs Tariff of India, Chapter 76, tariff item 7601 (unwrought aluminium)"
-  verify: "PENDING — confirm effective BCD on 7601 for 2022"
-  note: "Seed. Used only for the MCX import-parity proxy (MCX Aluminium is priced duty-paid)."
+  source: >-
+    Customs Tariff Act 1975, First Schedule tariff rate for heading 7601 = 7.5% (search summaries attribute the
+    5% -> 7.5% increase to Budget 2016-17; no Budget-2016 document was retrieved). Notification 50/2017-Customs
+    (principal, cached) has no 7601 concession, and the 2018–2023 Budget amendments read (see bcd_scrap_hs7602)
+    contain no 7601 entry, so the tariff rate applied in 2022. AlCircle (Apr-2026,
+    https://www.alcircle.com/news/can-india-sustain-8-25-aluminium-duties-when-55-of-demand-is-imported-118251, read
+    2026-09-16): 'Primary aluminium under HS 7601 is charged at 8.25 per cent, scrap under HS 7602 at 2.5 per cent'
+    (8.25% = 7.5% BCD × 1.10 SWS).
+  verify: >-
+    PARTIAL 2026-09-16 — chain of evidence is consistent but the 2022 First Schedule page for chapter 76 itself was
+    not retrieved. Next step: download the Customs Tariff chapter 76 as amended by the Finance Act 2022 (CBIC Tax
+    Information Portal > Acts > Customs Tariff Act) and read tariff items 7601 10 10–7601 20 90.
+  note: >-
+    Used only for the MCX import-parity proxy (MCX Aluminium is priced duty-paid; market_proxy.yaml calibrates
+    mcx_domestic_premium_inr_kg on this rate).
+
+landing_charges_frac:
+  value: 0.0
+  unit: frac_of_cif
+  flag: DIRECT
+  source: >-
+    Notification No. 91/2017-Customs (N.T.) dated 26-Sep-2017, Customs Valuation (Determination of Value of Imported
+    Goods) Amendment Rules 2017, substituting Rule 10(2) (CBIC portal id 1006196; cached
+    csnt91-2017_valuation_amend.pdf). The substituted rule includes transport, loading, unloading and handling
+    charges 'to the place of importation' at actual and contains no deemed landing-charge percentage.
+  verify: "VERIFIED 2026-09-16 (amendment text read; in force throughout 2022)."
+  note: >-
+    The pre-2017 Rule 10(2) added a deemed 1% of CIF for landing charges; that addition no longer exists, so AV =
+    CIF (ocean freight and insurance at actual). Destination THC/CFS/DO after arrival are NOT in AV — they sit in
+    port_cf_charges_inr_t_* (logistics.yaml). Fallbacks written into the same rule: freight not ascertainable =>
+    20% of FOB; insurance not ascertainable => 1.125% of FOB (see customs_deemed_* below).
+
+customs_deemed_freight_frac_fob:
+  value: 0.20
+  unit: frac_of_fob
+  flag: DIRECT
+  source: "Notification 91/2017-Customs (N.T.), substituted Rule 10(2), first proviso (cached csnt91-2017_valuation_amend.pdf)"
+  verify: "VERIFIED 2026-09-16 (text read)"
+  note: "Only applies when actual freight is not ascertainable (e.g., an FOB contract with undocumented freight). Not used in the base parity, which uses actual/proxy freight."
+
+customs_deemed_insurance_frac_fob:
+  value: 0.01125
+  unit: frac_of_fob
+  flag: DIRECT
+  source: "Notification 91/2017-Customs (N.T.), substituted Rule 10(2), third proviso (cached csnt91-2017_valuation_amend.pdf)"
+  verify: "VERIFIED 2026-09-16 (text read)"
+  note: >-
+    Customs-valuation fallback when the insurance cost is not ascertainable. It is ~10x the commercial premium
+    (insurance_rate, logistics.yaml), so an importer who cannot evidence the actual premium pays duty on a larger AV:
+    ~1.1% × 2.75% ≈ 0.03% of FOB extra duty — immaterial, but a real compliance point.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Customs exchange rate (Customs Act s.14 — CBIC fortnightly notifications)
+# ---------------------------------------------------------------------------------------------------------------
+customs_usdinr_import:
+  path:
+    - [2022-02-18, 76.05]   # 10/2022-Cus(NT) dated 17-Feb-2022
+    - [2022-03-04, 76.65]   # 13/2022-Cus(NT) dated 03-Mar-2022
+    - [2022-03-18, 76.90]   # 18/2022-Cus(NT) dated 17-Mar-2022
+    - [2022-04-08, 76.80]   # 32/2022-Cus(NT) dated 07-Apr-2022
+    - [2022-04-22, 77.15]   # 34/2022-Cus(NT) dated 21-Apr-2022
+    - [2022-05-06, 77.05]   # 40/2022-Cus(NT) dated 05-May-2022
+    - [2022-05-20, 78.60]   # 43/2022-Cus(NT) dated 19-May-2022
+    - [2022-06-03, 78.50]   # 49/2022-Cus(NT) dated 02-Jun-2022
+    - [2022-06-17, 78.95]   # 51/2022-Cus(NT) dated 16-Jun-2022
+    - [2022-07-08, 79.90]   # 58/2022-Cus(NT) dated 07-Jul-2022
+    - [2022-07-22, 80.95]   # 64/2022-Cus(NT) dated 21-Jul-2022
+    - [2022-08-05, 80.25]   # 66/2022-Cus(NT) dated 04-Aug-2022
+    - [2022-08-19, 80.50]   # 70/2022-Cus(NT) dated 18-Aug-2022
+    - [2022-09-02, 80.45]   # 73/2022-Cus(NT) dated 01-Sep-2022
+    - [2022-09-16, 80.40]   # 78/2022-Cus(NT) dated 15-Sep-2022 (in force to 06-Oct-2022)
+  interp: step
+  unit: inr_per_usd
+  flag: DIRECT
+  source: >-
+    CBIC exchange-rate notifications under s.14 Customs Act, Schedule I 'US Dollar — (a) For Imported Goods', each
+    effective the day after issue as stated in its text (cached data/raw/regulatory/cbic_exchange_rates_2022/csnt<N>-2022.pdf,
+    listed on https://taxinformation.cbic.gov.in/content-page/explore-notification, Customs > Non Tariff > 2022).
+  verify: >-
+    VERIFIED 2026-09-16 — all 15 USD-changing notifications Feb–Sep 2022 read. The interleaved amendments 16/2022,
+    36/2022, 38/2022, 42/2022, 53/2022, 54/2022, 83/2022 and 85/2022 were also read: they change only Turkish lira,
+    Norwegian krone, rand, Swiss franc or sterling, never the USD rate.
+  note: >-
+    Assessable value in INR = CIF USD × the import rate in force on the Bill of Entry date (s.14 read with s.46/s.15
+    Customs Act; the rate on the date of filing the BoE applies — rule stated from the Act, not re-fetched). Import −
+    export = INR 1.70 in 13 of the 15 notifications and INR 1.75 in 64/2022 (80.95 / 79.20) and 73/2022 (80.45 / 78.70)
+    (corrected after review; all 15 import values re-read from the cached PDFs). Values before 18-Feb-2022 clamp to
+    76.05 (not in window). CONTRACTS §5 uses this rate ONLY for the duty base (av_customs_inr_t); the goods themselves
+    are paid at the market rate.
+
+customs_fx_markup_frac:
+  value: 0.011
+  unit: frac_of_market_usdinr
+  flag: PROXY
+  source: >-
+    Computed in-repo 2026-09-16: customs_usdinr_import ÷ market USDINR (data/processed/fx_rates_daily.csv usdinr,
+    ECB cross) on the last business day before each notification, 14 notifications 04-Mar-2022 → 16-Sep-2022:
+    mean +1.11% (range +0.78% to +1.36%); versus the average market rate over each notification's validity period:
+    mean +0.68% (range −0.53% to +1.88%).
+  verify: "PARTIAL — the customs side is DIRECT; the market side is the ECB-cross PROXY, not the RBI reference rate."
+  note: >-
+    Use only as a fallback when a date falls outside customs_usdinr_import. Economic reading: the customs import rate
+    is set roughly at market + ~₹0.85 and then frozen for a fortnight, so in a depreciating-INR fortnight (e.g.
+    22-Jul-2022 validity, +1.88%) duty is computed on a stale-but-high rate, and in a sharp INR fall (e.g. 06-May,
+    16-Sep validity) the importer briefly pays duty on a rate BELOW market.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Import policy & compliance (DGFT / Customs / Mines) — structural facts
+# ---------------------------------------------------------------------------------------------------------------
+import_policy_hs7602:
+  value: "Free, subject to DGFT HBP para 2.54 conditions (PSIC / designated ports / radiation checks) and NFMIMS registration"
+  unit: text
+  flag: DIRECT
+  source: >-
+    DGFT Public Notice No. 46/2015-2020 dated 14-Jan-2022 amending HBP 2015-20 para 2.54(d)(v)(iv) (text as
+    reproduced at http://worldtradescanner.com/46-PN-14.01.2022.htm and summarised at
+    https://www.bizsolindia.com/dgft-import-consignments-of-metallic-waste-and-scrap-both-shredded-and-unshredded-imported-from-safe-countries-region-i-e-the-usa-the-uk-canada-new-zealand-australia-and-the-eu-will-not-requ/);
+    NFMIMS per DGFT Notification 61/2015-2020 dated 31-Mar-2021 (reported by TaxTMI/TeamLease/Taxscan secondary pages).
+  verify: >-
+    PARTIAL 2026-09-16 — PN 46 content read via two republishers, not the DGFT PDF itself; NFMIMS coverage of 7602
+    read only from secondary pages. Next step: fetch the DGFT PDFs from https://www.dgft.gov.in/CP/?opt=public-notice
+    and ?opt=notification (JS portal; use a browser) and read the ITC(HS) policy-condition text for 7602.
+  note: "Structural input for the compliance narrative and the stress scenario; not a number in the parity formula."
+
+psic_required_safe_origin_designated_port:
+  value: false
+  unit: bool
+  flag: DIRECT
+  source: "DGFT Public Notice 46/2015-2020 (14-Jan-2022), para 2.54(d)(v)(iv) as amended (see import_policy_hs7602)"
+  verify: "PARTIAL — republisher text read (worldtradescanner, bizsolindia); DGFT original not fetched"
+  note: >-
+    Metallic scrap from USA, UK, Canada, New Zealand, Australia and the EU needs no PSIC when cleared at one of ten
+    ports (Chennai, Tuticorin, Kandla, JNPT, Mumbai, Krishnapatnam, Mundra, Kattupalli, Hazira, Kamarajar), provided
+    it carries a supplier/scrap-yard certificate of no radioactive material/explosives and passes portal-monitor
+    radiation and container-scanner checks at the port. => the USEC_MUN lane (US origin into Mundra) needs no PSIC.
+
+psic_required_uae_origin:
+  value: true
+  unit: bool
+  flag: DIRECT
+  source: "DGFT Public Notice 46/2015-2020 (14-Jan-2022): exemption limited to the six named safe origins; other origins remain subject to PSIC"
+  verify: "PARTIAL — republisher text read; DGFT original not fetched"
+  note: >-
+    UAE is not a 'safe country', so Jebel Ali cargo into Nhava Sheva (JEA_NSA) needs a Pre-Shipment Inspection
+    Certificate from a DGFT-recognised inspection agency (list at https://www.dgft.gov.in/CP/?opt=psia) even though
+    JNPT is a designated port. Operational consequence: add PSIC cost and lead time to every Gulf fixture.
+
+psic_cost_usd_per_box:
+  value: 40.0
+  unit: usd_per_box
+  flag: ASSUMPTION
+  source: "Desk assumption — no 2022 PSIA tariff was retrieved"
+  verify: "PENDING — obtain an inspection-agency (PSIA) 2022 quote or published fee for radiation + explosives inspection of a 20ft scrap container at Jebel Ali"
+  note: "≈ USD 1.6/MT at 25 MT/box — small but now included in CONTRACTS §5 port charges for non-safe origins (JEA_NSA), per review; material to operations (lead time ~2–4 days before stuffing/sailing)."
+
+nfmims_registration_required:
+  value: true
+  unit: bool
+  flag: DIRECT
+  source: "DGFT Notification 61/2015-2020 dated 31-Mar-2021 (import policy of chapter-76 items changed to 'Free subject to compulsory registration under NFMIMS'); DGFT Policy Circular 42/2015-2020 dated 27-Jul-2022 clarifications (read at https://www.taxscan.in/dgft-clarifies-issues-relating-to-non-ferrous-metal-import-monitoring-system/194908)"
+  verify: "PARTIAL — secondary sources only; whether 7602 00 10/90 are in the 43 covered chapter-76 lines is not confirmed from the DGFT annexure. Next step: read the annexure of Notification 61/2015-2020 on dgft.gov.in."
+  note: >-
+    Registration (automatic URN) must be filed no earlier than 60 days and no later than 5 days before expected
+    arrival (secondary sources); the 27-Jul-2022 circular says one registration can cover multiple consignments
+    within its validity and that NFMIMS does not apply to air freight.
+
+nfmims_min_lead_days:
+  value: 5
+  unit: days_before_arrival
+  flag: PROXY
+  source: "Secondary descriptions of DGFT Notification 61/2015-2020 (IndiaFilings / TaxTMI summaries retrieved via search 2026-09-16)"
+  verify: "PENDING — confirm 60/5-day window and 75-day validity in the DGFT notification text"
+  note: "A late NFMIMS registration blocks the Bill of Entry — an avoidable demurrage trigger on the JEA_NSA lane where transit is only ~5 days."
+
+bis_qco_scrap_in_force_2022:
+  value: false
+  unit: bool
+  flag: DIRECT
+  source: >-
+    PIB release (01-Sep-2023, PRID 1954005, https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=1954005, cached
+    data/raw/regulatory/news/pib_prid_1954005_mines_qco_non_ferrous.html): the Mines ministry QCOs notified 31-Aug-2023
+    'mark the first technical regulations from Ministry of Mines under the BIS Act' and cover aluminium and alloy
+    ingots/castings and EC-grade products, not scrap. Argus 'India scraps BIS norms on some metals' (14-Nov-2025,
+    https://www.argusmedia.com/en/news-and-insights/latest-market-news/2754022-india-scraps-bis-norms-on-some-metals,
+    cached argus_2754022_india_scraps_bis_norms_on_some_metals.html) and ELP Law 'BIS Update - Withdrawal of QCOs for
+    certain metals' (https://elplaw.in/leadership/bis-update-withdrawal-of-qcos-for-certain-metals/, cached) report
+    those QCOs withdrawn (announced 13-Nov-2025). The Tribune / ANI (08-Jul-2026,
+    https://www.tribuneindia.com/news/aluminium-quality/aluminium-association-of-india-urges-centre-to-notify-bis-standards-for-aluminium-scrap,
+    cached tribune_aai_urges_bis_standards_aluminium_scrap.html): the standard 'Aluminium & Aluminium Alloy Scrap -
+    Requirements & Conditions of Delivery' 'has remained pending for more than two years'.
+  verify: "VERIFIED 2026-09-16 — no BIS QCO applied to aluminium scrap in 2022 (PIB: the first Mines QCOs came in Aug-2023 and did not cover scrap); later status from Argus/ELP (withdrawal) and Tribune/ANI (scrap standard still pending). All four pages re-retrieved and cached on 2026-09-16 after review found two sources without URLs."
+  note: >-
+    So the 'BIS-QCO + demurrage' scenario (Table 6 row 4.2) is a hypothetical policy shock, not a replay of a 2022
+    event. It is plausible because (i) the primary industry (AAI) has lobbied since 2022–23 for scrap standards and
+    higher scrap duty, (ii) the Mines ministry did impose QCOs on primary aluminium within ~18 months of the window,
+    and (iii) BIS standard IS 2066 (Part 1):2024 for scrap classification now exists. See notes §4.
+
+qco_stress_delay_days:
+  value: 21
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk scenario design; anchored on clearance_delivery_days range 7–21 (logistics.yaml) and on the 3-month notification-to-effect lag written into the 2023 Mines QCOs (PIB 01-Sep-2023)"
+  verify: "N/A — scenario assumption"
+  note: >-
+    Extra port dwell per container while BIS licence / test-report paperwork is demanded at clearance for cargo
+    already afloat when a scrap QCO bites. Applied on top of clearance_delivery_days and beyond free days, it drives
+    demurrage via demurrage_usd_per_box_day and detention_free_days (logistics.yaml) plus 21 days' extra finance
+    cost. 21 days ≈ one BIS sampling-and-test cycle plus a re-filing — a judgement, not an observation.
+
+qco_stress_rejection_frac:
+  value: 0.10
+  unit: frac_of_shipment_mt
+  flag: ASSUMPTION
+  source: "Desk scenario design"
+  verify: "N/A — scenario assumption"
+  note: >-
+    Share of affected tonnage refused clearance (non-conforming grade/contamination against a new BIS scrap
+    standard) and re-exported or sold in bond. 10% reflects that ISRI-graded Taint/Tabor and Tense would largely
+    conform while lower Zorba/mixed lots would not; a harsher 25% is a sensible sensitivity.
+
+qco_stress_rejected_loss_frac:
+  value: 0.15
+  unit: frac_of_cif_value
+  flag: ASSUMPTION
+  source: "Desk scenario design"
+  verify: "N/A — scenario assumption"
+  note: >-
+    Loss on each rejected tonne as a fraction of its CIF value: return/onward freight, re-export documentation,
+    distressed resale discount to a third-country buyer. Combined with rejection 10% this is ~1.5% of cargo value
+    before demurrage — deliberately smaller than the delay/demurrage leg, which is where 2023–2025 QCO frictions
+    actually bit importers.

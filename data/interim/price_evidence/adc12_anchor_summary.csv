@@ -1,0 +1,2 @@
+n,first,last,median_premium_inr_t,mean_premium_inr_t,min_premium_inr_t,max_premium_inr_t,std_premium_inr_t,passthrough_slope_adc12_on_parity,passthrough_intercept_inr_t,corr_premium_parity,median_premium_vs_trailing120_inr_t,std_premium_vs_trailing120_inr_t,oem_gap_inr_t
+15,2023-12-01,2025-12-11,-8955.0453,-16422.0798,-52068.3627,12861.4135,23965.198,0.1538,173085.9135,-0.9321,-2070.8536,17533.2149,8000.0

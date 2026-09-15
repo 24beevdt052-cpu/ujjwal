@@ -1,0 +1,344 @@
+# Owned by the Phase 0 regulatory/contract research agent (revised by the Phase 0 fixer after independent review).
+# ISRI grade physics (moisture / contamination / metal yield / heavies) and the grade price factors (CFR India price as a
+# fraction of LME 3M) for the three desk grades: Zorba 95/5, Taint/Tabor (ISRI-clean) and Tense (ISRI-clean).
+# Research trail: docs/research/regulatory_contract_notes.md §7–8. Every evidence number below is recomputed from cached
+# public pages by `desk.data.fetch_price_evidence` (tables in data/interim/price_evidence/), which RAISES if this file
+# and the evidence disagree.
+#
+# Specs: ISRI Scrap Specifications Circular 2022 (effective 07/2022), Guidelines for Nonferrous Scrap
+#   https://www.isrispecs.org/wp-content/uploads/2023/05/ISRI-Scrap-Specifications-Circular-updated-1.pdf
+#   cached data/raw/regulatory/isri/ISRI-Scrap-Specifications-Circular-2022-updated-1.pdf
+# Price evidence:
+#   [DGCIS] Ministry of Commerce TRADESTAT/MEIDB 'Import :: Commodity wise all Countries', HS 76020010 ('ALUMINIUM SCRAP
+#           COVERD BY ISRI CODE ...', unit KGS), monthly US$ value and quantity, calendar-year pages 2022, 2024, 2025
+#           (each also carries the prior year: 2021–2025 covered), Revised Final. POST form
+#           https://tradestat.commerce.gov.in/meidb/commodity_wise_all_countries_import ; cached
+#           data/raw/regulatory/tradestat/meidb_cwac_import_76020010_YYYYMM_rv{1=US$ mn,2=quantity}.html
+#   [BigMint] BigMint weekly India imported-scrap assessments and reported deals, republished by AlCircle, 23 dated
+#           articles 14-Feb-2024 → 18-Dec-2025 (URLs and exact sentences in desk/data/fetch_price_evidence.py; cached
+#           data/raw/regulatory/alcircle/). No public 2022 grade quote exists (Fastmarkets/Argus/BigMint archives paywalled).
+#   [LME]   Westmetall LME official 3M: data/processed/lme_daily.csv (2018–22) + data/raw/westmetall_lme_al_202{3,4,5}.html
+#
+# Construction (review fix: ONE base, CFR India basis, identical for both lanes — CONTRACTS §5 CFR parity):
+#   mix(m)    = DGCIS all-origin HS 76020010 unit value in month m+2  ÷  mean LME 3M official in contract month m
+#   diff_g    = median over 2024–25 BigMint quotes of [price ÷ LME 3M(D−1) ÷ (1 − stated attachments) − mix(quote month)]
+#   factor_g  = mix(m) + diff_g            (breakpoints mid-contract-month, linear)
+# The previous version netted an unweighted two-lane freight mean out of the CIF mix and added differentials measured
+# against a "three-grade average" of three 2024 quotes; both steps were removed because they mixed bases.
+
+# ---------------------------------------------------------------------------------------------------------------
+# All-grade mix ratio and its sensitivities (PROXY: transformation of official trade statistics and LME prices)
+# ---------------------------------------------------------------------------------------------------------------
+grade_factor_mix:
+  path:
+    - [2021-12-15, 0.836]
+    - [2022-01-15, 0.767]
+    - [2022-02-15, 0.771]
+    - [2022-03-15, 0.702]
+    - [2022-04-15, 0.764]
+    - [2022-05-15, 0.821]
+    - [2022-06-15, 0.866]
+    - [2022-07-15, 0.875]
+    - [2022-08-15, 0.810]
+    - [2022-09-15, 0.890]
+  interp: linear
+  unit: frac_of_lme_3m_cif_india
+  flag: PROXY
+  source: "[DGCIS] HS 76020010 all-origin monthly unit value (CIF $/t) in month m+2 ÷ [LME] mean official 3M in contract month m (data/interim/price_evidence/mix_ratio_by_contract_month.csv)"
+  verify: "VERIFIED 2026-09-16 — trade statistics and LME prices read from cached official/republished tables and recomputed by desk.data.fetch_price_evidence (fails on mismatch). The SHAPE is real data; it is an all-grade, all-origin average whose grade mix can change month to month."
+  note: >-
+    Mar–Aug 2022 contract-month mean 0.806. HINDSIGHT: UV(m+2) is published months after contract month m, so this path
+    uses information a 2022 desk did not have (see grade_factor_mix_pit). Market dynamics in the SHAPE are real data:
+    at the LME spike (Mar-2022 contracts) scrap lagged and the ratio fell to 0.70; through the crash (May–Jul) scrap
+    was sticky and the ratio rose to 0.87–0.88; it eased to 0.81 in August. USGS US scrap/LME ratios move the same
+    way (grade_falling_market_logic).
+
+grade_factor_mix_lag1:
+  path:
+    - [2021-12-15, 0.841]
+    - [2022-01-15, 0.751]
+    - [2022-02-15, 0.714]
+    - [2022-03-15, 0.702]
+    - [2022-04-15, 0.759]
+    - [2022-05-15, 0.877]
+    - [2022-06-15, 0.907]
+    - [2022-07-15, 0.930]
+    - [2022-08-15, 0.869]
+    - [2022-09-15, 0.876]
+  interp: linear
+  unit: frac_of_lme_3m_cif_india
+  flag: PROXY
+  source: "As grade_factor_mix with UV month m+1 (data/interim/price_evidence/mix_ratio_by_contract_month.csv)"
+  verify: "VERIFIED 2026-09-16 — recomputed from cached DGCIS/LME tables"
+  note: "Sensitivity only (Mar–Aug mean 0.841). P1 must show window_open under lag 1 and lag 3 next to the lag-2 base (review finding on regime-driven swings)."
+
+grade_factor_mix_lag3:
+  path:
+    - [2021-12-15, 0.855]
+    - [2022-01-15, 0.829]
+    - [2022-02-15, 0.771]
+    - [2022-03-15, 0.706]
+    - [2022-04-15, 0.716]
+    - [2022-05-15, 0.784]
+    - [2022-06-15, 0.815]
+    - [2022-07-15, 0.816]
+    - [2022-08-15, 0.824]
+    - [2022-09-15, 0.773]
+  interp: linear
+  unit: frac_of_lme_3m_cif_india
+  flag: PROXY
+  source: "As grade_factor_mix with UV month m+3"
+  verify: "VERIFIED 2026-09-16 — recomputed from cached DGCIS/LME tables"
+  note: "Sensitivity only (Mar–Aug mean 0.777)."
+
+grade_factor_mix_pit:
+  path:
+    - [2021-12-15, 0.789]
+    - [2022-01-15, 0.759]
+    - [2022-02-15, 0.856]
+    - [2022-03-15, 0.836]
+    - [2022-04-15, 0.767]
+    - [2022-05-15, 0.771]
+    - [2022-06-15, 0.702]
+    - [2022-07-15, 0.764]
+    - [2022-08-15, 0.821]
+    - [2022-09-15, 0.866]
+  interp: linear
+  unit: frac_of_lme_3m_cif_india
+  flag: ASSUMPTION
+  source: "Point-in-time variant: UV(m−1) ÷ mean LME 3M(m−3), i.e. the latest lag-2 ratio a desk could compute during month m"
+  verify: "PENDING — the ~1-month DGCIS release lag behind this construction is assumed, not verified. Next step: check TRADESTAT/DGCIS release calendar for 8-digit monthly import data in 2022."
+  note: "Sensitivity only (Mar–Aug mean 0.777). It removes the look-ahead but trades on a 3-month-stale ratio, which in 2022 would have been exactly wrong-footed at both the spike and the crash."
+
+grade_factor_lag_months:
+  value: 2
+  unit: months
+  flag: PROXY
+  source: "In-repo fit on [DGCIS] HS 76020010 unit values vs LME 3M monthly means, contract months Jan-2021–Dec-2022 (24): ratio std 0.089 (lag 0), 0.063 (1), 0.043 (2), 0.045 (3) — recomputed by desk.data.fetch_price_evidence"
+  verify: "N/A — empirical choice; documented"
+  note: "Economic reading: contract → loading → sailing (5–40 days) → Bill of Entry. Lags 2 and 3 fit equally well; lag 1 and 3 paths are published as sensitivities."
+
+# ---------------------------------------------------------------------------------------------------------------
+# Grade differentials vs the mix (measured on 2024–25 quotes; applying them to 2022 is the judgement => ASSUMPTION)
+# ---------------------------------------------------------------------------------------------------------------
+grade_factor_diff_zorba:
+  value: -0.02
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "[BigMint] UK Zorba 95/5 CFR India assessments (14) and one US Zorba 95/5 deal, 24-Feb-2024 → 31-Oct-2025: median(price ÷ LME 3M(D−1) − lag-2 mix) = −0.022 (IQR −0.044 … +0.007, n=15), rounded to 0.005 (data/interim/price_evidence/grade_differentials.csv)"
+  verify: "PARTIAL 2026-09-16 — every quote traced to its cached AlCircle sentence and date-matched Westmetall 3M; no 2022 Zorba quote exists in public. Next step: 2022 Zorba 95/5 CFR India assessments (BigMint/Fastmarkets archive) to replace the cross-period assumption."
+  note: >-
+    Sensitivities: assessments only −0.031; article-date (D0) LME −0.033. Zorba 95/5 is not adjusted for attachments
+    (the '95/5' name already describes ~95% aluminium / ~5% heavy non-ferrous). Read grade_factor_zorba, do not add
+    this again.
+
+grade_factor_diff_taint_tabor:
+  value: -0.02
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "[BigMint] US Taint/Tabor HRB (2–3%) assessments (3) and deals (US HRB 2–3%, UAE Taint/Tabor ×2), 13-Mar-2024 → 27-Aug-2025, adjusted to ISRI-clean by ÷(1 − stated attachments): median diff −0.018 (IQR −0.058 … −0.009, n=8); UK 'Taint Tabor C/S (9–10%)' prints excluded (undefined sub-grade, inconsistent levels)"
+  verify: "PARTIAL 2026-09-16 — quotes traced to cached sentences; small sample, and the Dec-2025 HRB prints cannot be scored yet (lag-2 unit value for Feb-2026 not used). Next step: 2022 Taint/Tabor CIF India quotes."
+  note: >-
+    Unadjusted median −0.028; assessments only −0.015. Still CONTRADICTS the MASTER_SPEC 88–92% guide: the clean-TT
+    CFR factor averages 0.786 in Mar–Aug 2022 on this construction.
+
+grade_factor_diff_tense:
+  value: -0.07
+  unit: signed_diff_of_lme_3m_frac_cfr_india
+  flag: ASSUMPTION
+  source: "[BigMint] UAE Tense (benchmark labelled 8–9% attachments) and US Tense (labelled 6–7%) assessments (25) plus 3 deals (US 5–7%, Europe 2%, UK 6%), 14-Feb-2024 → 31-Oct-2025, adjusted to ISRI-clean ÷(1 − attachments): median diff −0.068 (IQR −0.082 … −0.024, n=28), rounded to 0.005"
+  verify: "PARTIAL 2026-09-16 — quotes traced to cached sentences; where an article omits the benchmark's attachment label the series label from other weeks is applied (attach_source=SERIES in the evidence table). Next step: 2022 Tense CFR India assessments."
+  note: >-
+    Unadjusted (as-quoted, with attachments) median −0.124. The attachment adjustment assumes a buyer pays for
+    aluminium content only; iron inserts have some value, so the clean-equivalent may be slightly overstated.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Grade factors used by the parity (CONTRACTS §5: cfr_usd_t = lme_3m_usd_t × grade_factor_g(w); same for both lanes)
+# ---------------------------------------------------------------------------------------------------------------
+grade_factor_zorba:
+  path:
+    - [2021-12-15, 0.816]
+    - [2022-01-15, 0.747]
+    - [2022-02-15, 0.751]
+    - [2022-03-15, 0.682]
+    - [2022-04-15, 0.744]
+    - [2022-05-15, 0.801]
+    - [2022-06-15, 0.846]
+    - [2022-07-15, 0.855]
+    - [2022-08-15, 0.790]
+    - [2022-09-15, 0.870]
+  interp: linear
+  unit: frac_of_lme_3m_cfr_india
+  flag: ASSUMPTION
+  source: "grade_factor_mix (PROXY) + grade_factor_diff_zorba (ASSUMPTION); construction in file header. Desk grade = Zorba 95/5."
+  verify: "PARTIAL 2026-09-16 — the mix shape is VERIFIED official data; the level depends on a 2024–25 differential applied to 2022. Next step: as grade_factor_diff_zorba."
+  note: >-
+    Flag = weakest component (review fix: the level, not only the shape, drives fob/cfr, and a ±0.02 shift is ~USD 57/t
+    ≈ INR 4,400/t — the size of margin_threshold_inr_t). Mar–Aug contract-month mean 0.786. P1 must show the ±1 IQR
+    differential sensitivity next to window_open. Grade definition (review fix): the price evidence is for Zorba 95/5,
+    so the desk buys Zorba 95/5 and its recovery and heavies credit below use the same definition.
+
+grade_factor_taint_tabor:
+  path:
+    - [2021-12-15, 0.816]
+    - [2022-01-15, 0.747]
+    - [2022-02-15, 0.751]
+    - [2022-03-15, 0.682]
+    - [2022-04-15, 0.744]
+    - [2022-05-15, 0.801]
+    - [2022-06-15, 0.846]
+    - [2022-07-15, 0.855]
+    - [2022-08-15, 0.790]
+    - [2022-09-15, 0.870]
+  interp: linear
+  unit: frac_of_lme_3m_cfr_india
+  flag: ASSUMPTION
+  source: "grade_factor_mix (PROXY) + grade_factor_diff_taint_tabor (ASSUMPTION); ISRI-clean Taint/Tabor"
+  verify: "PARTIAL 2026-09-16 — as grade_factor_zorba. CONTRADICTS the MASTER_SPEC guide of 88–92% for Taint/Tabor: no retrieved evidence supports it."
+  note: "Mar–Aug contract-month mean 0.786 (equal to Zorba 95/5 on the evidence medians: clean-TT and Zorba 95/5 quote ratios were 0.832 vs 0.828 in 2024–25). If P1 wants to test the spec's view, run a +0.10 sensitivity."
+
+grade_factor_tense:
+  path:
+    - [2021-12-15, 0.766]
+    - [2022-01-15, 0.697]
+    - [2022-02-15, 0.701]
+    - [2022-03-15, 0.632]
+    - [2022-04-15, 0.694]
+    - [2022-05-15, 0.751]
+    - [2022-06-15, 0.796]
+    - [2022-07-15, 0.805]
+    - [2022-08-15, 0.740]
+    - [2022-09-15, 0.820]
+  interp: linear
+  unit: frac_of_lme_3m_cfr_india
+  flag: ASSUMPTION
+  source: "grade_factor_mix (PROXY) + grade_factor_diff_tense (ASSUMPTION); ISRI-clean Tense"
+  verify: "PARTIAL 2026-09-16 — as grade_factor_zorba."
+  note: >-
+    Mar–Aug contract-month mean 0.736. Tense (mixed castings, ISRI oil & grease ≤2%) is the workhorse feed for
+    ADC12/LM6 alloy ingot, so it tracks domestic alloy demand; in Feb-2024 domestic Tense traded at INR 172,500/t
+    ex-Delhi (AlCircle 24-Feb-2024).
+
+grade_falling_market_logic:
+  value: "In a sharp LME fall scrap prices lag, so the factor (scrap ÷ LME) RISES and the absolute USD discount narrows; in a spike the factor FALLS. Buyers' bids then widen discounts once LME stabilises."
+  unit: text
+  flag: PROXY
+  source: >-
+    [DGCIS] lagged unit-value ratio: 0.70 (Mar-2022 contracts, LME 3M avg $3,543) → 0.87 (Jun) → 0.88 (Jul) → 0.81
+    (Aug). [USGS] Table 7 ÷ Table 6, US old sheet / LME cash: 0.537 (Mar-2022) → 0.606 (Apr) → 0.599 (May–Jun) →
+    0.561 (Aug); old cast 0.522 → 0.607 (Jun) → 0.568 (Aug); and in the 2021 rally old sheet fell from 0.669 (Mar-2021)
+    to 0.519 (Sep-2021).
+  verify: "VERIFIED 2026-09-16 as a pattern in two independent public datasets (direction only, not grade-specific levels)"
+  note: >-
+    Trader implication: a desk that buys scrap on a fixed % of LME in a crash is paying away the stickiness to the
+    supplier; the seller prefers fixed-USD offers in a falling market and %-of-LME in a rising one. This is why the
+    desk's M+1 LME-linked SPAs (Table 4 row 2.4) are safer for the buyer than fixed prices when LME is falling fast.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Recovery physics (CONTRACTS §5: recovery = (1 − moisture) × (1 − contamination) × metal_yield; aluminium only)
+# ---------------------------------------------------------------------------------------------------------------
+moisture_frac_zorba:
+  value: 0.01
+  unit: frac_of_gross_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Zorba spec sets metal content by agreement and requires the lot free of radioactive material, dross and ash, but sets no moisture limit; the sister fragmentizer grades require material to be 'dry' (Twitch/Tweak). Level = desk SPA franchise (standard_moisture_franchise_frac)"
+  verify: "N/A — assumption; SPA-driven"
+  note: "Shredded Zorba from wet media separation can arrive at 1–3% moisture; the SPA deducts weight above the 1% franchise, so the desk pays for at most ~1%."
+
+contamination_frac_zorba:
+  value: 0.06
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "Trade usage of 'Zorba 95/5' (BigMint assessment name): ~95% aluminium and ~5% heavy non-ferrous (Cu, brass, Zn, stainless); ISRI 2022 Zorba: sold by estimated non-ferrous metal content, passed over magnets"
+  verify: "PENDING — the 95/5 composition is trade naming, not an ISRI definition; confirm from a BigMint/Fastmarkets Zorba methodology note or a packing-list assay"
+  note: "Non-aluminium fraction of the dry lot = heavies 0.05 (heavies_frac_zorba, credited separately) + ~0.01 rubber/plastic/dirt/free iron. Review fix: the previous Zorba 90 definition (0.08 contamination, 0.85 yield, no heavies credit) contradicted the Zorba 95/5 price evidence."
+
+metal_yield_frac_zorba:
+  value: 0.93
+  unit: frac_of_aluminium_to_ingot
+  flag: ASSUMPTION
+  source: "Desk assumption: melt recovery of shredded, eddy-current-separated aluminium (thin gauge, some coatings) 0.92–0.94"
+  verify: "PENDING — no published Indian smelter yield for Zorba retrieved; check a BigMint/Fastmarkets Zorba methodology note or an Indian secondary smelter DRHP"
+  note: "Recovery_zorba = 0.99 × 0.94 × 0.93 = 0.866 (aluminium only). P1 recovery sensitivity: 0.92–0.94."
+
+heavies_frac_zorba:
+  value: 0.05
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "Grade name 'Zorba 95/5' (~5% heavy non-ferrous metals), see contamination_frac_zorba"
+  verify: "PENDING — as contamination_frac_zorba"
+  note: "Heavies are floated / hand-picked out and sold to heavy-non-ferrous buyers; CONTRACTS §5 credits them (byproduct_inr_t)."
+
+heavies_frac_taint_tabor:
+  value: 0.0
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Taint/Tabor: aluminium sheet only; attachments are not a saleable heavy fraction"
+  verify: "N/A — structural"
+  note: "No by-product credit."
+
+heavies_frac_tense:
+  value: 0.0
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Tense: aluminium castings free of iron and brass"
+  verify: "N/A — structural"
+  note: "No by-product credit."
+
+heavies_net_value_frac_of_lme_al:
+  value: 0.80
+  unit: frac_of_lme_3m_usd_t_per_mt_of_heavies
+  flag: ASSUMPTION
+  source: "Desk judgement: a mixed Zorba heavies concentrate (copper, brass, zinc, stainless) sells well above aluminium per tonne; valuing it at LME aluminium 3M and deducting ~20% for separation, handling and a buyer's margin is deliberately conservative"
+  verify: "PENDING — no public 2022 or 2024 India price for Zorba heavies / 'Zebra' was retrieved. Next step: a BigMint or Fastmarkets heavy non-ferrous shred price series, or a US ReMA 'Zebra' quote converted to CFR India."
+  note: "At window-average LME 3M ≈ USD 2,850/t and 0.05 heavies this credit is ≈ USD 114/t ≈ INR 8,900/t of scrap — ignoring it (previous register) was a ₹9k/t omission, larger than the margin hurdle. P1 sensitivity: 0.4–1.5."
+
+# Melt yields: review fix — thin, partly painted sheet oxidises more in the melt than thicker castings, and ISRI Tense is
+# specified free of iron, so the previous 'plus inserts' deduction double-counted contamination_frac_tense.
+moisture_frac_taint_tabor:
+  value: 0.005
+  unit: frac_of_gross_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Taint/Tabor: clean mixed old alloy sheet, free of dirt and non-metallic items; no numeric moisture limit"
+  verify: "N/A — assumption"
+  note: "Baled/cut sheet sheds water; residual moisture in bale interstices after monsoon-season ocean transit."
+
+contamination_frac_taint_tabor:
+  value: 0.02
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Taint/Tabor: 'Oil and grease not to total more than 1%. Up to 10% Tale [painted siding] permitted.'; free of foil, castings, screen, plastic, dirt"
+  verify: "N/A — assumption within ISRI limits"
+  note: "≤1% oil/grease + paint/coating mass (~0.5–1% on a lot with up to 10% painted siding) + stray attachments."
+
+metal_yield_frac_taint_tabor:
+  value: 0.92
+  unit: frac_of_clean_metal_to_ingot
+  flag: ASSUMPTION
+  source: "Desk assumption: melt loss of thin, partly painted old sheet 6–10% (coating burn-off and oxidation of high surface-area feed) — no public Indian figure retrieved"
+  verify: "PENDING — confirm melt-loss range with an Indian secondary smelter disclosure or an aluminium recycling engineering reference"
+  note: "Recovery_taint_tabor = 0.995 × 0.98 × 0.92 = 0.897. P1 recovery sensitivity: 0.90–0.94."
+
+moisture_frac_tense:
+  value: 0.005
+  unit: frac_of_gross_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Tense: clean aluminium castings, free of iron, brass, dirt and other non-metallic items; no numeric moisture limit"
+  verify: "N/A — assumption"
+  note: "Castings hold little water; 0.5% allows for surface moisture and dirt in cavities."
+
+contamination_frac_tense:
+  value: 0.02
+  unit: frac_of_dry_weight
+  flag: ASSUMPTION
+  source: "ISRI 2022 Tense: 'Oil and grease not to total more than 2%'; India trade quotes are commonly for Tense with 6–9% attachments (BigMint 'UAE Tense (8-9 per cent)', 'US-origin Tense (6-7 per cent)')"
+  verify: "N/A — assumption within ISRI limits"
+  note: "Desk buys ISRI-clean Tense; grade_factor_diff_tense already converts attachment-bearing quotes to a clean basis."
+
+metal_yield_frac_tense:
+  value: 0.94
+  unit: frac_of_clean_metal_to_ingot
+  flag: ASSUMPTION
+  source: "Desk assumption: melt loss of mixed auto castings 4–7% (thicker sections, lower surface area than sheet); no insert deduction because ISRI Tense is free of iron"
+  verify: "PENDING — as metal_yield_frac_taint_tabor"
+  note: "Recovery_tense = 0.995 × 0.98 × 0.94 = 0.917; Tense chemistry (Si, Cu) is close to ADC12/LM-series, so little re-alloying is needed. P1 recovery sensitivity: 0.92–0.95."

@@ -1,38 +1,133 @@
-# SEED VALUES — owned by the Phase 0 market-data agent. Policy-rate paths are public facts; spreads are proxies.
+# Owned by the Phase 0 market-data agent. Policy-rate paths are public facts verified step-by-step against the central
+# banks' own pages; term spreads are fallback proxies used only when the real 3M series cannot be fetched.
 
 rbi_repo_rate_pa:
   path:
+    - [2017-08-02, 0.0600]
+    - [2018-06-06, 0.0625]
+    - [2018-08-01, 0.0650]
+    - [2019-02-07, 0.0625]
+    - [2019-04-04, 0.0600]
+    - [2019-06-06, 0.0575]
+    - [2019-08-07, 0.0540]
+    - [2019-10-04, 0.0515]
+    - [2020-03-27, 0.0440]
     - [2020-05-22, 0.0400]
     - [2022-05-04, 0.0440]
     - [2022-06-08, 0.0490]
     - [2022-08-05, 0.0540]
     - [2022-09-30, 0.0590]
+    - [2022-12-07, 0.0625]
   interp: step
   unit: rate_pa
   flag: DIRECT
-  source: "RBI Monetary Policy Statements (off-cycle 4 May 2022; 8 Jun; 5 Aug; 30 Sep 2022)"
-  verify: "PENDING"
-  note: "Seed. Step path, effective on announcement date."
+  source: "RBI MPC resolutions (policy repo rate under the LAF), 'with immediate effect' on the announcement date"
+  verify: >-
+    VERIFIED 2026-09-16 — every step read from rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=<id>:
+    41256 (02-Aug-2017, 6.25->6.0), 44125 (06-Jun-2018, to 6.25), 44636 (01-Aug-2018, to 6.5), 46235 (07-Feb-2019,
+    6.5->6.25), 46722 (04-Apr-2019, to 6.0), 47225 (06-Jun-2019, to 5.75), 47818 (07-Aug-2019, 5.75->5.40),
+    48319 (04-Oct-2019, to 5.15), 49581 (27-Mar-2020, to 4.40 from 5.15), 49843 (22-May-2020, to 4.0 from 4.40),
+    53652 (04-May-2022, +40bp to 4.40), 53832 (08-Jun-2022, +50bp to 4.90), 54148 (05-Aug-2022, +50bp to 5.40),
+    54541 (minutes of 28-30 Sep 2022 meeting, +50bp to 5.90), 54818 (07-Dec-2022, +35bp to 6.25). Each release
+    states the size of the move, so the chain has no unrecorded steps between them.
+  note: >-
+    Step path effective on the announcement date. First breakpoint (Aug 2017) covers the Dec-2017 start of the
+    FX/rates history.
 
 fed_funds_upper_pa:
   path:
+    - [2017-06-15, 0.0125]
+    - [2017-12-14, 0.0150]
+    - [2018-03-22, 0.0175]
+    - [2018-06-14, 0.0200]
+    - [2018-09-27, 0.0225]
+    - [2018-12-20, 0.0250]
+    - [2019-08-01, 0.0225]
+    - [2019-09-19, 0.0200]
+    - [2019-10-31, 0.0175]
+    - [2020-03-04, 0.0125]
     - [2020-03-16, 0.0025]
     - [2022-03-17, 0.0050]
     - [2022-05-05, 0.0100]
     - [2022-06-16, 0.0175]
     - [2022-07-28, 0.0250]
     - [2022-09-22, 0.0325]
+    - [2022-11-03, 0.0400]
+    - [2022-12-15, 0.0450]
   interp: step
   unit: rate_pa
   flag: DIRECT
-  source: "FOMC statements (16 Mar, 4 May, 15 Jun, 27 Jul, 21 Sep 2022); effective the day after"
-  verify: "PENDING"
-  note: "Seed. Upper bound of the target range."
+  source: "Federal Reserve Board, Policy Tools > Open Market Operations, 'federal funds rate target range' change table"
+  verify: >-
+    VERIFIED 2026-09-16 via https://www.federalreserve.gov/monetarypolicy/openmarket.htm — table dates (effective
+    dates, i.e. the day after each FOMC decision) and ranges 2017-06-15 1.00-1.25 through 2022-12-15 4.25-4.50
+    match every breakpoint here; no changes listed for 2021.
+  note: "Upper bound of the target range, stepped on the effective date."
 
-wc_rate_inr_pa:
-  value: 0.095
+usd_term_spread_3m_pa:
+  value: -0.0007
+  unit: rate_pa
+  flag: PROXY
+  source: "Calibrated in-repo: mean(US Treasury 13-week bill yield x 360/365 − fed_funds_upper_pa) over ECB days 2017-12-01..2022-12-30 = −0.00072"
+  verify: "VERIFIED 2026-09-16 — recomputed from data/raw/rates/ust_daily_bill_rates_*.csv (see docs/research/market_data_notes.md)"
+  note: >-
+    FALLBACK ONLY: used for usd_rate_3m_pa when the Treasury bill CSVs are neither fetchable nor cached. Bills trade
+    slightly below the top of the Fed range on average; the gap is not constant (quarterly means from −31bp in
+    Q3-2019 to +31bp in Q3-2022, when hikes were being priced in) so the real series is always preferred.
+
+inr_term_spread_3m_pa:
+  value: -0.0012
+  unit: rate_pa
+  flag: PROXY
+  source: "Calibrated in-repo: mean(OECD MEI India IR3TIB monthly − calendar-month mean RBI repo), 2017-12..2022-12 = −0.00121 (std 0.0045)"
+  verify: "VERIFIED 2026-09-16 — recomputed from data/raw/rates/oecd_finmark_ind_ir3tib_2017-12_2022-12.csv"
+  note: >-
+    FALLBACK ONLY: used for inr_rate_3m_pa in any month without an OECD print. The monthly spread ranged from −94bp
+    (Nov 2020, surplus liquidity) to +56bp (Nov 2022, hikes priced in), so a constant spread is a weak stand-in.
+
+sbi_mclr_1y_pa:
+  path:
+    - [2021-12-15, 0.0700]
+    - [2022-04-15, 0.0710]
+    - [2022-05-15, 0.0720]
+    - [2022-06-15, 0.0740]
+    - [2022-07-15, 0.0750]
+    - [2022-08-15, 0.0770]
+    - [2022-10-15, 0.0795]
+    - [2022-11-15, 0.0805]
+    - [2022-12-15, 0.0830]
+  interp: step
+  unit: rate_pa
+  flag: DIRECT
+  source: "State Bank of India 'MCLR Historical Data' table, 1Y column, monthly effective dates (https://sbi.bank.in/web/interest-rates/interest-rates/mclr-historical-data, cached data/raw/rates/sbi_mclr_historical_data.html). Only the dates on which the 1Y rate changed are kept (15-Dec-2021 7.00 unchanged through 15-Mar-2022; 15-Sep-2022 unchanged at 7.70)."
+  verify: "VERIFIED 2026-09-16 — table read from the cached SBI page; the table lists rates by the 15th of each month, so a revision effective on another day of the month appears from the next listed date (actual SBI effective dates not checked against SBI press releases)"
+  note: "Benchmark for the desk's INR working-capital line; rose 70 bp (7.00% → 7.70%) Mar–Aug 2022 while RBI repo rose 140 bp — partial pass-through, as expected for MCLR."
+
+wc_rate_spread_over_mclr_pa:
+  value: 0.025
   unit: rate_pa
   flag: ASSUMPTION
-  source: "Desk assumption: mid-size trader working-capital line ~ bank MCLR + ~2%"
-  verify: "N/A — assumption; sanity-check vs SBI 1Y MCLR 2022 (~7.0–7.7%)"
-  note: "Seed. Used for finance cost = (AV + duty) × days/365 × rate."
+  source: "Desk assumption: mid-size unrated metals trader's cash-credit / working-capital line priced at SBI 1Y MCLR + 2.5%"
+  verify: "PENDING — no 2022 sanction letter or published spread for a comparable borrower retrieved. Next step: a listed metals trader's FY2022-23 annual report (borrowing-cost note) to back out its working-capital rate over MCLR."
+  note: "2.5% keeps the rate at the previous register's 9.5% at the start of the window (7.00% + 2.5%), so the review fix changes only the path, not the starting level. Sensitivity ±1%."
+
+wc_rate_inr_pa:
+  path:
+    - [2021-12-15, 0.0950]
+    - [2022-04-15, 0.0960]
+    - [2022-05-15, 0.0970]
+    - [2022-06-15, 0.0990]
+    - [2022-07-15, 0.1000]
+    - [2022-08-15, 0.1020]
+    - [2022-10-15, 0.1045]
+    - [2022-11-15, 0.1055]
+    - [2022-12-15, 0.1080]
+  interp: step
+  unit: rate_pa
+  flag: ASSUMPTION
+  source: "sbi_mclr_1y_pa (DIRECT) + wc_rate_spread_over_mclr_pa (ASSUMPTION); flag = weakest component"
+  verify: "N/A — derived path; components verified/assumed as stated (tests assert path = MCLR + spread)"
+  note: >-
+    Review fix: was a flat 9.5% through a window in which repo rose 140 bp; now 9.5% (Mar) → 9.6% (15-Apr) → 9.7%
+    (15-May) → 9.9% (15-Jun) → 10.0% (15-Jul) → 10.2% (15-Aug-2022). Used for finance cost = (goods + duty) ×
+    finance_days_l / 365 × rate (CONTRACTS §5), at the rate in force on the parity week.

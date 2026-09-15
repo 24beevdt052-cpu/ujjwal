@@ -1,0 +1,297 @@
+# Owned by the Phase 0 regulatory/contract research agent. Exchange-contract and hedging conventions: MCX Aluminium,
+# LME Aluminium reference prices, USD/INR forwards. Research trail: docs/research/regulatory_contract_notes.md §5–6.
+#
+# MCX sources (all read 2026-09-16 in a browser session — mcxindia.com returns Akamai HTTP 403 to scripted clients, and
+# the "Aluminium April 2022 contracts onwards" specification PDF now serves an HTML page, so the spec was taken from the
+# contract-launch circulars that embed it; PDF text extracted in-browser with pdf.js):
+#   [C385] MCX/TRD/385/2021, 30-Jun-2021, Annexure 1 'Contract Specifications of Aluminium' (Nov-2021 contract)
+#   https://www.mcxindia.com/docs/default-source/circulars/english/2021/june/circular-385---2021gu8e60c446-fadd-442b-96ff-40a27492ea5c.pdf
+#   [C617] MCX/TRD/617/2022, 31-Oct-2022, Annexure 1 (Mar-2023 contract)
+#   https://www.mcxindia.com/docs/default-source/circulars/english/2022/october/circular-617-2022gu7c8756af-e5c2-4c2e-b3c8-338419b706c2.pdf
+#   [PR22] MCX Aluminium Performance Review 2021-22 and [PR23] 2022-23 (delivery tables list actual contract expiries)
+#   https://www.mcxindia.com/docs/default-source/products/metals/performance-review/aluminium---performance-review-2021-22.pdf
+#   https://www.mcxindia.com/docs/default-source/products/metals/performance-review/mcx_aluminium-performance-review-22-23.pdf
+# Every 2022-traded contract (Mar–Nov 2022 expiries) was launched between these two circulars, whose Aluminium
+# annexures are identical on every field below except the additional delivery centres — hence DIRECT for 2022.
+
+# ---------------------------------------------------------------------------------------------------------------
+# MCX Aluminium (symbol ALUMINIUM)
+# ---------------------------------------------------------------------------------------------------------------
+mcx_al_lot_mt:
+  value: 5.0
+  unit: mt_per_lot
+  flag: DIRECT
+  source: "[C385] and [C617] Annexure 1: 'Trading Unit 5 MT'"
+  verify: "VERIFIED 2026-09-16 (identical in Jun-2021 and Oct-2022 circulars)"
+  note: "Hedge tonnage is rounded to whole lots via desk.units.mt_to_lots; 1,000 MT scrap ≈ 0.8–0.9 × 1,000 MT metal ≈ 160–180 lots."
+
+mcx_al_quote_unit:
+  value: "INR per kg, ex-warehouse Raipur district, excluding only GST"
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617]: 'Quotation/ Base Value 1 Kg'; 'Price Quote Ex-Warehouse Raipur district (excludes only GST)'"
+  verify: "VERIFIED 2026-09-16"
+  note: "₹/kg × 1,000 = ₹/MT (desk.units.inr_kg_to_inr_t). Price is ex-warehouse Raipur, i.e. a delivered-India duty-paid price, which is why the import-parity proxy uses 7601 BCD."
+
+mcx_al_tick_inr_kg:
+  value: 0.05
+  unit: inr_per_kg
+  flag: DIRECT
+  source: "[C385]/[C617]: 'Tick Size (Minimum Price Movement) 5 paisa per kg'"
+  verify: "VERIFIED 2026-09-16"
+  note: "= ₹250 per 5 MT lot."
+
+mcx_al_max_order_mt:
+  value: 150.0
+  unit: mt_per_order
+  flag: DIRECT
+  source: "[C385]/[C617]: 'Maximum Order Size 150 MT'"
+  verify: "VERIFIED 2026-09-16"
+  note: "30 lots per order — a 1,000 MT hedge needs ≥6 child orders; relevant for execution-slippage commentary, not P&L."
+
+mcx_al_expiry_rule:
+  value: "Last calendar day of the contract month; if a holiday, the preceding working day. Trading on expiry day only up to 17:00 IST."
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617] 'Last Trading Day' field; the 17:00 cut-off is in the body of [C385]"
+  verify: "VERIFIED 2026-09-16"
+  note: "CONTRACTS §4.5 approximates expiry as the last calendar day (previous business day if not a panel day); the actual 2022 dates are in mcx_al_expiry_dates_2022."
+
+mcx_al_expiry_dates_2022:
+  value: ["2022-03-31", "2022-04-29", "2022-05-31", "2022-06-30", "2022-07-29", "2022-08-30", "2022-09-30", "2022-10-31", "2022-11-30"]
+  unit: dates
+  flag: DIRECT
+  source: "[PR22] Table 10 (contract expiry 31-Mar-2022) and [PR23] Table 10 'Delivery Quantity - Aluminium, Contract Expiry' (29-Apr-2022 … 30-Nov-2022)"
+  verify: "VERIFIED 2026-09-16 (dates as printed by MCX)"
+  note: >-
+    Note 30-Aug-2022, not 31-Aug: consistent with 31-Aug-2022 being an MCX holiday under the 'preceding working
+    day' rule — the holiday list itself was not retrieved. Apr/Jul expiries fall on
+    Friday 29th because the 30th/31st were weekend days. Caution: [PR22] prints two impossible dates for 2021
+    ('31-Jun-2021', '30-May-2021'), so treat the performance-review tables as good-but-not-perfect.
+
+mcx_al_trading_hours:
+  value: "Mon–Fri 09:00 to 23:30 IST (US summer time) / 23:55 IST (US winter time)"
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617] 'Trading Session'; MCX/TRD/646/2021 (08-Oct-2021): 09:00–23:55 for internationally referenceable non-agri commodities from 08-Nov-2021 to 11-Mar-2022"
+  verify: "VERIFIED 2026-09-16"
+  note: "From 14-Mar-2022 (US summer time) MCX aluminium closed 23:30 IST (≈ 18:00 GMT / 19:00 BST), i.e. hours after the LME official prices (12:20–13:25 London) and the LME close — MCX closes embed afternoon LME/COMEX moves that the same-day LME official does not (a timing source of daily LME–MCX basis noise)."
+
+mcx_al_dpl_base_frac:
+  value: 0.04
+  unit: frac_of_prev_close
+  flag: DIRECT
+  source: "[C385]/[C617] 'Daily Price Limits': narrower slab of 4%, relaxed to 6% without cooling-off, then 9% after a 15-minute cooling-off; beyond 9% in steps of 3% when international prices move more"
+  verify: "VERIFIED 2026-09-16 (SEBI circular 27-Sep-2022, attached to MCX/TRD/556/2022, later allowed direct relaxation — after the window)"
+  note: "LME official cash moved more than 4% on 10 days between 24-Feb and 31-Aug-2022 in lme_daily.csv (−12.2% on 08-Mar-2022, −5.3% on 15-Mar), so the 4% narrow slab was a live constraint on MCX price discovery in the window; whether MCX actually invoked the 6%/9% relaxations on those days was not checked."
+
+mcx_al_dpl_relaxed_frac:
+  value: 0.06
+  unit: frac_of_prev_close
+  flag: DIRECT
+  source: "[C385]/[C617] 'Daily Price Limits'"
+  verify: "VERIFIED 2026-09-16"
+  note: "First relaxation, no cooling-off period."
+
+mcx_al_dpl_max_frac:
+  value: 0.09
+  unit: frac_of_prev_close
+  flag: DIRECT
+  source: "[C385]/[C617] 'Daily Price Limits'"
+  verify: "VERIFIED 2026-09-16"
+  note: "After a 15-minute cooling-off; further 3% steps allowed if international markets move more."
+
+mcx_al_initial_margin_frac:
+  value: 0.08
+  unit: frac_of_contract_value
+  flag: DIRECT
+  source: "[C385]/[C617] 'Initial Margin: Minimum 8% or based on SPAN whichever is higher'"
+  verify: "VERIFIED 2026-09-16 as the contract MINIMUM. The actual SPAN-driven margin on 2022 dates was not retrieved (MCXCCL risk-parameter files not fetched)."
+  note: "Floor only. For cash-buffer modelling use mcx_al_margin_used_frac."
+
+mcx_al_elm_frac:
+  value: 0.01
+  unit: frac_of_contract_value
+  flag: DIRECT
+  source: "[C385]/[C617] 'Extreme Loss Margin: Minimum 1%'"
+  verify: "VERIFIED 2026-09-16 (minimum)"
+  note: "Charged on gross open positions on top of initial margin."
+
+mcx_al_additional_margin_frac:
+  value: 0.0
+  unit: frac_of_contract_value
+  flag: PROXY
+  source: >-
+    MCX circular index (https://www.mcxindia.com/circulars/all-circulars, title search 'Additional Margin',
+    01-Jun-2021 → 30-Sep-2022): imposition/withdrawal circulars in the window concern gold (MCX/MCXCCL/143/2022,
+    08-Mar-2022: +2% on gold, withdrawn 22-Mar-2022 by 171/2022), silver (Jun–Jul 2022) and cotton — none names
+    aluminium.
+  verify: "PARTIAL — absence inferred from circular titles; an aluminium clause inside a multi-commodity circular would be missed. Next step: open every MCXCCL 'Imposition of Additional Margin' circular Feb–Aug 2022."
+  note: "So the desk's March-2022 margin stress comes from SPAN rising with volatility, not from an exchange-imposed aluminium add-on."
+
+mcx_al_margin_used_frac:
+  value: 0.10
+  unit: frac_of_contract_value
+  flag: ASSUMPTION
+  source: "Desk assumption = initial margin minimum 8% + ELM 1% + ~1% SPAN/volatility cushion"
+  verify: "PENDING — replace with MCXCCL daily SPAN aluminium margin % for Mar–Aug 2022 if the risk-parameter archive becomes retrievable"
+  note: "Used for margin & liquidity (Table 6 row 4.5) and variation-margin cash planning; stress with 0.12–0.15 in the crash fortnight."
+
+mcx_al_delivery_unit_mt:
+  value: 5.0
+  unit: mt
+  flag: DIRECT
+  source: "[C385]/[C617] 'Delivery Unit 5 MT with tolerance limit of +/- 10%'"
+  verify: "VERIFIED 2026-09-16"
+  note: "Deliverable = primary aluminium ingots ≥99.70% of LME-approved brands (sows/T-bars at ₹1/kg discount). Secondary alloy ingot is NOT deliverable — the desk's hedge is a cross-product hedge (grade/basis risk)."
+
+mcx_al_delivery_logic:
+  value: "Compulsory delivery; staggered delivery tender period = last 5 trading days incl. expiry; all positions open at expiry marked for delivery"
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617] 'Delivery Logic', 'Staggered Delivery Tender Period'"
+  verify: "VERIFIED 2026-09-16"
+  note: "Buyers allocated delivery cannot refuse — hence the desk must roll before the tender period (mcx_roll_days_before_expiry)."
+
+mcx_al_delivery_centres:
+  value: "Primary: Raipur district (Chhattisgarh). Additional: Thane district (Maharashtra) in [C385]; Thane, NCR, Chennai, Kolkata in [C617]"
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617] 'Delivery Centre', 'Additional Delivery Centre(s)'; MCXCCL warehouse-accreditation circulars 30/2022 (17-Jan), 51/2022 (27-Jan), 71/2022 (10-Feb) for additional delivery centres (titles read)"
+  verify: "PARTIAL — the exact contract month from which NCR/Chennai/Kolkata became deliverable was not pinned down"
+  note: "Rajkot/Gujarat buyers are far from Raipur — a physical buyer taking MCX delivery pays inland freight; supports treating MCX as a price reference, not a supply source."
+
+mcx_al_delivery_period_margin_frac:
+  value: 0.25
+  unit: frac_of_contract_value
+  flag: DIRECT
+  source: "[C385]/[C617] 'Delivery Period Margin: higher of 3% + 5-day 99% VaR of spot price volatility, or 25%'"
+  verify: "VERIFIED 2026-09-16 (floor of 25%)"
+  note: "Another reason never to hold a hedge into the tender period."
+
+mcx_al_final_settlement_rule:
+  value: "Due Date Rate = simple average of last polled spot prices on E0, E-1, E-2 (fallback rules if unavailable)"
+  unit: text
+  flag: DIRECT
+  source: "[C385]/[C617] 'Due Date Rate (Final Settlement Price)'"
+  verify: "VERIFIED 2026-09-16"
+  note: "MCX polls ex-warehouse spot twice daily ([PR23] §3e)."
+
+mcx_al_position_limit_client_mt:
+  value: 25000.0
+  unit: mt
+  flag: DIRECT
+  source: "[C385]/[C617] 'Maximum Allowable Open Position: individual client 25,000 MT or 5% of market-wide OI, whichever is higher'"
+  verify: "VERIFIED 2026-09-16"
+  note: "Far above the desk's 1,000–5,000 MT trades; not binding. (Hedger exemptions exist but are not needed.)"
+
+mcx_alumini_traded_2022:
+  value: false
+  unit: bool
+  flag: DIRECT
+  source: "MCX/TRD/104/2023 dated 15-Feb-2023 'Launch of Aluminium Mini Futures Contracts' w.e.f. 20-Feb-2023 (read in browser: https://www.mcxindia.com/docs/default-source/circulars/english/2023/february/circular---104-2023gud405b281-9e96-4e04-aaee-4d4820d54730.pdf)"
+  verify: "VERIFIED 2026-09-16 — no ALUMINI contract was available during Mar–Aug 2022 (earlier 1 MT variants of 2019–2020 had lapsed; relaunched Feb-2023)"
+  note: "Desk hedges in 5 MT ALUMINIUM lots only; odd tonnage (<5 MT) stays unhedged."
+
+mcx_alumini_lot_mt:
+  value: 1.0
+  unit: mt_per_lot
+  flag: DIRECT
+  source: "MCX/TRD/104/2023 Annexure 'Contract Specifications of Aluminium Mini': Trading Unit 1 MT (tick 5 paisa/kg, max order 150 MT, same DPL/IM/ELM as ALUMINIUM)"
+  verify: "VERIFIED 2026-09-16 (spec as launched Feb-2023; NOT tradable in the 2022 window)"
+  note: "Reference only — see mcx_alumini_traded_2022."
+
+mcx_roll_days_before_expiry:
+  value: 7
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Desk rule derived from the 5-trading-day staggered delivery tender period and the 25% delivery-period margin ([C385]/[C617])"
+  verify: "N/A — policy assumption"
+  note: "Roll M1 → M2 on the 7th trading day before expiry: 2 days' cushion before the tender period opens, avoiding delivery allocation and the 25% margin; costs one spread crossing per month."
+
+mcx_basis_std_inr_kg:
+  value: 4.44
+  unit: inr_per_kg
+  flag: DIRECT
+  source: "[PR23] §4a 'Basis Risk for F.Y. 2022-23: Aluminium Rs/Kg, Avg Return of Basis 0.83, Standard Deviation 4.44' ([PR22]: 1.03 / 4.37 for FY2021-22)"
+  verify: "VERIFIED 2026-09-16 (as published; MCX defines it as the std-dev of daily return in basis = spot − near-month futures)"
+  note: "MCX-reported hedge efficiency of near-month futures vs MCX spot was only 14.00% in FY21-22 and 55.67% in FY22-23 — a caution that even a same-exchange hedge leaves large basis noise; the desk's cross-product hedge (scrap/alloy vs primary futures) is weaker still."
+
+# ---------------------------------------------------------------------------------------------------------------
+# LME Aluminium reference conventions
+# ---------------------------------------------------------------------------------------------------------------
+lme_al_lot_t:
+  value: 25.0
+  unit: mt_per_lot
+  flag: DIRECT
+  source: "LME Aluminium contract specifications page (https://www.lme.com/en/metals/non-ferrous/lme-aluminium/contract-specifications, read in browser 2026-09-16): lot size 25 tonnes, price USD/t, tick $0.50 outright Ring/LMEselect"
+  verify: "PARTIAL — current page, not a 2022-dated rulebook; the 25 t lot and USD/t quotation are long-standing"
+  note: "Reference only; the desk hedges on MCX (INR, 5 MT) and has no LME membership/clearing in the base case."
+
+lme_pricing_reference:
+  value: "LME Official Settlement Price = LME Aluminium cash offer at the close of the second Ring session (established and published within 12:20–13:25 London; see lme_official_publication_window_london)"
+  unit: text
+  flag: DIRECT
+  source: "LME 'LME Official Prices explained' (https://www.lme.com/market-data/lme-reference-prices/lme-official-price, read 2026-09-16): 'the LME Official Settlement Price is the last cash offer price'"
+  verify: "PARTIAL — current methodology page (re-read in a browser 2026-09-16 after review flagged an inconsistency); the official-price definition predates 2022 but a 2022-dated benchmark methodology PDF was not retrieved"
+  note: >-
+    Timing wording reconciled with lme_official_publication_window_london (review): the page's summary line says
+    'When is it published? 12.30-13.25 London time' while its own 'Trading day and price points' table says
+    established and published 12.20 - 13.25; both fields now quote the table's wider window.
+    Physical SPAs price off this official cash settlement (not the 3M). The desk's panel uses Westmetall's
+    republication of LME official cash and 3M (lme_daily.csv). CONTRACTS §5 values FOB off LME 3M × grade factor
+    (the forward the desk can actually hedge against at contract date); M+1 settlement references cash.
+
+lme_m1_pricing_rule:
+  value: "Provisional invoice on B/L; final price = arithmetic average of daily LME Official Cash Settlement Prices over the calendar month following the B/L month (M+1), × grade factor"
+  unit: text
+  flag: ASSUMPTION
+  source: "Desk SPA convention (Table 4 row 2.4). The averaging mechanism mirrors the LME Monthly Average Settlement Price (MASP) — 'the average of the daily LME Official Cash Settlement Prices ... over the number of business days' (LME Aluminium contract specifications page, Monthly Average Futures section, read 2026-09-16)"
+  verify: "N/A — contract-design assumption; MASP definition VERIFIED from the LME page"
+  note: >-
+    Choosing M+1 (not B/L-month) average gives the buyer time to arrange a matching sale and lets both sides hedge
+    with LME MAFs/TAPOs. In a contango month the M+1 average of CASH is below today's 3M, so a buyer who hedged by
+    selling 3M earns the carry; in backwardation it is the reverse (Table 3 row 1.7).
+
+lme_official_publication_window_london:
+  value: "12:20–13:25 London time (Official and Official Settlement Prices established and published)"
+  unit: text
+  flag: DIRECT
+  source: "LME 'LME Official Prices explained' page (https://www.lme.com/market-data/lme-reference-prices/lme-official-price), 'Trading day and price points' table: 'LME Official and Official Settlement Price established 12.20 - 13.25' and 'published 12.20 - 13.25' (re-read in a browser 2026-09-16)"
+  verify: "PARTIAL — current timetable, not a 2022-dated version; the same page's summary line gives 'When is it published? 12.30-13.25 London time', so the page is internally inconsistent by 10 minutes. Next step: the Benchmark Methodology - LME Official Prices PDF linked from that page."
+  note: "≈ 17:50–18:55 IST (BST) — MCX aluminium is still trading when the LME official is set. The 12:20 vs 12:30 start does not affect any daily calculation in this project."
+
+# ---------------------------------------------------------------------------------------------------------------
+# USD/INR forward hedging conventions for an Indian importer
+# ---------------------------------------------------------------------------------------------------------------
+fx_hedge_regime:
+  value: "RBI Risk Management & Inter-Bank Dealings directions (A.P. (DIR Series) Circular No. 29, 07-Apr-2020): users hedge contracted or anticipated exposures with AD Cat-I banks; free cancellation and rebooking; notional up to USD 10 mn outstanding without establishing underlying exposure"
+  unit: text
+  flag: DIRECT
+  source: "RBI/2019-20/210 A.P.(DIR Series) Circular No. 29 dated 07-Apr-2020, as summarised at https://taxguru.in/rbi/risk-management-inter-bank-dealings-hedging-foreign-exchange-risk.html (read 2026-09-16)"
+  verify: "PARTIAL — secondary summary read (it states effective 01-Jun-2020; other summaries give 01-Sep-2020 after a COVID deferral); RBI original not fetched. Next step: read the circular on rbi.org.in and confirm it was unchanged through 2022."
+  note: "An importer with a signed SPA has a contracted exposure and may book deliverable forwards for the full USD value; retail users must be shown the mid-market mark before dealing."
+
+fx_hedge_no_documentation_limit_usd:
+  value: 10000000.0
+  unit: usd
+  flag: DIRECT
+  source: "A.P. (DIR Series) Circular No. 29 (07-Apr-2020): 'up to USD 10 million equivalent of notional value (outstanding at any point in time) without the need to establish the existence of underlying exposure' (quoted via taxguru summary)"
+  verify: "PARTIAL — secondary summary; RBI original not fetched"
+  note: "A 1,000 MT Zorba cargo at ~USD 2,300/t is ~USD 2.3 mn, so even a 4-cargo book fits under the limit."
+
+fx_forward_bank_margin_inr:
+  value: 0.10
+  unit: inr_per_usd
+  flag: ASSUMPTION
+  source: "Desk assumption for a mid-size corporate importer's forward (spot + premium) margin over the interbank mid"
+  verify: "PENDING — no 2022 bank rate card for corporate forward margins was retrieved; check RBI FX-Retail platform documentation / RBI speeches on retail FX spreads for an order of magnitude"
+  note: "10 paise ≈ 0.13% of notional (≈ ₹230k on a USD 2.3 mn cargo). Range 0.03 (large corporate) to 0.25 (small SME)."
+
+fx_forward_settlement:
+  value: "Deliverable outright forward, settled on the LC/usance payment date; tenor matched to finance_days (sight LC) or usance maturity"
+  unit: text
+  flag: ASSUMPTION
+  source: "Desk hedge-policy convention (Table 4 row 2.7b) within the RBI regime in fx_hedge_regime"
+  verify: "N/A — policy assumption"
+  note: "Forward points come from fx_rates_daily.csv (PROXY covered-interest-parity forwards) plus fx_forward_bank_margin_inr."

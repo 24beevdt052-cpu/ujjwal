@@ -1,0 +1,317 @@
+# Logistics & freight register — owned by the Phase 0 freight/logistics analyst (desk.data.fetch_freight).
+# Research trail, sources and failed attempts: docs/research/freight_notes.md. Every URL below was actually retrieved;
+# cached copies live under data/raw/freight/.
+#
+# Lane definitions (CONTRACTS §4.3):
+#   JEA_NSA  = Jebel Ali (UAE) -> Nhava Sheva / JNPT (India), 20ft dry containers, sold to a SIM buyer within ~200 km
+#              of JNPT (review fix: trucking Gulf cargo 850 km to Rajkot when Mundra is 240 km away was not a choice a
+#              desk would make; Gujarat buyers are served by the USEC_MUN lane).
+#   USEC_MUN = US East Coast (New York/Savannah range) -> Mundra (India), 40ft dry containers.
+# Ocean freight USD/box excludes origin/destination THC, CFS, DO fees and inland haulage; those are port_cf_charges_*.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Container loading
+# ---------------------------------------------------------------------------------------------------------------
+container_payload_mt_20ft:
+  value: 25.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 4 row 2.1 ('containerised ~24-26 MT/box'); 20ft dry box max gross 30,480 kg less ~2,200 kg tare"
+  verify: "PENDING — confirm typical Zorba / Taint-Tabor 20ft load weights from a Jebel Ali shipper's packing list or a BigMint/Fastmarkets methodology note"
+  note: >
+    BASE payload used to convert freight_weekly.csv USD/box into USD/MT. Heavy scrap cubes out by weight, not volume,
+    so the 20ft box is used ex-Gulf and loaded close to the carrier's weight cap. Midpoint of the spec's 24-26 MT.
+    Grade-specific payloads (container_payload_mt_20ft_<grade>) rescale per-box costs in CONTRACTS §5.
+
+container_payload_mt_40ft:
+  value: 21.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "US federal gross vehicle weight limit 80,000 lb (23 CFR 658.17) applied to typical tractor (~8 t) + 40ft chassis (~3 t) + container tare (~3.8 t)"
+  verify: "PENDING — the eCFR page redirected to a bot check when fetched; re-check 23 CFR 658.17 on ecfr.gov and a US scrap exporter's 40ft load weights (Recycling Today / ReMA)"
+  note: >
+    US scrap is exported in 40ft boxes (backhaul equipment availability) but road weight limits, not box
+    capacity, cap the payload at roughly 20-22 MT for non-permitted drayage (36.3 t GVW - ~15.3 t tractor, chassis
+    and box). Range 19-26 MT (26 MT only with port-side transloading / overweight permits). This is why the spec's
+    generic 24-26 MT/box is NOT used for the 40ft lane.
+
+container_payload_mt_20ft_zorba:
+  value: 26.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "Desk judgement: shredded Zorba is dense (loose bulk ~1.0–1.3 t/m³) and loads to the ~27–28 t 20ft payload cap"
+  verify: "PENDING — packing lists / bills of lading for Zorba 95/5 20ft shipments (review asked for grade-specific payloads)"
+  note: "CONTRACTS §5 scales per-box freight, port and PSIC costs by container_payload_mt_20ft / this value."
+
+container_payload_mt_20ft_taint_tabor:
+  value: 20.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "Desk judgement: baled old sheet cubes out before the weight cap in a 33 m³ 20ft box (bales ~0.6 t/m³)"
+  verify: "PENDING — packing lists for baled Taint/Tabor 20ft shipments"
+  note: "Range 16–23 MT; the lower payload raises per-MT freight and port costs by 25% versus the 25 MT base."
+
+container_payload_mt_20ft_tense:
+  value: 25.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "Desk judgement: loose castings load to near the weight cap, as the base"
+  verify: "PENDING — packing lists for Tense 20ft shipments"
+  note: "Equal to the base payload."
+
+container_payload_mt_40ft_zorba:
+  value: 21.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "US road-weight cap binds before volume for dense Zorba (see container_payload_mt_40ft)"
+  verify: "PENDING — as container_payload_mt_40ft"
+  note: "Equal to the 40ft base."
+
+container_payload_mt_40ft_taint_tabor:
+  value: 21.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "Baled sheet at ~0.6 t/m³ needs ~35 m³ for 21 MT, within a 67 m³ 40ft box, so the road-weight cap still binds"
+  verify: "PENDING — as container_payload_mt_40ft"
+  note: "Equal to the 40ft base."
+
+container_payload_mt_40ft_tense:
+  value: 21.0
+  unit: mt_per_box
+  flag: ASSUMPTION
+  source: "US road-weight cap binds (see container_payload_mt_40ft)"
+  verify: "PENDING — as container_payload_mt_40ft"
+  note: "Equal to the 40ft base."
+
+# ---------------------------------------------------------------------------------------------------------------
+# Transit and cash cycle
+# ---------------------------------------------------------------------------------------------------------------
+transit_days_jea_nsa:
+  value: 5
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: ~1,050 nm short-sea Gulf-West India service, direct weekly mainline/feeder calls"
+  verify: "PENDING — pull a 2022 carrier schedule (e.g. Wayback copy of an MSC/Maersk/ESL Jebel Ali->Nhava Sheva point-to-point schedule) for port-to-port days"
+  note: >
+    Port-to-port sailing ~3-5 days plus berthing delays; range 3-8 days. 2022 schedule reliability was poor, so
+    use the upper half of the range for stress cases.
+
+transit_days_usec_mun:
+  value: 40
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: US East Coast -> West India via Suez, direct ISC-USEC string or Mediterranean transhipment"
+  verify: "PENDING — pull a 2022 carrier schedule (Wayback copy of a Hapag-Lloyd/MSC New York or Savannah -> Mundra routing) and record port-to-port days"
+  note: >
+    Direct India-USEC services run ~28-35 days one way; transhipment via Med hubs adds 7-15 days. Range 30-55
+    days. Mundra is typically served via transhipment from USEC.
+
+clearance_delivery_days:
+  value: 10
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: vessel arrival -> Bill of Entry, duty payment, radiation/PSIC document checks, examination, out-of-charge, CFS delivery and truck to the SIM buyer (Gujarat for Mundra; within ~200 km of JNPT for Nhava Sheva)"
+  verify: "PENDING — compare with CBIC National Time Release Study 2022 (average release time for sea cargo at JNCH Nhava Sheva and Mundra) and add inland trucking days"
+  note: >
+    Scrap is a risk-managed cargo (radiation screening, pre-shipment inspection certificate checks) so release is
+    slower than average containerised imports. Range 7-21 days; the upper end is the BIS/QCO + demurrage stress.
+
+finance_days_jea_nsa:
+  value: 40
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk construction from components: LC-at-sight payment, transit_days_jea_nsa, clearance_delivery_days, 30-day domestic buyer credit"
+  verify: "PENDING — reconcile with the payment terms P2 assigns in config/trades.yaml (LC sight vs usance; buyer advance vs 30d credit)"
+  note: >
+    DEFINITION: days the desk's own INR working capital is tied up per tonne, from the day it pays the supplier
+    to the day it receives the domestic buyer's payment. Timeline from B/L date: supplier paid under a sight LC on
+    document presentation ~day 7 (goods already arrived after 5 days sailing; release by telex/LOI), BoE and
+    duty ~day 8, out-of-charge + delivery ~day 17 (clearance_delivery_days after arrival, discharge queue
+    included), buyer pays 30 days after delivery ~day 47 => 47 - 7 = 40 days. Applied in CONTRACTS §5 to
+    (goods value at market FX + duties) for simplicity, which slightly overstates duty financing (duty is paid ~1 day after cash-out
+    here). P1 must NOT add buyer-credit days again. A 60-90d usance LC would shorten this by the usance period
+    (usance interest is then priced separately).
+
+finance_days_usec_mun:
+  value: 73
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk construction from components: LC-at-sight payment, transit_days_usec_mun, clearance_delivery_days, 30-day domestic buyer credit"
+  verify: "PENDING — reconcile with the payment terms P2 assigns in config/trades.yaml (LC sight vs usance; buyer advance vs 30d credit)"
+  note: >
+    Same DEFINITION as finance_days_jea_nsa. Timeline from B/L date: sight LC paid ~day 7, arrival day 40, BoE and
+    duty ~day 41, delivery ~day 50, buyer pays ~day 80 => 80 - 7 = 73 days. Here duty is paid ~34 days after
+    cash-out, so applying 73 days to duties overstates finance cost on duties by ~34 days' interest (~INR 50/MT
+    at 2.75% effective duty on ~INR 2 lakh/MT assessable value); accepted for formula simplicity and noted for P1.
+
+typical_laycan_days:
+  value: 15
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: container scrap SPAs specify a shipment window rather than a bulk-style laycan"
+  verify: "PENDING — check shipment-period wording in a published ISRI/ReMA or BIR model contract for containerised non-ferrous scrap"
+  note: >
+    Laycan is a bulk-chartering term; for container cargo the equivalent is the shipment period in which the
+    seller must load (commonly a half-month or calendar-month window). 15 days is used as the SIM "laycan" for
+    Table 4 row 2.8 containers; bulk parcels (if any) should use 5-10 days.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Port, clearance and inland charges (destination side, INR per MT of scrap)
+# ---------------------------------------------------------------------------------------------------------------
+port_cf_charges_inr_t_nsa:
+  value: 1600
+  unit: inr_per_mt
+  flag: ASSUMPTION
+  source: "Desk build-up per 20ft box / 25 MT base payload; component magnitudes are desk estimates (no 2022 tariff retrieved — carrier THC PDFs returned 403), not quotes"
+  verify: "PENDING — retrieve 2022 Wayback copies of a carrier's India import THC/DO tariff and a JNPT CFS tariff; get a 2022 short-haul (~200 km) 20ft truck rate out of JNPT"
+  note: >
+    Components per 20ft box (INR): destination THC ~9,500; CFS handling + ground rent within free days ~7,500;
+    delivery order + B/L/documentation ~1,000; customs broker (CHA) fees ~3,000; examination, radiation-check
+    and labour ~2,000; inland haulage to the SIM buyer within ~200 km of JNPT ~16,000 (review fix: previously
+    ~52,000 for ~850 km to Rajkot; the short haul is priced above the long haul's per-km rate). Total ~39,000 per box
+    = ~1,560/MT at 25 MT, rounded to 1,600. Range 1,200-2,500/MT. Excludes customs duty, IGST, demurrage and the PSIC
+    fee (psic_cost_usd_per_box, added separately in CONTRACTS §5 for this non-safe-origin lane).
+
+port_cf_charges_inr_t_mun:
+  value: 2650
+  unit: inr_per_mt
+  flag: ASSUMPTION
+  source: "Desk build-up per 40ft box / 21 MT; component magnitudes are desk estimates (no 2022 tariff retrieved — carrier THC PDFs returned 403), not quotes"
+  verify: "PENDING — retrieve 2022 Wayback copies of a carrier's Mundra import THC/DO tariff and an Adani Mundra CFS tariff; get a 2022 Mundra->Rajkot 40ft trailer rate"
+  note: >
+    Components per 40ft box (INR): destination THC ~14,500; CFS handling + ground rent within free days ~10,000;
+    DO + documentation ~1,000; CHA ~3,500; examination, radiation-check and labour ~2,500; inland haulage
+    Mundra -> Rajkot (~240 km) ~24,000. Total ~55,500 per box = ~2,650/MT at 21 MT. Range 1,800-3,800/MT.
+    The per-tonne port cost is higher than NSA (fewer tonnes per box) but haulage is far shorter.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Insurance, demurrage/detention
+# ---------------------------------------------------------------------------------------------------------------
+insurance_rate:
+  value: 0.0010
+  unit: frac_of_insured_value
+  flag: ASSUMPTION
+  source: "Desk assumption: marine cargo open-cover premium for non-ferrous scrap, ICC (A)/(B) clauses"
+  verify: "PENDING — obtain an indicative 2022 marine cargo rate for metal scrap from an Indian insurer's published tariff guidance or a broker note"
+  note: >
+    0.10% of insured value per shipment; plausible range 0.05%-0.20% (scrap is low-theft but prone to
+    wetting/contamination claims). Immaterial to parity (~USD 2-3/MT). NOTE for the regulatory owner (not verified here): for
+    customs assessable value, the Customs Valuation Rules 2007 (Rule 10(2)) deem insurance at 1.125% of FOB when the
+    actual cost is not ascertainable — a customs-valuation rule, distinct from this commercial premium.
+
+insured_value_uplift:
+  value: 1.10
+  unit: multiple_of_cif_value
+  flag: DIRECT
+  source: "ICC Uniform Customs and Practice for Documentary Credits (UCP 600), Article 28(f)(ii): if the credit is silent, insurance cover must be at least 110% of the CIF or CIP value"
+  verify: "PARTIAL 2026-09-16 — wording confirmed via secondary reproduction (tradefinance.training 'UCP comparison Part 4'); the ICC publication itself is paywalled"
+  note: >
+    Market convention for LC-financed imports; insurance_usd_t = insurance_rate x 1.10 x CFR value per
+    CONTRACTS §5 (CFR = FOB + freight; the grade factor is quoted on a CFR India basis).
+
+detention_free_days:
+  value: 14
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: destination free time (carrier detention + CFS ground-rent-free period) negotiated by a regular scrap importer"
+  verify: "PENDING — retrieve a 2022 Wayback copy of a carrier's India import detention tariff (standard free days) and a JNPT/Mundra CFS free-period schedule"
+  note: >
+    Standard carrier import free time in India is often 7-10 days; regular importers commonly negotiate 14-21.
+    Range 7-21. Counted from vessel discharge.
+
+demurrage_usd_per_box_day:
+  value: 35
+  unit: usd_per_box_per_day
+  flag: ASSUMPTION
+  source: "Desk assumption: combined carrier detention + CFS ground rent per box per day beyond detention_free_days (first slab)"
+  verify: "PENDING — retrieve 2022 Wayback copies of a carrier's India import detention slabs (USD/day by box size) and a CFS ground-rent tariff (INR/day)"
+  note: >
+    Blended 20ft/40ft first-slab figure; carriers escalate slabs after 5-10 days, so long delays cost more per day.
+    Range 15-75 USD/box/day. Used by P3 attribution factor (f) and the 'BIS-QCO + demurrage' stress.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Freight level calibration (used by desk.data.fetch_freight)
+# ---------------------------------------------------------------------------------------------------------------
+freight_jea_nsa_usd_box_ref:
+  value: 600
+  unit: usd_per_20ft_box
+  flag: ASSUMPTION
+  source: "Desk judgement; bounded by public India-inbound 2022 quotes (Container News) and normal-market Gulf-West India levels (Container News 2023-24) — see docs/research/freight_notes.md"
+  verify: "PENDING — no citable 2022 Jebel Ali->Nhava Sheva quote found (Platts WCI India-Middle East assessments and Xeneta are paywalled; S&P pages return 403). Next step: a 2022 Wayback copy of a Freightos/SeaRates/iContainers JEA->INNSA rate page, or a BigMint/Fastmarkets 2022 UAE-origin scrap CFR vs FOB spread"
+  note: >
+    Ocean freight incl. BAF/usual surcharges, excl. THC. Reasoning: (1) 2022 long-haul India-inbound backhaul
+    rates were USD 2,300/TEU Europe->West India (Mar-Apr 2022) and USD 1,075/TEU USEC->West India (Aug 2022);
+    a ~1,050 nm Gulf feeder lane should sit well below those. (2) India was short of export boxes in 2021-22, so
+    carriers wanted to reposition equipment INTO India, which depresses inbound short-sea rates. (3) In later
+    normal markets the reverse lane West India->Jebel Ali printed USD 75/TEU (Apr 2023) and USD 550/TEU (Sep 2024,
+    Red Sea disruption). Plausible 2022-03-04 range USD 350-1,000/20ft (USD 14-40/MT at 25 MT).
+
+freight_jea_nsa_ref_date:
+  value: 2022-03-04
+  unit: date_week_ending_friday
+  flag: ASSUMPTION
+  source: "Desk choice: first week of the headline window"
+  verify: "N/A — calibration choice"
+  note: "Week at which freight_jea_nsa_usd_box_ref applies; the JEA_NSA series moves proportionally with the USEC India-inbound series from here."
+
+freight_usec_west_india_usd_feu_reported:
+  path:
+    - [2022-08-30, 1450]
+    - [2022-09-30, 1434]
+    - [2022-11-29, 1434]
+    - [2022-12-30, 1125]
+    - [2023-01-30, 1100]
+  interp: step
+  unit: usd_per_40ft_box
+  flag: DIRECT
+  source: "Container News monthly India rate analyses: 30 Aug 2022, 30 Sep 2022, 30 Jan 2023 (container-news.com) and the 29 Nov 2022 edition republished by Maritime Gateway (maritimegateway.com) — 'USEC ... into West India (Nhava Sheva/Mundra)' average carrier rates"
+  verify: "VERIFIED 2026-09-16 — values regex-extracted from cached article HTML (data/raw/freight/articles/) by desk.data.fetch_freight, which fails if text and YAML disagree; see data/interim/freight/points_india_inbound_anchors.csv for quotes"
+  note: >
+    Monthly averages of rates offered by leading liners for USEC (New York) -> West India, as reported by a trade
+    publication (not an exchange index). The December value is the 'from US$1,125' prior-month level in the
+    30 Jan 2023 article. Used as level anchors for USEC_MUN (Mundra is within 'West India').
+
+freight_europe_west_india_usd_feu_reported:
+  path:
+    - [2022-03-31, 2500]
+    - [2022-04-29, 2500]
+    - [2022-06-30, 2050]
+    - [2022-07-27, 1950]
+    - [2022-08-30, 1900]
+    - [2022-09-30, 1700]
+  interp: step
+  unit: usd_per_40ft_box
+  flag: DIRECT
+  source: "Container News monthly India rate analyses 29 Apr, 27 Jul, 30 Aug, 30 Sep 2022 (container-news.com) — eastbound Felixstowe/Rotterdam -> West India (Nhava Sheva/Mundra)"
+  verify: "VERIFIED 2026-09-16 — values regex-extracted from cached article HTML by desk.data.fetch_freight (fails on mismatch); quotes in data/interim/freight/points_india_inbound_anchors.csv"
+  note: >
+    Sibling India-inbound backhaul lane. 2022-03-31 is stated in the April article ('same levels as they were at
+    the end of March'); 2022-06-30 is the June level quoted as 'versus' in the July article. Used (i) to carry
+    the USEC_MUN level into Mar/Apr 2022, before Container News reported the USEC leg, via the USEC/Europe ratio
+    observed Jun-Sep 2022, and (ii) as evidence that India-inbound freight eased ~24% from Mar to Aug 2022.
+
+freight_usec_jun2022_drop_frac:
+  value: 0.125
+  unit: frac
+  flag: PROXY
+  source: "Container News, 27 Jul 2022: 'On the return leg, rates offered by leading liners have dropped by between 10% and 15%, on average' (US East/West/Gulf coasts -> West India) vs June"
+  verify: "VERIFIED 2026-09-16 — range regex-extracted from cached article; midpoint used"
+  note: >
+    Midpoint of the reported 10-15% July-vs-June fall for all US coasts into West India, applied to the USEC leg
+    to derive a June 2022 anchor (USD 1,450 / (1 - 0.125) = ~1,657/FEU). Range of resulting June anchor
+    USD 1,611-1,706/FEU.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Scenario parameters
+# ---------------------------------------------------------------------------------------------------------------
+freight_stress_shock_frac:
+  value: 0.40
+  unit: frac_of_base_freight
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 6 row 4.2 stress scenario 'freight +40%'"
+  verify: "N/A — spec-defined hypothetical scenario"
+  note: >
+    Hypothetical instantaneous +40% on ocean freight USD/box for both lanes (not on port_cf_charges). It is a
+    stress, not a replay: India-inbound freight did NOT rise 40% during Mar-Aug 2022 (it fell; see
+    docs/research/freight_notes.md). For context, a +40% move is small next to the 2021 WCI surge (+99% from
+    7 Jan to 16 Sep 2021) and to the West India->USEC export spike (USD 11,200 -> 13,200/FEU Mar->Apr 2022, +18% in a month).

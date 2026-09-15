@@ -1,0 +1,245 @@
+# Owned by the Phase 0 regulatory/contract research agent. Commercial economics of the desk: conversion cost, domestic
+# price anchor, margin hurdle, trade-finance (LC) costs, SPA quality terms and domestic credit norms.
+# Research trail: docs/research/regulatory_contract_notes.md §9–10.
+#
+# Key public evidence used (all read 2026-09-16):
+#   [SBI22]  State Bank of India 'Schedule of Forex Transactions Related Service Charges', revised charges w.e.f.
+#            01-Apr-2022 (https://sbi.bank.in/documents/16012/12924450/210222-Forex+Transactions+Related+Service+Charges+w.e.f.+01.04.2022+-+Notice+for+Customers.pdf/bb330c64-337a-b951-6ce4-bfd3b1d3bd6d?t=1645435603197;
+#            cached data/raw/regulatory/banks/sbi_forex_service_charges_wef_2022-04-01.pdf)
+#   [CRISIL] 'Assessment of secondary aluminium industry in India', CRISIL Research, Sept 2021, as published by CMR
+#            (https://www.cmr.co.in/wp-content/uploads/2022/02/Assessment-of-secondary-aluminium-industry-in-India_03092021.docx.pdf;
+#            cached data/raw/regulatory/cmr/Assessment-of-secondary-aluminium-industry-in-India_03092021.pdf)
+#   [BM-Feb24] AlCircle/BigMint 24-Feb-2024 'Raw material costs propel India's aluminium ADC12 prices upward W-o-W'
+#            (https://www.alcircle.com/news/raw-material-costs-propel-india-s-aluminium-adc12-prices-upward-w-o-w-108017)
+#   [BM-Dec24] AlCircle/BigMint 05-Dec-2024 'India: ADC12 aluminium alloyed ingot prices remain rangebound'
+#            (http://www.alcircle.com/news/press-release/india-adc12-aluminium-alloyed-ingot-prices-remain-rangebound-112726)
+#   ECB EUR/INR and EUR/USD reference rates for the 2024 cross-checks: data/raw/regulatory/ecb/
+
+# ---------------------------------------------------------------------------------------------------------------
+# Conversion, anchor and hurdle (CONTRACTS §5)
+# ---------------------------------------------------------------------------------------------------------------
+conversion_cost_inr_t:
+  value: 12000
+  unit: inr_per_mt_ingot
+  flag: ASSUMPTION
+  source: >-
+    Desk toll-conversion charge per tonne of secondary alloy INGOT produced (fuel, power, flux/salt, alloying top-up,
+    labour, dross handling, overheads and the converter's margin), triangulated from BigMint/AlCircle 24-Feb-2024
+    (https://www.alcircle.com/news/raw-material-costs-propel-india-s-aluminium-adc12-prices-upward-w-o-w-108017):
+    ADC12 INR 204,000/t vs domestic Tense INR 172,500/t ex-Delhi; 1 t of ingot needs ~1/0.90 = 1.11 t of Tense
+    (INR 191,700), leaving INR ~12,300/t of ingot; the Dec-2024 non-OEM / OEM prints (INR 201,000 / 209,000) give
+    ~INR 9,000–17,000/t of ingot. Range INR 8,000–18,000 per t of INGOT.
+  verify: "PENDING — no 2022 Indian secondary-smelter cost disclosure retrieved. Next step: cost-of-production note in a listed Indian secondary aluminium producer's 2022 annual report/DRHP (power + fuel + consumables per tonne)."
+  note: >-
+    UNIT FIX (review): the evidence is per tonne of ingot, so the unit is inr_per_mt_ingot and CONTRACTS §5 converts it
+    per MT of scrap as conversion_inr_t = conversion_cost_inr_t × recovery_frac_g (e.g. INR 10,760/t of Tense scrap at
+    0.897 recovery; lower for Zorba, which yields less ingot per tonne). Uniform across grades by design: (i) Zorba's
+    heavies separation cost is netted inside heavies_net_value_frac_of_lme_al; (ii) Taint/Tabor's silicon top-up to
+    ADC12 chemistry costs roughly nothing net, because silicon 553 (~USD 2,030/t CIF Mundra in the same 24-Feb-2024
+    article) was priced below the alloy it becomes part of; (iii) melt-shop differences are inside the 8–18k range.
+    Cross-check with [CRISIL] (Sept 2021): scrap = 80–85% of total cost incl. taxes and duties, i.e. a 15–20% non-scrap
+    cost base (~INR 30–40k/t of ingot, part non-cash: depreciation, finance, selling) — a broader base than a toll
+    charge; P1 runs it as the upper sensitivity (conversion_cost_sensitivity_inr_t_ingot).
+
+conversion_cost_sensitivity_inr_t_ingot:
+  value: [8000, 12000, 18000, 30000]
+  unit: inr_per_mt_ingot
+  flag: ASSUMPTION
+  source: "conversion_cost_inr_t range (8–18k, 2024 spreads) plus a CRISIL-consistent upper case (~15% non-scrap cost on ~INR 200k/t ingot)"
+  verify: "N/A — sensitivity grid"
+  note: "P1 must report window_open for each value (named sensitivity)."
+
+domestic_anchor_premium_inr_t:
+  value: -9000
+  unit: inr_per_mt
+  flag: ASSUMPTION
+  source: >-
+    Median of 15 dated BigMint ADC12 ex-Delhi prices (01-Dec-2023 → 11-Dec-2025, republished by AlCircle; OEM-approved
+    prints moved to a non-OEM basis by the INR 8,000 OEM − non-OEM gap in the 05/11-Dec-2024 articles) minus duty-paid
+    LME CASH parity on the day before publication: LME cash (Westmetall) × ECB USD/INR × (1 + 7.5% × 1.10). Median
+    −8,955 → −9,000; mean −16,422; range −52,068 … +12,861 (data/interim/price_evidence/adc12_vs_duty_paid_parity.csv,
+    exact sentences in desk/data/fetch_price_evidence.py).
+  verify: "PENDING — no 2022 ADC12/LM6 India price series was retrievable (AlCircle/BigMint 2022 archives not found in public). Next step: weekly 2022 ADC12 ex-Delhi/Chennai from BigMint or an automaker's 2022 monthly alloy settlement prices, compared with MCX near-month."
+  note: >-
+    REVIEW FIXES. (1) Basis: recalibrated against duty-paid LME CASH parity — the basis of the panel's MCX proxy that
+    CONTRACTS §5 adds this premium to — instead of 3M (cash–3M basis in the sample: median INR ~4,100/t; M1 carry
+    adds a further 0–1,300/t, not modelled). (2) Evidence: the previous −18,000 was the mean of two points computed
+    with the articles' own LME figures (the 24-Feb-2024 point used 3M $2,247; Westmetall 3M on 23-Feb-2024 was $2,197).
+    (3) Regime dependence is strong: correlation of the premium with parity −0.93; OLS short-run pass-through of
+    parity into ADC12 = 0.15 (domestic_anchor_passthrough_frac). Premiums were +5k…+13k at parity ~191–205k (H1-2024)
+    and −34k…−52k at parity ~235–276k (late 2024–25). The 2022 window's parity ran ~200–330k, so a constant premium
+    overstates the anchor at the March spike and understates it in July–August. P1 must publish window_open as a band
+    over domestic_anchor_premium_sensitivity_inr_t and under the sticky variant (domestic_anchor_trailing_bdays), not
+    as a single flag. (4) CRISIL (Sept 2021, cached CMR PDF) says 'Secondary aluminium continues to be 25-30% cheaper
+    than primary aluminium' with no date, product or price basis; against the dated 2023–25 ADC12 prints (−20% … +7%
+    of parity) it reads as a cost or low-grade-product statement and is kept only as the low-end sensitivity (−55,000
+    ≈ 25% of the window-mean MCX proxy of INR ~222k/t), not rejected and not used as the base.
+
+domestic_anchor_premium_sensitivity_inr_t:
+  value: [-55000, -52000, -9000, 13000]
+  unit: inr_per_mt
+  flag: ASSUMPTION
+  source: "CRISIL-consistent low case (−25% of ~INR 222k), evidence minimum (−52,068), base median, evidence maximum (+12,861), rounded"
+  verify: "N/A — sensitivity grid built from the domestic_anchor_premium_inr_t evidence"
+  note: "P1 publishes the parity window for each value."
+
+domestic_anchor_passthrough_frac:
+  value: 0.15
+  unit: frac
+  flag: PROXY
+  source: "OLS slope of ADC12 (non-OEM basis) on duty-paid LME cash parity over the 15 dated 2023–25 observations (desk.data.fetch_price_evidence; intercept INR ~173k/t)"
+  verify: "VERIFIED 2026-09-16 as a statistic of the cached evidence (n=15; one regime, not 2022)"
+  note: "Evidence of stickiness only: within 2023–25 a INR 1 move in import parity moved secondary alloy ingot by ~INR 0.15. Do not extrapolate the intercept to 2022 (it reflects 2024 scrap costs)."
+
+domestic_anchor_trailing_bdays:
+  value: 120
+  unit: lme_trading_days
+  flag: ASSUMPTION
+  source: "Sticky-anchor sensitivity: anchor = mean duty-paid cash parity (= MCX spot proxy) over the previous 120 LME days + domestic_anchor_premium_trailing_inr_t"
+  verify: "N/A — sensitivity design, not a fit optimum: on the 2023–25 evidence the premium's std falls steadily with window length (INR 24.0k against spot parity, 18.3k at 90, 17.5k at 120, 15.5k at 250 days; data/interim/price_evidence/adc12_trailing_parity_dispersion.csv); 120 LME days (~6 months) is a judgement for scrap inventory plus contract lags"
+  note: "Economic reading: alloy ingot is priced cost-plus off scrap bought weeks to months earlier, so it tracks a trailing average of import parity. In 2022 this variant shuts the March spike and opens the July–August trough — the opposite of the constant-premium base."
+
+domestic_anchor_premium_trailing_inr_t:
+  value: -2000
+  unit: inr_per_mt
+  flag: ASSUMPTION
+  source: "Median of ADC12 (non-OEM basis) minus the 120-LME-day trailing mean of duty-paid cash parity over the same 15 observations: −2,071 → −2,000"
+  verify: "N/A — sensitivity; same evidence as domestic_anchor_premium_inr_t"
+  note: "Used only with domestic_anchor_trailing_bdays."
+
+margin_threshold_inr_t:
+  value: 5000
+  unit: inr_per_mt_scrap
+  flag: ASSUMPTION
+  source: "Desk hurdle: minimum expected net margin per MT of scrap before a trade is allowed (Table 3 row 1.4)"
+  verify: "N/A — risk-policy assumption"
+  note: >-
+    ≈ 2% of a ~INR 2.3 lakh/MT landed cost. Sized to cover: expected quality/weight claims under the SPA penalty
+    schedule (~0.5–1% of value ≈ INR 1,200–2,300), residual MCX hedge noise over a ~6-week cash cycle (the anchor
+    premium is unhedgeable, see domestic_anchor_premium_inr_t), a few days' demurrage on 25 MT boxes, and leaves
+    ~INR 1,500–2,000 as return on risk capital. Opening a window below this is 'picking up pennies in front of a
+    steamroller' given the LME daily moves of 4–12% seen in Mar-2022.
+
+# ---------------------------------------------------------------------------------------------------------------
+# Trade finance (Table 4 row 2.6 — LC sight vs 60–90 day usance)
+# ---------------------------------------------------------------------------------------------------------------
+lc_opening_fee_frac_per_month:
+  value: 0.0008
+  unit: frac_of_lc_value_per_month
+  flag: DIRECT
+  source: "[SBI22] Import LC / Revolving LC issuance: revised charge '0.08% per month and part thereof. Minimum Charges Rs. 2,000/-' w.e.f. 01-Apr-2022 (was 0.18% for the first 3 months + 0.08% per additional month)"
+  verify: "VERIFIED 2026-09-16 as SBI's published card rate for the window; a corporate's negotiated rate may be lower"
+  note: "Charged on LC value for the validity period (shipment window + presentation period)."
+
+lc_opening_fee_frac:
+  value: 0.0024
+  unit: frac_of_lc_value
+  flag: PROXY
+  source: "[SBI22] 0.08% per month × 3 months' LC validity (desk assumption for a 15-day laycan + sailing + 21-day presentation)"
+  verify: "PARTIAL — rate VERIFIED from SBI card; 3-month validity is an assumption"
+  note: "≈ USD 5.5/MT on a USD 2,300/MT cargo. Revolving LCs for a supply programme are charged the same per reinstatement."
+
+lc_usance_fee_frac_per_month:
+  value: 0.0007
+  unit: frac_of_bill_value_per_month
+  flag: DIRECT
+  source: "[SBI22] Import LC 'Usance Charges': revised '0.07% per month and part thereof', minimum Rs 2,000, w.e.f. 01-Apr-2022"
+  verify: "VERIFIED 2026-09-16 (SBI card rate)"
+  note: "Commitment charge for the usance period of a usance LC, separate from the interest cost of the credit itself."
+
+import_bill_commission_frac:
+  value: 0.0012
+  unit: frac_of_bill_value
+  flag: DIRECT
+  source: "[SBI22] 'Commission on Import Bills Collection (Under LCs or Without LC)': revised 0.12% of bill amount, minimum Rs 500 (+0.10% in lieu of exchange if FX not converted with SBI), w.e.f. 01-Apr-2022"
+  verify: "VERIFIED 2026-09-16 (SBI card rate)"
+  note: "Charged at bill retirement."
+
+lc_confirmation_fee_pa:
+  value: 0.005
+  unit: rate_pa
+  flag: PROXY
+  source: "[SBI22] export-side 'LC Confirmation Charges based on the rating of LC issuing bank': AAA–AA 0.25% p.a.; A–Baa3/BBB 0.50% p.a.; Ba1–B3/BB/B and unrated 0.75% p.a."
+  verify: "PARTIAL — this is SBI's price for confirming OTHER banks' LCs; the fee a UAE/US bank charges to confirm an Indian bank's LC was not retrieved"
+  note: "Proxy uses the BBB band (Indian banks' sovereign-capped ratings). US yards selling Taint/Tabor often ask for confirmation; Gulf traders frequently accept an unconfirmed LC from a top Indian bank — so apply on USEC_MUN, optional on JEA_NSA."
+
+usance_interest_spread_pa:
+  value: 0.015
+  unit: rate_pa_over_usd_benchmark
+  flag: ASSUMPTION
+  source: "Desk assumption for supplier's/buyer's credit pricing on a 60–90 day USD usance, over 6-month SOFR-type benchmark; bounded by trade_credit_aic_ceiling_spread_pa"
+  verify: "PENDING — no 2022 buyer's-credit quote retrieved; check an Indian bank or buyer's-credit arranger's 2022 indicative pricing"
+  note: "Usance cost in USD = (benchmark + spread) × days/360 on the bill value; compare with the INR working-capital line (wc_rate_inr_pa, rates.yaml) plus forward premium to choose sight vs usance."
+
+trade_credit_aic_ceiling_spread_pa:
+  value: 0.03
+  unit: rate_pa_over_benchmark
+  flag: DIRECT
+  source: "RBI ECB/Trade Credit master direction as amended 08-Dec-2021: LIBOR replaced by 'any widely accepted interbank rate or alternative reference rate (ARR) of 6-month tenor'; all-in-cost ceiling for trade credits raised to benchmark + 300 bps (350 bps for LIBOR-transition cases), as summarised at https://www.argus-p.com/updates/updates/rbi-changes-to-all-in-cost-benchmark-and-ceiling-for-foreign-currency-ecbs-and-trade-credits/"
+  verify: "PARTIAL — law-firm summary read; RBI circular text not fetched. Next step: read the RBI press release/circular of 08-Dec-2021 on rbi.org.in."
+  note: "Regulatory cap on usance/buyer's credit all-in cost for the window; desk pricing sits well inside it."
+
+# ---------------------------------------------------------------------------------------------------------------
+# SPA quality terms (Table 4 row 2.2)
+# ---------------------------------------------------------------------------------------------------------------
+standard_moisture_franchise_frac:
+  value: 0.01
+  unit: frac_of_gross_weight
+  flag: ASSUMPTION
+  source: "Desk SPA template. ISRI 2022 non-ferrous guidelines set no general moisture franchise (fragmentizer grades must be 'dry'); weight deduction above a small franchise is the common scrap-contract practice"
+  verify: "N/A — contract-design assumption"
+  note: "Moisture above 1% (determined by joint surveyor on arrival, oven-dry method) is deducted 1:1 from invoice weight; below 1% no adjustment."
+
+rejection_penalty_schedule:
+  value:
+    - {trigger: "moisture above franchise", measure: "joint survey, oven-dry", remedy: "weight deduction 1:1 for the excess"}
+    - {trigger: "non-metallics / attachments above ISRI grade limit by up to 3 percentage points", measure: "joint survey, sample sort", remedy: "price discount of 1.5 × excess % on the whole lot"}
+    - {trigger: "non-metallics above limit by more than 3 points, or wrong grade", measure: "joint survey", remedy: "buyer may reject the lot or renegotiate within 10 days of survey; seller bears re-export or storage costs"}
+    - {trigger: "free zinc / magnesium / iron above ISRI limit (Zorba, fragmentizer grades)", measure: "lab analysis of drill/melt sample", remedy: "discount per agreed schedule, rejection if > 2× limit"}
+    - {trigger: "radioactivity above natural background or explosive/sealed pressurised items", measure: "port portal monitor / PSIA certificate / AERB-notified agency", remedy: "outright rejection; all costs, re-export and liabilities for seller's account"}
+  unit: list
+  flag: ASSUMPTION
+  source: "Desk SPA template built on ISRI 2022 grade limits (Taint/Tabor oil & grease ≤1%, Tense ≤2%, fragmentizer non-metallics ≤5%) and DGFT PN 46/2015-20 radiation/explosives conditions"
+  verify: "N/A — contract-design assumption (no 2022 executed SPA available)"
+  note: "Numbers in the schedule are design choices; the 1.5× discount multiplier is intentionally punitive so sellers do not dilute grade."
+
+radioactivity_clause:
+  value: >-
+    Seller warrants the material is free of radioactive substances above natural background, explosives, closed
+    or pressurised containers and arms/ammunition; each shipment carries the supplier/scrap-yard certificate
+    required by DGFT HBP para 2.54 (safe-origin, designated port) or a PSIC from a DGFT-recognised inspection agency
+    (all other cases). Any container flagged by the Indian port radiation portal monitor or found non-compliant is
+    rejected; seller bears inspection, isolation, decontamination, re-export and regulatory costs and indemnifies
+    buyer against penalties.
+  unit: text
+  flag: ASSUMPTION
+  source: "Desk SPA clause drafted from DGFT PN 46/2015-2020 (14-Jan-2022) conditions and ISRI 2022 Zorba spec ('Shall be free of radioactive material')"
+  verify: "N/A — contract-design assumption; underlying DGFT condition PARTIAL (see regulatory.yaml import_policy_hs7602)"
+  note: "Summary text only — not legal advice and not a copy of any real contract."
+
+# ---------------------------------------------------------------------------------------------------------------
+# Domestic sales credit norms (Table 4 row 2.6)
+# ---------------------------------------------------------------------------------------------------------------
+domestic_buyer_credit_days:
+  value: 30
+  unit: days
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 4 row 2.6 ('advance vs 30d credit on domestic sales'); consistent with finance_days_* construction in logistics.yaml"
+  verify: "N/A — desk policy assumption"
+  note: "Foundry buyers in the Rajkot cluster (SIM) get 30 days against a credit limit; weak names pay advance. P2/P5 use this for exposure and days-past-due."
+
+msme_max_payment_days:
+  value: 45
+  unit: days
+  flag: DIRECT
+  source: "Micro, Small and Medium Enterprises Development Act 2006, s.15 proviso: 'in no case the period agreed upon between the supplier and the buyer in writing shall exceed forty-five days from the day of acceptance or the day of deemed acceptance' (read at https://indiankanoon.org/doc/574789/ on 2026-09-16)"
+  verify: "VERIFIED 2026-09-16 (statute text via Indian Kanoon; not re-checked on India Code)"
+  note: "Relevant only where the supplier in a domestic sale is a registered micro/small enterprise (e.g. if the SIM desk were one selling to a large buyer): the statute caps agreed credit at 45 days. Interest consequences of late payment (s.16) were not re-read."
+
+secondary_raw_material_cost_share:
+  value: 0.825
+  unit: frac_of_total_cost
+  flag: PROXY
+  source: "[CRISIL] Sept 2021: 'Raw material cost (scrap) typically accounts for 80-85% of the total cost (inclusive of all taxes and duties)'; the value is the midpoint of that published range (a transformation, hence PROXY; the DIRECT statement is the range 0.80–0.85)"
+  verify: "VERIFIED 2026-09-16 that CRISIL Research publishes the 80–85% range (cached CMR PDF, industry estimate, not a measured 2022 figure); the midpoint is a convention"
+  note: "Context for conversion_cost_inr_t and for the interview answer 'why is scrap spread, not LME, the P&L driver for a secondary smelter'. Same report: '85-90% of scrap is imported' (FY2020) and secondary aluminium 'continues to be 25-30% cheaper than primary aluminium'."

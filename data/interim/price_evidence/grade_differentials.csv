@@ -1,0 +1,4 @@
+grade,n_quotes,n_assessments,median_diff_clean,p25_diff_clean,p75_diff_clean,median_diff_clean_assessments_only,median_diff_raw,median_diff_clean_same_day_lme,median_clean_ratio
+zorba,15,14,-0.022,-0.0442,0.0066,-0.0306,-0.022,-0.0331,0.8275
+taint_tabor,8,5,-0.0178,-0.0583,-0.0093,-0.0148,-0.0283,-0.0203,0.8318
+tense,28,25,-0.0677,-0.0823,-0.0236,-0.0687,-0.1244,-0.0641,0.7899

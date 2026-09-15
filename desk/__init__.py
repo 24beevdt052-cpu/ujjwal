@@ -12,5 +12,9 @@ WINDOW_END = _dt.date(2022, 8, 31)
 HORIZON_END = _dt.date(2022, 9, 30)
 # Pre-window history used for GARCH lookback and covariance estimation.
 HISTORY_START = _dt.date(2018, 1, 2)
+# Last day of the Phase 0 market panel (every processed daily/weekly file ends here).
+PANEL_END = _dt.date(2022, 12, 30)
+# CONTRACTS §3: series on other calendars may be carried forward at most this many business days; longer gaps raise.
+MAX_FILL_BDAYS = 5
 
 RNG_SEED = 20220307  # date of the LME all-time high; every stochastic component seeds from this
