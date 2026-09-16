@@ -183,8 +183,9 @@ trades:
           measured cross-exchange basis is zero by construction and only the third-party mirror run shows it.
           The line is split 200/100 lots from the outset because the cargo is expected to be sold in two
           parcels, and a tranche is lifted as each sale fixes its price. The hedge goes on the day AFTER the
-          trade: the near-month contract moved 12.0 % on the trade date, past the 9 % maximum daily price limit
-          (mcx_al_dpl_max_frac), so it would have been limit-locked and no short could have been filled. The
+          trade: the near-month PROXY moved 12.0 % on the trade date, past the 9 % maximum daily price limit
+          (mcx_al_dpl_max_frac), so a real contract would have traded at the limit if it traded at all, and a
+          seller finds no bid in a limit-down market — an inference from the proxy, not an MCX print. The
           desk carries one session of the cargo unhedged and says so rather than claiming a fill it could not
           have had. Two honest qualifications on that. The panel's MCX series is a computed import-parity proxy
           with no price limits in it at all — it prints the whole move on the trade date — so the limit is a
@@ -195,7 +196,7 @@ trades:
           docs/20_trade_book.md §6.1. One more artefact to name, because this line rolls: the panel's M1 and M2
           are built from one spot by a deterministic interest carry, so the curve is in contango by construction
           and every roll of a short in this book shows a gain; the real contract can and does go into
-          backwardation, when the same roll costs money.
+          backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T01-MCX-1
             contract_month: "2022-04"
@@ -266,12 +267,13 @@ trades:
         this morning the LME gave back 484 dollars in a day off an all-time high, which is the first honest
         price in a fortnight. I buy fixed FOB rather than on a formula: at 2,340 I have locked a 70 % discount
         to a metal price that has just been marked down, and a monthly-average formula two months out would
-        leave me guessing in a market that has clearly stopped going up. I take the freight open because the US-India index has now fallen
-        five weeks running and because at 106 dollars a tonne it is small against the metal — but the stop is
+        leave me guessing in a market that has clearly stopped going up. I take the freight open because the US-India index is down on the
+        week and five dollars under where it stood in late January, and because at 106 dollars a tonne it is small
+        against the metal — but the stop is
         written down at plus 15 % and the boxes get booked by 18-Mar whatever happens, so the decision is not
         mine to postpone. I want 300 lots of MCX against 90 % of the LME-equivalent length, split 200/100
         because I expect to place this cargo in two parcels — but the near month has moved 12 % today, past the
-        9 % slab, so the contract is limit-locked and I get the short on tomorrow's session instead. One night
+        9 % slab, so the contract is bid only at the limit, if at all, and I get the short on tomorrow's session instead. One night
         naked is the risk of buying on the day the market breaks, and it cuts both ways: if the contract really
         is locked, tomorrow opens lower to catch up the rest of the move and I sell my hedge below where I could
         have sold it today. What I am knowingly running: the Zorba
@@ -381,7 +383,7 @@ trades:
           and an LME-priced scrap cargo, nor the fact that the two averaging windows do not overlap at all; the
           desk treats an averaging leg as fully open before its window and closed after its midpoint trading
           day, which is an approximation and is the reason the flip is one decision rather than nine. In base
-          runs the panel MCX series is a parity proxy, so the reported basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the same roll costs money.
+          runs the panel MCX series is a parity proxy, so the reported basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T02-MCX-1
             contract_month: "2022-03"
@@ -532,7 +534,7 @@ trades:
           Taint/Tabor discount to LME, which is where most of this grade's volatility actually lives; one roll
           from the April into the May contract; and the divergence between MCX duty-paid primary parity and the
           scrap the desk owns. In base runs the panel MCX series is a parity proxy, so the reported
-          cross-exchange basis is zero by construction and only the mirror run carries evidence of it. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the same roll costs money.
+          cross-exchange basis is zero by construction and only the mirror run carries evidence of it. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T03-MCX-1
             contract_month: "2022-04"
@@ -685,7 +687,7 @@ trades:
           already shown it can move 12 % in a session. Second, on this grade the point-in-time screen says the
           scrap discount, not the flat price, is where the risk lives, and the MCX contract does not hedge the
           discount at any ratio. This is a deliberate decision to carry roughly 435 tonnes of LME-equivalent
-          length unhedged, and if the market keeps falling it will cost money. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the same roll costs money.
+          length unhedged, and if the market keeps falling it will cost money. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T04-MCX-1
             contract_month: "2022-04"
@@ -847,7 +849,7 @@ trades:
           lifted, and both lines come off together when the sale's window passes its midpoint. The
           unhedgeable parts are the same as elsewhere: MCX prices duty-paid primary metal, the desk owns Tense
           scrap, and the two averaging windows do not overlap. In base runs the panel MCX series is a parity
-          proxy, so the measured cross-exchange basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the same roll costs money.
+          proxy, so the measured cross-exchange basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T05-MCX-1
             contract_month: "2022-05"
@@ -1008,7 +1010,7 @@ trades:
           and it is larger than usual on this ticket because the Zorba discount has moved thirteen points since
           March while the flat price has fallen a thousand dollars. That divergence is the grade-spread bucket
           and no number of lots hedges it. One roll, May into June. In base runs the panel MCX series is a
-          parity proxy, so the reported basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the same roll costs money.
+          parity proxy, so the reported basis is zero by construction. One artefact to name, because this line rolls: the panel's MCX M1 and M2 are built from one spot by a deterministic interest carry, so the curve is in contango by construction and every roll of a short in this book shows a gain; the real contract can and does go into backwardation, when the metal part of the same roll costs money.
         tranches:
           - hedge_id: T06-MCX-1
             contract_month: "2022-05"
@@ -1054,7 +1056,7 @@ trades:
         down, and a cargo bought at a sticky discount into a falling flat price is a position where my hedge
         does the work and the discount is on my side. I sell 176 lots against 90 % of the length and roll once.
         The decision worth arguing about is the dollar. I am covering 60 % of the payable, not the whole thing.
-        The rupee is at 77.26 and has weakened three sessions running; my policy is to cover the contracted USD
+        The rupee is at 77.26, almost a rupee weaker than three sessions ago; my policy is to cover the contracted USD
         payable in full, and to deal each forward on its bill of lading, when I know what I owe and when I owe
         it — which also means I am uncovered from today until the first B/L, a fortnight of rupee I am carrying
         whether I like it or not. But this cargo has no rupee revenue attached to it yet, and a fully covered
@@ -1174,9 +1176,10 @@ trades:
           On the roll cost this ticket talks about: the panel's M1 and M2 come from one spot through a
           deterministic interest carry, so its curve is in permanent contango and a short that rolls COLLECTS
           the spread here rather than paying it. The cost the rationale is worried about is the other state of
-          the world — a curve that flips to backwardation, as the real contract did in the second half of the
-          window — and this book cannot show it. Treat the roll line as an artefact of the proxy, not as
-          evidence that rolling a short is free.
+          the world — a curve that flips to backwardation, which the LME's own cash-3M curve later did (a
+          disclosure added in review, after the fact, and not an input to this decision) — and this book cannot
+          show it. Treat the roll line as mostly the proxy's rupee carry, not as evidence that rolling a short is
+          free.
         tranches:
           - hedge_id: T07-MCX-1
             contract_month: "2022-06"
@@ -1341,8 +1344,12 @@ trades:
         terms_basis_note: >-
           grade_factor_tense on 08-Jun-2022 is 0.785839 of LME 3M on a CFR basis. Contracted at 0.782 flat
           against the official cash average of the month after shipment. The June laycan sits inside one
-          calendar month so the quotational period is known at signature; the provisional invoice is 95 % of
-          B/L weight at the B/L-day cash price, with the balance settled after the average.
+          calendar month so the quotational period is known at signature — but only while the vessels hold their
+          dates: the laycan closes on its last day, so a bill of lading that slips by a single day takes the whole
+          quotational period into the following month and reprices the lot against a different average. That is
+          the schedule risk this ticket carries with no slack at all, and docs/20_trade_book.md §6.5 sizes it. The
+          provisional invoice is 95 % of B/L weight at the B/L-day cash price, with the balance settled after the
+          average.
       payment:
         instrument: LC_SIGHT
         lc_open_date: 2022-06-10                 # >= lc_open_days_before_laycan_min ahead of the 20-Jun laycan
@@ -1450,12 +1457,15 @@ trades:
             and the first draft of this book got it wrong: the box does not quietly leave the Bill of Entry
             while the rest clears. The consignment is referred to Customs and the AERB, the Bill of Entry is
             held, and the other 39 boxes sit accruing detention until the referral closes — that is event
-            T08-LOG-3, fourteen simulated days of it. Re-export of the alarmed box then needs Customs and DGFT
-            permission and its own freight and handling, which this book does NOT model and which therefore
-            understates the cost of this event. The claim on the seller is a disputed, unsecured negotiation
-            after an LC has already paid at sight, so recovery is 0.6 and not 1.0. The remaining 39 boxes
+            T08-LOG-3, fourteen simulated days of it. The alarmed box itself stays under hold for
+            rejected_box_hold_days (45, ASSUMPTION) accruing slabbed detention, and is then re-exported at
+            rejected_box_reexport_cost_usd_per_box (3,000, ASSUMPTION) — both paid by the desk first and claimed
+            back at the recovery below. Decontamination or disposal of a genuinely contaminated box, which can cost
+            far more, is NOT modelled. The goods deduction is set off against the final invoice, which
+            secures the cash but not the claim: the seller disputes the survey and the settlement hands back the
+            share it does not accept, so recovery is 0.6 and not 1.0 (Phase 3 publishes 0.0 and 1.0 beside it). The remaining 39 boxes
             settle with a small moisture deduction and a 0.6 % contamination discount. Magnitudes are
-            simulated; the clause and the portal are real (regulatory.yaml radioactivity_clause).
+            simulated; the clause and the portal are real (commercial.yaml radioactivity_clause).
       logistics:
         - event_id: T08-LOG-1
           lot_id: L1
@@ -1491,7 +1501,7 @@ trades:
           extra_dwell_days: 14
           real_trigger_ref: >-
             Radiation portal monitors and the AERB/Customs referral procedure at Indian ports
-            (regulatory.yaml radioactivity_clause) — the mechanism is real, this consignment is not
+            (commercial.yaml radioactivity_clause) — the mechanism is real, this consignment is not
           flag: SIM
           note: >-
             The landside half of the radiation event, kept separate from it so the cost is visible. One alarmed
@@ -1599,8 +1609,10 @@ trades:
           usual one and in base runs the measured basis is zero by construction, the panel MCX series being a
           parity proxy. The roll on this line is worth naming twice: the panel builds M1 and M2 from one spot
           with a deterministic interest carry, so its curve is always in contango and rolling a short always
-          shows a gain — while the real contract has been in backwardation for a fortnight, where the same roll
-          would cost money. The gain this roll reports is the proxy's, not the market's.
+          shows a gain — while the LME's own cash-3M curve has been in backwardation for a fortnight, and in
+          backwardation the metal part of a short roll costs money; on a parity curve that carried the LME slope
+          only the rupee-over-dollar rate carry would keep this roll positive. The gain this roll reports is
+          mostly the proxy's rupee carry, not a market view.
         tranches:
           - hedge_id: T09-MCX-1
             contract_month: "2022-08"

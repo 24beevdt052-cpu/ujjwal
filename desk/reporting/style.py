@@ -44,7 +44,10 @@ FACTOR_LABELS = {
 }
 # Full P&L bucket list for attribution tables: day-one deal margin + the seven market factors (CONTRACTS §7).
 PNL_BUCKETS = ["new_deal"] + FACTOR_ORDER
-FACTOR_LABELS["new_deal"] = "(0) Deal margin at inception"
+# "(0) at contract", not "at inception": new_deal is booked on EVERY contract date — the purchase, each sale, each
+# freight fixture and hedge booking — and on this book under two thirds of it lands on the purchase trade date
+# (docs/30 §13.2 publishes the split). "Inception" read as day one would overstate what was locked at signature.
+FACTOR_LABELS["new_deal"] = "(0) Deal margin at contract dates"
 
 FACTOR_COLORS = {
     "new_deal": "#2e7d32",

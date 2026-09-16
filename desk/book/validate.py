@@ -533,6 +533,15 @@ _CLAIM_USD_UNDER = re.compile(
     r"([\d,]+(?:\.\d+)?)\s*(?:dollars|USD/t)\s+under\s+(?:my own |my |the )?(netback|parity)", re.I)
 _CLAIM_RUPEE_AT = re.compile(r"rupee[^.;]{0,25}?\bat\s+(\d{2}\.\d{2})\b", re.I)
 _CLAIM_PCT_TODAY = re.compile(r"moved\s+(\d{1,2}(?:\.\d+)?)\s*%\s*(?:today|on the trade date)", re.I)
+# "fallen five weeks running", "weakened three sessions running": a streak claim, reconciled to the panel (the
+# review found two such claims that the tape does not support, T01 and T06, and the first P13 could not see them).
+_NUMBER_WORDS = {w: i for i, w in enumerate(
+    ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"])}
+_CLAIM_STREAK = re.compile(
+    r"\b(fallen|fell|dropped|risen|rose|climbed|weakened|strengthened|gained|lost)\s+(?:for\s+)?"
+    r"(\d{1,2}|" + "|".join(_NUMBER_WORDS) + r")\s+(weeks?|sessions?|days?)\s+(?:running|in a row|straight)",
+    re.I)
+_DOWN_WORDS = {"fallen", "fell", "dropped", "lost", "weakened"}
 # A note may not claim its own inputs were knowable on the day: two of them never are (CONTRACTS §4.3,
 # scrap_grades.yaml). Deleting the claim is the fix; the numbers stay.
 _CLAIM_POINT_IN_TIME = re.compile(
@@ -618,6 +627,15 @@ def numeric_claim_hits(t: Ticket, text: str, asof: dt.date) -> list[str]:
         cands = {f"usdinr on the {label}": float(panel_row(ref)["usdinr"]) for label, ref in refs.items()}
         _fail(m.group(0), want, cands, CLAIM_TOL_USDINR, "₹/USD")
 
+    for m in _CLAIM_STREAK.finditer(text):
+        want = int(m[2]) if m[2].isdigit() else _NUMBER_WORDS[m[2].lower()]
+        down = m[1].lower() in _DOWN_WORDS
+        before = text[max(0, m.start() - 80):m.start()].lower()
+        streak, what = _streak(t, before, asof, down, weekly=m[3].lower().startswith("week"))
+        if streak is not None and streak < want:
+            hits.append(f"{m.group(0)!r} (panel gives a {streak}-{m[3].lower().rstrip('s')} streak in {what} "
+                        f"to {asof})")
+
     prev = _panel_prev(asof)
     if prev is not None:
         moves = {"MCX M1": "mcx_al_m1_inr_kg", "MCX M2": "mcx_al_m2_inr_kg",
@@ -627,6 +645,41 @@ def numeric_claim_hits(t: Ticket, text: str, asof: dt.date) -> list[str]:
         for m in _CLAIM_PCT_TODAY.finditer(text):
             _fail(m.group(0), float(m[1]), cands, CLAIM_TOL_PCT_POINTS, "%")
     return hits
+
+
+def _streak(t: Ticket, before: str, asof: dt.date, down: bool, *, weekly: bool) -> tuple[int | None, str]:
+    """Consecutive moves in one direction ending on `asof`, for the series the sentence names (None: not ours).
+
+    The subject is read from the words just before the claim: the rupee (usdinr — a *weakening* rupee is a RISING
+    usdinr), a freight index (the ticket's own lane, weekly), or the LME (cash, daily). Anything else is skipped:
+    P13 checks the claims it can parse and says so.
+    """
+    if "rupee" in before:
+        s = panel()["usdinr"]
+        down = not down                                     # rupee weakens <=> usdinr rises
+        what = "usdinr (rupee)"
+    elif "index" in before or "freight" in before:
+        f = pd.read_csv(PROCESSED_DIR / "freight_weekly.csv", parse_dates=["week_end"]).set_index("week_end")
+        col = LANE_SPEC[t.lane]["freight_col"]
+        s = f[col]
+        what = f"{col} (weekly)"
+        weekly = True
+    elif "lme" in before or "aluminium" in before or "metal" in before:
+        s = panel()["lme_cash_usd_t"]
+        what = "LME cash"
+    else:
+        return None, ""
+    s = s[s.index <= pd.Timestamp(asof)].dropna()
+    if weekly and what.startswith("usdinr"):
+        s = s.resample("W-FRI").last().dropna()
+    diffs = s.diff().dropna().to_numpy()[::-1]
+    n = 0
+    for x in diffs:
+        if (x < 0) if down else (x > 0):
+            n += 1
+        else:
+            break
+    return n, what
 
 
 def provenance_claim_hits(text: str) -> list[str]:

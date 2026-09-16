@@ -266,8 +266,35 @@ demurrage_usd_per_box_day_slab3:
   verify: "PENDING — as demurrage_slab1_days"
   note: >
     3x demurrage_usd_per_box_day, applied to every chargeable day beyond slab 1 + slab 2. Range 45-225.
-    desk.book.validate.demurrage_usd() implements the schedule; the P3 engine must use the same function (see
-    docs/20_trade_book.md §12) or the two phases will publish different demurrage.
+    desk.book.validate.demurrage_usd() implements the schedule for Phase 2 and desk.mtm.lifecycle.detention_usd()
+    for Phase 3; tests/test_mtm_engine.py asserts the two agree. All four demurrage keys price the COMBINED carrier
+    detention + CFS ground rent beyond detention_free_days (the port_cf_charges_* build-up already carries ground
+    rent inside the free period); the two are not split into separate tariffs, and the flat single-tier rate the
+    first build used was a floor on the real cost, not an estimate of it.
+
+rejected_box_hold_days:
+  value: 45
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: calendar days from vessel arrival until a container rejected at the port (radiation-portal alarm or gross non-conformity) has been segregated, surveyed under Customs/AERB supervision, granted re-export permission and shipped out"
+  verify: "PENDING — no 2022 case record or CBIC/AERB published timeline in the cached sources; the 30-60 day cycle is desk judgement for a referral that involves a second regulator"
+  note: >
+    Added in the Phase 1-3 review, when the radiation-portal rejection on T08 was found to cost nothing. Range 30-60.
+    The rejected box accrues slabbed detention (demurrage_usd_per_box_day[_slab2/3]) for every day of the hold
+    beyond detention_free_days, on top of rejected_box_reexport_cost_usd_per_box. The rest of the consignment's hold
+    (its Bill of Entry is held while the referral runs) is a separate, ticketed SIM dwell event.
+
+rejected_box_reexport_cost_usd_per_box:
+  value: 3000
+  unit: usd_per_box
+  flag: ASSUMPTION
+  source: "Desk build-up per rejected box, no 2022 tariff retrieved: return ocean freight of the order of the book's own USEC_MUN box rate in mid-2022 (1,500-2,300 USD/FEU on freight_weekly.csv levels, itself ASSUMPTION), both-end THC and yard handling, a radiological survey and supervised segregation, and customs/DGFT re-export documentation and CHA"
+  verify: "PENDING — retrieve a 2022 carrier export THC tariff at Mundra and any published AERB/Customs re-export procedure cost; the component magnitudes are desk estimates, not quotes"
+  note: >
+    Range 2,000-6,000 USD per box. Paid by the importer first (the box cannot leave without a consignee paying the
+    line) and claimed back from the seller under the SPA's radioactivity clause at the quality event's
+    claim_recovery_frac. Decontamination or disposal of a genuinely contaminated box — which can cost far more — is
+    NOT modelled: the book assumes the alarm is a re-exportable source, the common case.
 
 # ---------------------------------------------------------------------------------------------------------------
 # Freight level calibration (used by desk.data.fetch_freight)

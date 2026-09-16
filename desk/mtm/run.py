@@ -114,11 +114,16 @@ def build(book: bs.Book, H: MarketHistory, *, label: str = "base", suffix: str =
             write(e2, "adverse_event_2_usdinr")
             write(e2_daily, "adverse_event_2_usdinr_daily")
             write(e3, "adverse_event_3_logistics_credit")
+            # Per-counterparty credit grain (review finding): one row per (date, trade, buyer), plus the buyer
+            # aggregate the E3 limit test reads, so the utilisation numbers can be reproduced from published files.
+            write(ev.buyer_exposure_by_trade(book, run), "buyer_credit_exposure_by_trade_daily")
+            write(ev.buyer_exposure(book, run), "buyer_credit_exposure_daily")
             write(stress, "adverse_event_3_freight_stress_hypothetical")
             write(summary, "adverse_events_summary")
             # Aliases under the Phase 3 brief's names — identical content, kept so both naming conventions resolve.
             write(e2, "adverse_event_2_inr_depreciation")
             write(e3, "adverse_event_3_payment_delay_demurrage")
+            write(new_deal_timing(book, run), "new_deal_timing")
             recon = _write_cashflows(book, H, run)
             controls = pd.concat([controls, _fallback_rows(run), recon], ignore_index=True)
             write(controls, "pnl_controls")
@@ -127,6 +132,48 @@ def build(book: bs.Book, H: MarketHistory, *, label: str = "base", suffix: str =
             "counterfactuals": {"no_mcx": no_mcx, "no_fx_forward": no_fwd, "no_events": no_events,
                                 "fixtures_at_bl": at_bl, "no_dwell": no_dwell, "no_payment_delay": no_delay,
                                 "no_quality": no_quality}}
+
+
+# Leg families for the new_deal timing split (leg_id prefix before the colon).
+_NEW_DEAL_FAMILY = {"SALE": "sale", "INVENTORY": "inventory_mark", "FREIGHT": "freight_fixture",
+                    "MCX": "hedges", "FX": "hedges"}
+
+
+def new_deal_timing(book: bs.Book, run: engine.BookRun) -> pd.DataFrame:
+    """Bucket (0) split by WHEN it was booked: on the purchase trade date, or on a later contract date.
+
+    `new_deal` is booked on every contract date — the purchase, each sale, each freight fixture, each hedge — at the
+    market of that day. The chart label used to say "at inception", and on this book a large share lands after the
+    trade date, at a market that had already moved (Phase 1-3 review, controller lens). Per trade and for the book:
+    the day-one amount, the later amount, and the later amount by leg family. On a sale date the family `sale` is the
+    contracted price and `inventory_mark` is the replacement mark it releases; read them together.
+    """
+    leg = run.attribution_leg
+    trade_dates = {t.trade_id: t.trade_date for t in book.trades}
+    rows = []
+    for t in book.trades:
+        sub = leg[(leg["trade_id"] == t.trade_id) & (leg["new_deal"] != 0.0)]
+        day1 = sub[sub["date"] == trade_dates[t.trade_id]]
+        later = sub[sub["date"] != trade_dates[t.trade_id]]
+        fam = later["leg_id"].str.split(":").str[0].map(lambda x: _NEW_DEAL_FAMILY.get(x, "purchase_costs_and_fees"))
+        by = later.groupby(fam)["new_deal"].sum()
+        total = float(sub["new_deal"].sum())
+        rows.append({"trade_id": t.trade_id, "trade_date": t.trade_date,
+                     "new_deal_on_trade_date_inr": float(day1["new_deal"].sum()),
+                     "new_deal_after_trade_date_inr": float(later["new_deal"].sum()),
+                     "new_deal_total_inr": total,
+                     "after_trade_date_share_frac": (float(later["new_deal"].sum()) / total) if total else float("nan"),
+                     **{f"after_{k}_inr": float(by.get(k, 0.0)) for k in
+                        ("sale", "inventory_mark", "freight_fixture", "hedges", "purchase_costs_and_fees")},
+                     "later_booking_dates": "; ".join(sorted({d.isoformat() if hasattr(d, "isoformat") else str(d)
+                                                             for d in later["date"]}))})
+    df = pd.DataFrame(rows)
+    num = [c for c in df.columns if c.endswith("_inr")]
+    book_row = {"trade_id": engine.BOOK_ID, "trade_date": None, **{c: float(df[c].sum()) for c in num},
+                "later_booking_dates": ""}
+    book_row["after_trade_date_share_frac"] = (book_row["new_deal_after_trade_date_inr"]
+                                               / book_row["new_deal_total_inr"])
+    return pd.concat([df, pd.DataFrame([book_row])], ignore_index=True)[list(df.columns)]
 
 
 def _fallback_rows(run: engine.BookRun) -> pd.DataFrame:
@@ -228,6 +275,7 @@ def _result_sensitivities(book: bs.Book, H: MarketHistory, base: dict, mirror: M
     per, summary = sens.run_cases(book, H, pit_run=pit_res["run"])
     write(per, "pnl_sensitivity_pricing")
     write(summary, "pnl_sensitivity_summary")
+    write(sens.sign_robustness(summary, book), "pnl_sensitivity_sign_robustness")
 
     carry = sens.roll_carry(book, H)
     write(carry, "mcx_roll_carry")

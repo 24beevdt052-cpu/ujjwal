@@ -5,187 +5,247 @@ base,base,REPRICE_SALE,—,,—,T03,29087405.6875,0.0,24239.5047,SENSITIVITY —
 base,base,REPRICE_SALE,—,,—,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
 base,base,REPRICE_SALE,—,,—,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 base,base,REPRICE_SALE,—,,—,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
-base,base,REPRICE_SALE,—,,—,T07,1441834.1281,0.0,762.8752,SENSITIVITY — not base P&L
-base,base,REPRICE_SALE,—,,—,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+base,base,REPRICE_SALE,—,,—,T07,1061109.0243,0.0,561.4333,SENSITIVITY — not base P&L
+base,base,REPRICE_SALE,—,,—,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 base,base,REPRICE_SALE,—,,—,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
-base,base,REPRICE_SALE,—,,—,BOOK,194867858.3874,0.0,13579.6417,SENSITIVITY — not base P&L
+base,base,REPRICE_SALE,—,,—,BOOK,192054770.6625,0.0,13383.6077,SENSITIVITY — not base P&L
 anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T01,13686363.1204,-50597461.3125,5431.0965,SENSITIVITY — not base P&L
-anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T02,24956104.0991,-25590827.3489,20796.7534,SENSITIVITY — not base P&L
 anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T03,4294766.5601,-24792639.1274,3578.9721,SENSITIVITY — not base P&L
 anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T04,-19760888.8192,-26243475.8989,-15683.2451,SENSITIVITY — not base P&L
-anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T05,-10668048.5991,-44320006.9016,-5080.0231,SENSITIVITY — not base P&L
 anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T06,-17258099.9385,-25877194.2,-13275.4615,SENSITIVITY — not base P&L
-anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T07,-38266676.8741,-39708511.0022,-20246.919,SENSITIVITY — not base P&L
-anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T07,-38647401.9779,-39708511.0022,-20448.3608,SENSITIVITY — not base P&L
+anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T08,-46563147.2343,-34836557.3992,-27716.1591,SENSITIVITY — not base P&L
 anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,T09,-15420426.8926,-25468877.154,-12850.3557,SENSITIVITY — not base P&L
-anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,BOOK,2179699.6925,-192688158.6949,151.8954,SENSITIVITY — not base P&L
+anchor_premium_-55000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-55000.0,ASSUMPTION,BOOK,-105380779.682,-297435550.3446,-7343.6083,SENSITIVITY — not base P&L
 anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T01,16986197.5538,-47297626.8791,6740.5546,SENSITIVITY — not base P&L
-anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T02,26625071.1002,-23921860.3479,22187.5593,SENSITIVITY — not base P&L
 anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T03,5911677.8075,-23175727.88,4926.3982,SENSITIVITY — not base P&L
 anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T04,-18049357.7824,-24531944.862,-14324.8871,SENSITIVITY — not base P&L
-anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T05,-7777613.3664,-41429571.6689,-3703.6254,SENSITIVITY — not base P&L
 anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T06,-15570456.8385,-24189551.1,-11977.2745,SENSITIVITY — not base P&L
-anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T07,-35676991.3739,-37118825.5021,-18876.715,SENSITIVITY — not base P&L
-anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T07,-36057716.4777,-37118825.5021,-19078.1569,SENSITIVITY — not base P&L
+anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T08,-44291197.8387,-32564608.0036,-26363.8082,SENSITIVITY — not base P&L
 anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,T09,-13759413.1652,-23807863.4265,-11466.1776,SENSITIVITY — not base P&L
-anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,BOOK,14746318.7378,-180121539.6496,1027.618,SENSITIVITY — not base P&L
+anchor_premium_-52000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-52000.0,ASSUMPTION,BOOK,-85982809.0074,-278037579.6699,-5991.8334,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
-anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T07,1441834.1281,0.0,762.8752,SENSITIVITY — not base P&L
-anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T07,1061109.0243,0.0,561.4333,SENSITIVITY — not base P&L
+anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
-anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,BOOK,194867858.3874,0.0,13579.6417,SENSITIVITY — not base P&L
+anchor_premium_-9000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,-9000.0,ASSUMPTION,BOOK,192054770.6625,0.0,13383.6077,SENSITIVITY — not base P&L
 anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T01,88482610.278,24198785.8451,35112.1469,SENSITIVITY — not base P&L
-anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T02,62786022.7888,12239091.3408,52321.6857,SENSITIVITY — not base P&L
 anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T03,40944754.8354,11857349.1479,34120.629,SENSITIVITY — not base P&L
 anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T04,19033814.6834,12551227.6038,15106.2021,SENSITIVITY — not base P&L
-anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T05,54848483.3423,21196525.0399,26118.3254,SENSITIVITY — not base P&L
 anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T06,20995143.6615,12376049.4,16150.1105,SENSITIVITY — not base P&L
-anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T07,20432861.1292,18991027.0011,10811.0376,SENSITIVITY — not base P&L
-anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T07,20052136.0254,18991027.0011,10609.5958,SENSITIVITY — not base P&L
+anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T08,4934372.3992,16660962.2344,2937.1264,SENSITIVITY — not base P&L
 anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,T09,22229217.5958,12180767.3345,18524.348,SENSITIVITY — not base P&L
-anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,BOOK,287023064.7198,92155206.3324,20001.6073,SENSITIVITY — not base P&L
+anchor_premium_+13000,anchor_premium,REPRICE_SALE,domestic_anchor_premium_inr_t,13000.0,ASSUMPTION,BOOK,334306555.6099,142251784.9474,23296.6241,SENSITIVITY — not base P&L
 conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T01,68683603.6775,4399779.2446,27255.3983,SENSITIVITY — not base P&L
-conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T02,52772220.7827,2225289.3347,43976.8507,SENSITIVITY — not base P&L
 conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T03,31243287.3508,2155881.6633,26036.0728,SENSITIVITY — not base P&L
 conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T04,8764628.4621,2282041.3825,6956.0543,SENSITIVITY — not base P&L
-conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T05,37505871.9461,3853913.6436,17859.939,SENSITIVITY — not base P&L
 conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T06,10869285.0615,2250190.8,8360.9885,SENSITIVITY — not base P&L
-conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T07,4894748.1283,3452914.0002,2589.8138,SENSITIVITY — not base P&L
-conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T07,4514023.0245,3452914.0002,2388.372,SENSITIVITY — not base P&L
+conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T08,-8697323.9743,3029265.8608,-5176.9786,SENSITIVITY — not base P&L
 conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,T09,12263135.2312,2214684.9699,10219.2794,SENSITIVITY — not base P&L
-conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,BOOK,211623350.4479,16755492.0604,14747.2718,SENSITIVITY — not base P&L
+conversion_8000,conversion,REPRICE_SALE,conversion_cost_inr_t,8000.0,ASSUMPTION,BOOK,217918731.562,25863960.8995,15185.9743,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
-conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T07,1441834.1281,0.0,762.8752,SENSITIVITY — not base P&L
-conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T07,1061109.0243,0.0,561.4333,SENSITIVITY — not base P&L
+conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
-conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,BOOK,194867858.3874,0.0,13579.6417,SENSITIVITY — not base P&L
+conversion_12000,conversion,REPRICE_SALE,conversion_cost_inr_t,12000.0,ASSUMPTION,BOOK,192054770.6625,0.0,13383.6077,SENSITIVITY — not base P&L
 conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T01,57684155.566,-6599668.8668,22890.5379,SENSITIVITY — not base P&L
-conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T02,47208997.446,-3337934.002,39340.8312,SENSITIVITY — not base P&L
 conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T03,25853583.1926,-3233822.4949,21544.6527,SENSITIVITY — not base P&L
 conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T04,3059525.0059,-3423062.0738,2428.1944,SENSITIVITY — not base P&L
-conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T05,27871087.837,-5780870.4654,13271.9466,SENSITIVITY — not base P&L
 conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T06,5243808.0615,-3375286.2,4033.6985,SENSITIVITY — not base P&L
-conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T07,-3737536.8722,-5179371.0003,-1977.5327,SENSITIVITY — not base P&L
-conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T07,-4118261.9759,-5179371.0003,-2178.9746,SENSITIVITY — not base P&L
+conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T08,-16270488.6263,-4543898.7912,-9684.8147,SENSITIVITY — not base P&L
 conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,T09,6726422.8065,-3322027.4549,5605.3523,SENSITIVITY — not base P&L
-conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,BOOK,169734620.2968,-25133238.0906,11828.1965,SENSITIVITY — not base P&L
+conversion_18000,conversion,REPRICE_SALE,conversion_cost_inr_t,18000.0,ASSUMPTION,BOOK,153258829.3132,-38795941.3493,10680.0578,SENSITIVITY — not base P&L
 conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T01,44484817.8324,-19799006.6005,17652.7055,SENSITIVITY — not base P&L
-conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T02,40533129.4419,-10013802.0061,33777.6079,SENSITIVITY — not base P&L
 conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T03,19385938.2029,-9701467.4846,16154.9485,SENSITIVITY — not base P&L
 conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T04,-3786599.1417,-10269186.2213,-3005.2374,SENSITIVITY — not base P&L
-conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T05,16309346.9062,-17342611.3963,7766.3557,SENSITIVITY — not base P&L
 conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T06,-1506764.3385,-10125858.6,-1159.0495,SENSITIVITY — not base P&L
-conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T07,-14096278.8727,-15538113.0009,-7458.3486,SENSITIVITY — not base P&L
-conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T07,-14477003.9765,-15538113.0009,-7659.7905,SENSITIVITY — not base P&L
+conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T08,-25358286.2087,-13631696.3736,-15094.218,SENSITIVITY — not base P&L
 conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,T09,82367.8967,-9966082.3646,68.6399,SENSITIVITY — not base P&L
-conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,BOOK,119468144.1155,-75399714.2719,8325.3062,SENSITIVITY — not base P&L
+conversion_30000,conversion,REPRICE_SALE,conversion_cost_inr_t,30000.0,ASSUMPTION,BOOK,75666946.6146,-116387824.0479,5272.958,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
-desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T07,1441834.1281,0.0,762.8752,SENSITIVITY — not base P&L
-desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T07,1061109.0243,0.0,561.4333,SENSITIVITY — not base P&L
+desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
-desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,BOOK,194867858.3874,0.0,13579.6417,SENSITIVITY — not base P&L
+desk_share_0.50,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.5,ASSUMPTION,BOOK,192054770.6625,0.0,13383.6077,SENSITIVITY — not base P&L
 desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T01,51578013.4713,-12705810.9616,20467.4657,SENSITIVITY — not base P&L
-desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T02,30596476.5618,-19950454.8863,25497.0638,SENSITIVITY — not base P&L
 desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T03,22650195.7234,-6437209.9641,18875.1631,SENSITIVITY — not base P&L
 desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T04,4238236.0663,-2244351.0134,3363.6794,SENSITIVITY — not base P&L
-desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T05,10432657.7507,-23219300.5518,4967.9323,SENSITIVITY — not base P&L
 desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T06,6941305.1687,-1677789.0927,5339.4655,SENSITIVITY — not base P&L
-desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T07,-6037959.2246,-7479793.3527,-3194.6874,SENSITIVITY — not base P&L
-desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T07,-6418684.3284,-7479793.3527,-3396.1293,SENSITIVITY — not base P&L
+desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T08,-21360066.6141,-9633476.7789,-12714.3254,SENSITIVITY — not base P&L
 desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,T09,4132777.4644,-5915672.7969,3443.9812,SENSITIVITY — not base P&L
-desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,BOOK,158407231.206,-36460627.1814,11038.8314,SENSITIVITY — not base P&L
+desk_share_0.25,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.25,ASSUMPTION,BOOK,102790911.2641,-89263859.3984,7163.1297,SENSITIVITY — not base P&L
 desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T01,43954526.8943,-20329297.5386,17442.2726,SENSITIVITY — not base P&L
-desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T02,18626203.63,-31920727.818,15521.8364,SENSITIVITY — not base P&L
 desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T03,18787869.745,-10299535.9426,15656.5581,SENSITIVITY — not base P&L
 desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T04,2891625.4583,-3590961.6214,2294.9408,SENSITIVITY — not base P&L
-desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T05,-3498922.5804,-37150880.8829,-1666.1536,SENSITIVITY — not base P&L
 desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T06,5934631.7131,-2684462.5484,4565.1013,SENSITIVITY — not base P&L
-desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T07,-10525835.2362,-11967669.3644,-5569.225,SENSITIVITY — not base P&L
-desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T07,-10906560.34,-11967669.3644,-5770.6668,SENSITIVITY — not base P&L
+desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T08,-27140152.6814,-15413562.8463,-16154.8528,SENSITIVITY — not base P&L
 desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,T09,583373.7863,-9465076.475,486.1448,SENSITIVITY — not base P&L
-desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,BOOK,136530854.8971,-58337003.4903,9514.3453,SENSITIVITY — not base P&L
+desk_share_0.10,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.1,ASSUMPTION,BOOK,49232595.6251,-142822175.0374,3430.8429,SENSITIVITY — not base P&L
 desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T01,38872202.5096,-25411621.9233,15425.4772,SENSITIVITY — not base P&L
-desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T02,10646021.6755,-39900909.7725,8871.6847,SENSITIVITY — not base P&L
 desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T03,16212985.7593,-12874419.9282,13510.8215,SENSITIVITY — not base P&L
 desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T04,1993885.0529,-4488702.0267,1582.4485,SENSITIVITY — not base P&L
-desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T05,-12786642.8011,-46438601.1036,-6088.8775,SENSITIVITY — not base P&L
 desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T06,5263516.076,-3355578.1855,4048.8585,SENSITIVITY — not base P&L
-desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T07,-13517752.5773,-14959586.7054,-7152.25,SENSITIVITY — not base P&L
-desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T07,-13898477.6811,-14959586.7054,-7353.6919,SENSITIVITY — not base P&L
+desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T08,-30993543.393,-19266953.5578,-18448.5377,SENSITIVITY — not base P&L
 desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,T09,-1782895.3324,-11831345.5938,-1485.7461,SENSITIVITY — not base P&L
-desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,BOOK,121946604.0246,-72921254.3629,8498.0212,SENSITIVITY — not base P&L
+desk_share_0.00,desk_share,REPRICE_SALE,desk_arb_share_frac (docs/20 S1),0.0,ASSUMPTION,BOOK,13527051.8657,-178527718.7968,942.6517,SENSITIVITY — not base P&L
 desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T01,51581598.1261,-12702226.3068,20468.8881,SENSITIVITY — not base P&L
-desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T02,16715473.7303,-33831457.7177,13929.5614,SENSITIVITY — not base P&L
 desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T03,22220958.362,-6866447.3255,18517.4653,SENSITIVITY — not base P&L
 desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T04,8353437.3132,1870850.2336,6629.7122,SENSITIVITY — not base P&L
-desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T05,-2275135.9518,-35927094.2543,-1083.3981,SENSITIVITY — not base P&L
 desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T06,11763516.076,3144421.8145,9048.8585,SENSITIVITY — not base P&L
-desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T07,-4099967.8215,-5541801.9496,-2169.2951,SENSITIVITY — not base P&L
-desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T07,-4480692.9253,-5541801.9496,-2370.737,SENSITIVITY — not base P&L
+desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T08,-22731254.253,-11004664.4178,-13530.5085,SENSITIVITY — not base P&L
 desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,T09,4257633.4347,-5790816.8267,3548.0279,SENSITIVITY — not base P&L
-desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,BOOK,168981838.027,-25886020.3605,11775.7378,SENSITIVITY — not base P&L
+desk_margin_5000,desk_margin,REPRICE_SALE,flat trading margin over replacement,5000.0,ASSUMPTION,BOOK,85405533.9122,-106649236.7503,5951.6052,SENSITIVITY — not base P&L
 desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T01,59207235.4959,-5076588.9369,23494.9347,SENSITIVITY — not base P&L
-desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T02,20357144.9632,-30189786.4848,16964.2875,SENSITIVITY — not base P&L
 desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T03,25825741.9237,-3261663.7638,21521.4516,SENSITIVITY — not base P&L
 desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T04,12169168.6693,5686581.5897,9658.0704,SENSITIVITY — not base P&L
-desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T05,4031768.1578,-29620190.1447,1919.8896,SENSITIVITY — not base P&L
 desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T06,15663516.076,7044421.8145,12048.8585,SENSITIVITY — not base P&L
-desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T07,1550703.032,108868.9039,820.4778,SENSITIVITY — not base P&L
-desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T07,1169977.9282,108868.9039,619.0359,SENSITIVITY — not base P&L
+desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T08,-17773880.769,-6047290.9338,-10579.6909,SENSITIVITY — not base P&L
 desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,T09,7881950.695,-2166499.5664,6568.2922,SENSITIVITY — not base P&L
-desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,BOOK,197202978.4284,2335120.041,13742.3678,SENSITIVITY — not base P&L
+desk_margin_8000,desk_margin,REPRICE_SALE,flat trading margin over replacement,8000.0,ASSUMPTION,BOOK,128532623.1401,-63522147.5224,8956.9772,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T01,61828328.8242,-2455495.6087,24535.0511,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T03,27658260.5772,-1429145.1104,23048.5505,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T04,5113881.4841,-1368705.5956,4058.6361,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T06,7457907.2455,-1161187.016,5736.8517,SENSITIVITY — not base P&L
-purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T07,-418562.1879,-1860396.3161,-221.4615,SENSITIVITY — not base P&L
-purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T07,-799287.2917,-1860396.3161,-422.9033,SENSITIVITY — not base P&L
+purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,T09,8999659.5227,-1048790.7386,7499.7163,SENSITIVITY — not base P&L
-purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,BOOK,185544138.0021,-9323720.3853,12929.9051,SENSITIVITY — not base P&L
+purchase_discount_0,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),0.0,ASSUMPTION,BOOK,182731050.2772,-9323720.3853,12733.8711,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T01,67889784.2888,3605959.8559,26940.3906,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T03,30539601.5255,1452195.838,25449.6679,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T04,8182269.458,1699682.3783,6493.8646,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T06,10647251.304,2028157.0426,8190.1933,SENSITIVITY — not base P&L
-purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T07,4273445.8336,2831611.7055,2261.0825,SENSITIVITY — not base P&L
-purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T07,3892720.7299,2831611.7055,2059.6406,SENSITIVITY — not base P&L
+purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,T09,12098844.1532,2050393.8918,10082.3701,SENSITIVITY — not base P&L
-purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,BOOK,208535859.0996,13668000.7121,14532.1156,SENSITIVITY — not base P&L
+purchase_discount_30,purchase_discount,REPRICE_SALE,purchase discount USD/t (docs/20 S2 band),30.0,ASSUMPTION,BOOK,205722771.3746,13668000.7121,14336.0816,SENSITIVITY — not base P&L
 grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T01,-28927186.2172,-93211010.6501,-11479.0421,SENSITIVITY — not base P&L
-grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T02,14859326.3995,-35687605.0485,12382.772,SENSITIVITY — not base P&L
+grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T02,36128129.4973,-14418801.9507,30106.7746,SENSITIVITY — not base P&L
 grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T03,-7601655.6938,-36689061.3813,-6334.7131,SENSITIVITY — not base P&L
 grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T04,-20375271.2971,-26857858.3768,-16170.8502,SENSITIVITY — not base P&L
-grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T05,37077299.9266,3425341.6241,17655.8571,SENSITIVITY — not base P&L
+grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T05,35020308.8848,1368350.5824,16676.3376,SENSITIVITY — not base P&L
 grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T06,4527855.1116,-4091239.1499,3482.9655,SENSITIVITY — not base P&L
-grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T07,27489038.5602,26047204.432,14544.4648,SENSITIVITY — not base P&L
-grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T08,36801245.6528,46095472.8668,21905.5034,SENSITIVITY — not base P&L
+grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T07,27108313.4564,26047204.432,14343.023,SENSITIVITY — not base P&L
+grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T08,32553876.4768,44280466.312,19377.3074,SENSITIVITY — not base P&L
 grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,T09,18858363.6531,8809913.3918,15715.303,SENSITIVITY — not base P&L
-grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,BOOK,82709016.0956,-112158842.2918,5763.6945,SENSITIVITY — not base P&L
+grade_mix_pit_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_pit,,ASSUMPTION,BOOK,97292733.8719,-94762036.7906,6779.9815,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T01,81675327.1833,17391502.7505,32410.8441,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T02,51471421.5618,924490.1138,42892.8513,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T03,32097629.8683,3010224.1808,26748.0249,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T04,15390157.5262,8907570.4466,12214.4107,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T05,32355626.1718,-1296332.1307,15407.441,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T06,2172247.184,-6446847.0774,1670.9594,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T07,-11191785.9139,-12252894.9382,-5921.5798,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T08,-16858682.7032,-5132092.8681,-10034.9302,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,T09,-110190.0643,-10158640.3256,-91.8251,SENSITIVITY — not base P&L
+grade_mix_lag1_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag1,,PROXY,BOOK,187001750.8141,-5053019.8484,13031.4809,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T01,49292890.9342,-14990933.4987,19560.671,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T02,50157672.4527,-389258.9953,41798.0604,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T03,25804106.6354,-3283299.0522,21503.4222,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T04,12068008.5495,5585421.4699,9577.7846,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T05,41898071.0227,8246112.7202,19951.4624,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T06,13485126.9114,4866032.6499,10373.1745,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T07,13391040.1048,12329931.0805,7085.2064,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T08,4305028.8273,16031618.6624,2562.5172,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,T09,9569215.3173,-479234.944,7974.3461,SENSITIVITY — not base P&L
+grade_mix_lag3_repriced,grade_mix,REPRICE_BOTH,grade_factor_mix_lag3,,PROXY,BOOK,219971160.7553,27916390.0928,15329.0007,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T01,74194557.633,9910733.2001,29442.2848,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T02,51943398.0936,1396466.6456,43286.1651,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T03,36517217.4107,7429811.7232,30431.0145,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T04,14391182.6082,7908595.5286,11421.5735,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T05,35866525.6924,2214567.3899,17079.2979,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T06,12168512.0782,3549417.8167,9360.3939,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T07,4244758.5549,3183649.5306,2245.904,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T08,-9661453.4221,2065136.4131,-5750.8651,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,T09,11578746.5166,1530296.2553,9648.9554,SENSITIVITY — not base P&L
+grade_diff_q25_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q25],,ASSUMPTION,BOOK,231243445.1657,39188674.5032,16114.5258,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T01,53390208.6014,-10893615.8315,21186.5907,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T02,45278959.7117,-5267971.7363,37732.4664,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T03,27011714.1617,-2075691.5258,22509.7618,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T04,4273136.1095,-2209450.9701,3391.3779,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T05,25297817.9046,-8354140.3978,12046.58,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T06,4717668.0662,-3901426.1953,3628.9754,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T07,-10948755.8714,-12009864.8958,-5792.9925,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T08,-19517023.1332,-7790433.2981,-11617.2757,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,T09,4275625.3633,-5772824.898,3563.0211,SENSITIVITY — not base P&L
+grade_diff_q75_repriced,grade_diff,REPRICE_BOTH,grade_factor_diff_quartiles_<g> [q75],,ASSUMPTION,BOOK,133779350.9137,-58275419.7488,9322.6029,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T07,-1832554.1053,-2893663.1296,-969.6053,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T08,-14552261.8554,-2825672.0203,-8662.0606,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
+claim_recovery_0.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),0.0,SIM,BOOK,186335435.5126,-5719335.1499,12985.0478,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T07,2990217.7774,1929108.7531,1582.1258,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T08,-9842808.4883,1883781.3469,-5858.8146,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
+claim_recovery_1.00,claim_recovery,EVENT_CASE,events.quality.claim_recovery_frac (SIM),1.0,SIM,BOOK,195867660.7625,3812890.1,13649.3143,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T01,64283824.4329,0.0,25509.4541,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T02,50546931.448,0.0,42122.4429,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T03,29087405.6875,0.0,24239.5047,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T04,6482587.0796,0.0,5144.9104,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T05,33651958.3024,0.0,16024.742,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T06,8619094.2615,0.0,6630.0725,SENSITIVITY — not base P&L
-grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T07,1441834.1281,0.0,762.8752,SENSITIVITY — not base P&L
-grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T08,-9294227.214,0.0,-5532.2781,SENSITIVITY — not base P&L
+grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T07,1061109.0243,0.0,561.4333,SENSITIVITY — not base P&L
+grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T08,-11726589.8351,0.0,-6980.113,SENSITIVITY — not base P&L
 grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,T09,10048450.2613,0.0,8373.7086,SENSITIVITY — not base P&L
-grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,BOOK,194867858.3874,0.0,13579.6417,SENSITIVITY — not base P&L
+grade_mix_pit_remark_only,grade_mix,REMARK_ONLY,grade_factor_mix_pit,,ASSUMPTION,BOOK,192054770.6625,0.0,13383.6077,SENSITIVITY — not base P&L

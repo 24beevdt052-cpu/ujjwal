@@ -45,11 +45,12 @@ from desk import WINDOW_END, WINDOW_START, units
 from desk.book import schema as bs
 from desk.mtm import curves, engine
 from desk.mtm.constants import param as register_param
-from desk.mtm.history import MarketHistory
+from desk.mtm.history import GRADES, MarketHistory
 from desk.mtm.lifecycle import LANE_BOX
 from desk.reporting.style import PNL_BUCKETS
 
 SENSITIVITY_LABEL = "SENSITIVITY — not base P&L"
+GRADES_FOR_SENSITIVITY = GRADES
 
 # `docs/20_trade_book.md` rules S1/S2, mirrored from `desk.book.validate` so Phase 3 can re-derive a price without
 # importing Phase 2's validator. `tests/test_mtm_sensitivity.py` asserts the base re-derivation reproduces every
@@ -62,6 +63,8 @@ PURCHASE_DISCOUNT_BAND_USD_T = (0.0, 30.0)
 REPRICE_SALE = "REPRICE_SALE"          # only the sale rule moves (the parameter never touches a purchase)
 REPRICE_BOTH = "REPRICE_BOTH"          # the grade factor moves both legs and the mark
 REMARK_ONLY = "REMARK_ONLY"            # the published `_grade_pit` variant: marks move, typed prices do not
+EVENT_CASE = "EVENT_CASE"              # a SIM operational-event magnitude moves; no price is re-derived
+CLAIM_RECOVERY_CASES = (0.0, 1.0)      # around the 0.6 both quality events type (docs/20 §7)
 
 
 # ------------------------------------------------------------------------------------------------ parity refs
@@ -120,6 +123,7 @@ class Case:
     purchase_discount_usd_t: float | None = None
     grade_source: str = "base"
     overrides: tuple[tuple[str, float], ...] = ()
+    claim_recovery_frac: float | None = None
     note: str = ""
 
     @property
@@ -162,6 +166,26 @@ def registered_cases(params: Callable = register_param) -> list[Case]:
     cases.append(Case("grade_mix_pit_repriced", "grade_mix", "grade_factor_mix_pit", float("nan"), "ASSUMPTION",
                       REPRICE_BOTH, share=DESK_ARB_SHARE_FRAC, grade_source="pit",
                       note="the point-in-time mix re-prices BOTH legs and re-marks: the honest grade sensitivity"))
+    for src in ("lag1", "lag3"):
+        cases.append(Case(f"grade_mix_{src}_repriced", "grade_mix", f"grade_factor_mix_{src}", float("nan"),
+                          "PROXY", REPRICE_BOTH, share=DESK_ARB_SHARE_FRAC, grade_source=src,
+                          note=f"the {src} published mix variant (as hindsight as the base lag-2) re-prices both legs "
+                               "and re-marks: how much the headline depends on WHICH reconstruction was used"))
+    # The grade DIFFERENTIAL is the other half of the reconstruction: the lag-2 mix sets the shape, a 2024-25
+    # differential applied to 2022 sets the level. Its evidence quartiles are registered (parity.yaml); P1 already
+    # screens on them, and here they re-price both legs (review finding, trader lens: "±1 IQR on grade_factor_diff").
+    for q, label in ((0, "q25"), (1, "q75")):
+        over = tuple((f"grade_factor_diff_{g}", float(params(f"grade_factor_diff_quartiles_{g}", None)[q]))
+                     for g in GRADES_FOR_SENSITIVITY)
+        cases.append(Case(f"grade_diff_{label}_repriced", "grade_diff", f"grade_factor_diff_quartiles_<g> [{label}]",
+                          float("nan"), "ASSUMPTION", REPRICE_BOTH, share=DESK_ARB_SHARE_FRAC, grade_source="lag2",
+                          overrides=over,
+                          note=f"every grade differential at its evidence {label} on the lag-2 mix; re-prices both legs "
+                               "and re-marks"))
+    for r in CLAIM_RECOVERY_CASES:
+        cases.append(Case(f"claim_recovery_{r:.2f}", "claim_recovery", "events.quality.claim_recovery_frac (SIM)",
+                          float(r), "SIM", EVENT_CASE, claim_recovery_frac=float(r),
+                          note="both quality events at this recovery instead of the typed 0.6; no price moves"))
     cases.append(Case("grade_mix_pit_remark_only", "grade_mix", "grade_factor_mix_pit", float("nan"), "ASSUMPTION",
                       REMARK_ONLY, grade_source="pit",
                       note="the published `_grade_pit` variant: marks move, typed prices do not (zero by design)"))
@@ -185,7 +209,16 @@ def reprice(book: bs.Book, base: MarketHistory, H: MarketHistory, case: Case) ->
     """Rebuild every ticket with its prices re-derived under `case`, holding each leg's negotiation delta."""
     if case.mechanism == REMARK_ONLY:
         return book
+    if case.mechanism == EVENT_CASE:
+        return replace(book, trades=tuple(_with_claim_recovery(t, case.claim_recovery_frac) for t in book.trades))
     return replace(book, trades=tuple(_reprice_ticket(t, base, H, case) for t in book.trades))
+
+
+def _with_claim_recovery(t: bs.Ticket, recovery: float | None) -> bs.Ticket:
+    if recovery is None or not t.events.quality:
+        return t
+    quality = tuple(replace(q, claim_recovery_frac=recovery) for q in t.events.quality)
+    return replace(t, events=replace(t.events, quality=quality))
 
 
 def _reprice_ticket(t: bs.Ticket, base: MarketHistory, H: MarketHistory, case: Case) -> bs.Ticket:
@@ -210,13 +243,17 @@ def _reprice_purchase(t: bs.Ticket, base: MarketHistory, H: MarketHistory, case:
 
 
 def _reprice_sale(t: bs.Ticket, s: bs.Sale, base: MarketHistory, H: MarketHistory, case: Case) -> bs.Sale:
-    if s.pricing.type is not bs.SalePricingType.FIXED:
-        return s                                   # an MCX-average sale is a formula; no rule parameter reaches it
     ref0 = reference(base, s.contract_date, t.grade.value, t.lane.value)
     ref1 = reference(H, s.contract_date, t.grade.value, t.lane.value)
-    delta = float(s.pricing.price_inr_t) - rule_sale_price(ref0, DESK_ARB_SHARE_FRAC)
-    price = rule_sale_price(ref1, case.share, case.fixed_margin_inr_t) + delta
-    return replace(s, pricing=replace(s.pricing, price_inr_t=price))
+    shift = rule_sale_price(ref1, case.share, case.fixed_margin_inr_t) - rule_sale_price(ref0, DESK_ARB_SHARE_FRAC)
+    if s.pricing.type is bs.SalePricingType.FIXED:
+        return replace(s, pricing=replace(s.pricing, price_inr_t=float(s.pricing.price_inr_t) + shift))
+    # An MCX-average sale is a formula, but its PREMIUM is not: every one in this book was struck so that
+    # `factor x MCX + premium` equals the same half-the-gap rule on the contract date (T02, T05, T08 terms notes).
+    # The first version of this module held those premiums fixed, which silently exempted 4,980 MT — a third of
+    # the book — from every sale-rule case and overstated the bottom of the anchor-premium band by ~₹10 crore
+    # (Phase 1-3 review follow-up). The premium now moves by exactly what the rule price moves.
+    return replace(s, pricing=replace(s.pricing, premium_inr_t=float(s.pricing.premium_inr_t) + shift))
 
 
 # ------------------------------------------------------------------------------------------------- the runs
@@ -279,6 +316,69 @@ def run_cases(book: bs.Book, base: MarketHistory, cases: Iterable[Case] | None =
     return per[cols], sm[sm_cols]
 
 
+# ------------------------------------------------------------------------------- sign robustness, per band
+NUMERIC_FAMILIES = ("anchor_premium", "conversion", "desk_share", "desk_margin", "purchase_discount",
+                    "claim_recovery")
+
+
+def sign_robustness(summary: pd.DataFrame, book: bs.Book, params: Callable = register_param) -> pd.DataFrame:
+    """One row per registered band: the P&L range across it, and whether the book's SIGN survives the whole band.
+
+    For a numeric band the book P&L is (to float noise) linear in the parameter — the sale rule is linear in the
+    netback and the netback is linear in the premium and the conversion cost — so the table also publishes the
+    slope and the **break-even value**: the parameter value at which the re-priced book makes exactly zero. A
+    break-even inside the registered band is the plain statement that the headline is not sign-robust to that
+    assumption. `linear_max_dev_inr` is the evidence for the linearity claim, not an assumption of it.
+    """
+    base_pnl = float(summary.loc[summary["case"] == "base", "cum_pnl_horizon_inr"].iloc[0])
+    recoveries = sorted({float(q.claim_recovery_frac) for t in book.trades for q in t.events.quality})
+    base_values = {"anchor_premium": float(params("domestic_anchor_premium_inr_t", None)),
+                   "conversion": float(params("conversion_cost_inr_t", None)),
+                   "desk_share": DESK_ARB_SHARE_FRAC,
+                   "claim_recovery": recoveries[0] if len(recoveries) == 1 else None}
+    rows = []
+    priced = summary[summary["mechanism"] != REMARK_ONLY]
+    for fam, g in priced[priced["family"] != "base"].groupby("family", sort=False):
+        pnl = g["cum_pnl_horizon_inr"].to_numpy(float)
+        row = {"family": fam, "param_key": g["param_key"].iloc[0], "flag": g["flag"].iloc[0], "n_cases": len(g),
+               "cases": "; ".join(g["case"]), "pnl_min_inr": float(pnl.min()), "pnl_max_inr": float(pnl.max()),
+               "base_pnl_inr": base_pnl, "base_value": float("nan"), "band_min_value": float("nan"),
+               "band_max_value": float("nan"), "slope_inr_per_unit": float("nan"),
+               "linear_max_dev_inr": float("nan"), "breakeven_value": float("nan"),
+               "breakeven_inside_band": False}
+        if fam in NUMERIC_FAMILIES:
+            x = g["param_value"].to_numpy(float)
+            y = pnl
+            bv = base_values.get(fam)
+            if bv is not None and not np.any(np.isclose(x, bv)):
+                x, y = np.append(x, bv), np.append(y, base_pnl)
+            row.update(base_value=float("nan") if bv is None else bv,
+                       band_min_value=float(x.min()), band_max_value=float(x.max()))
+            if len(np.unique(x)) >= 2:
+                slope, icpt = np.polyfit(x, y, 1)
+                row["slope_inr_per_unit"] = float(slope)
+                row["linear_max_dev_inr"] = float(np.abs(y - (slope * x + icpt)).max())
+                if abs(slope) > 1e-9:
+                    be = float(-icpt / slope)
+                    row["breakeven_value"] = be
+                    row["breakeven_inside_band"] = bool(x.min() <= be <= x.max())
+        row["sign_robust_within_band"] = bool((pnl > 0).all() and base_pnl > 0)
+        row["label"] = SENSITIVITY_LABEL
+        rows.append(row)
+    allp = priced["cum_pnl_horizon_inr"].to_numpy(float)
+    rows.append({"family": "ALL_REGISTERED_BANDS", "param_key": "every case above, one at a time", "flag": "—",
+                 "n_cases": len(priced), "cases": "one parameter moved per case; no joint scenario",
+                 "pnl_min_inr": float(allp.min()), "pnl_max_inr": float(allp.max()), "base_pnl_inr": base_pnl,
+                 "base_value": float("nan"), "band_min_value": float("nan"), "band_max_value": float("nan"),
+                 "slope_inr_per_unit": float("nan"), "linear_max_dev_inr": float("nan"),
+                 "breakeven_value": float("nan"), "breakeven_inside_band": bool((allp <= 0).any()),
+                 "sign_robust_within_band": bool((allp > 0).all()), "label": SENSITIVITY_LABEL})
+    cols = ["family", "param_key", "flag", "n_cases", "cases", "base_value", "band_min_value", "band_max_value",
+            "base_pnl_inr", "pnl_min_inr", "pnl_max_inr", "slope_inr_per_unit", "linear_max_dev_inr",
+            "breakeven_value", "breakeven_inside_band", "sign_robust_within_band", "label"]
+    return pd.DataFrame(rows)[cols]
+
+
 # --------------------------------------------------------------------------------- MCX roll: carry vs metal
 def roll_carry(book: bs.Book, H: MarketHistory) -> pd.DataFrame:
     """Every executed roll split into the INR carry the proxy creates by construction and everything else.
@@ -312,6 +412,23 @@ def roll_carry(book: bs.Book, H: MarketHistory) -> pd.DataFrame:
             dte_out = max(0, (H.cal.mcx_panel_expiry(tr.contract_month) - d).days)
             dte_in = max(0, (H.cal.mcx_panel_expiry(nxt.contract_month) - d).days)
             carry = spot_parity * M.inr_rate_3m_pa * (dte_in - dte_out) / units.DAY_COUNT_INR
+            # What the same roll would have been on a duty-paid parity curve that carried the LME's OWN term
+            # structure and a CIP rupee forward, built from the engine's primitives (linear cash->3M, `fx_x`):
+            #   F(T) = cash_fwd(T) x fx_x(T) / 1000 x uplift + domestic premium.
+            # Its roll spread splits into rupee-vs-dollar rate carry (the forward points) and METAL carry (the LME
+            # cash-3M slope at the forward rate). In backwardation the metal carry is negative: a short roll pays.
+            exp_out, exp_in = H.cal.mcx_panel_expiry(tr.contract_month), H.cal.mcx_panel_expiry(nxt.contract_month)
+            uplift = HV.duty_uplift(d)
+
+            def lme_curve_px(expiry):
+                s_ = max(expiry, d)
+                return (curves.cash_fwd(M, H.cal, d, s_) * curves.fx_x(HV, M, d, s_) / units.KG_PER_MT * uplift
+                        + M.mcx_domestic_premium_inr_kg)
+
+            spread_lme = lme_curve_px(exp_in) - lme_curve_px(exp_out)
+            fx_points = (M.lme_cash_usd_t / units.KG_PER_MT * uplift
+                         * (curves.fx_x(HV, M, d, max(exp_in, d)) - curves.fx_x(HV, M, d, max(exp_out, d))))
+            metal_carry = spread_lme - fx_points
             qty_kg = tr.lots * lot_kg
             rows.append({
                 "trade_id": t.trade_id, "roll_date": d, "roll_from": tr.hedge_id, "roll_to": nxt.hedge_id,
@@ -323,9 +440,24 @@ def roll_carry(book: bs.Book, H: MarketHistory) -> pd.DataFrame:
                 "carry_pnl_inr": -sign * carry * qty_kg,
                 "metal_pnl_inr": -sign * (spread - carry) * qty_kg,
                 "days_to_expiry_from": dte_out, "days_to_expiry_to": dte_in,
+                "lme_curve_roll_spread_inr_kg": spread_lme,
+                "lme_curve_rate_carry_inr_kg": fx_points,
+                "lme_curve_metal_carry_inr_kg": metal_carry,
+                "lme_curve_roll_pnl_inr": -sign * spread_lme * qty_kg,
+                "lme_curve_metal_carry_pnl_inr": -sign * metal_carry * qty_kg,
+                "proxy_minus_lme_curve_roll_pnl_inr": -sign * (spread - spread_lme) * qty_kg,
+                # The DIRECT LME curve on the same day, shown beside the proxy's roll so the contradiction is on the
+                # page: a positive cash-3M spread is backwardation, where a real short roll would have PAID.
+                "lme_cash_3m_spread_usd_t": float(getattr(H.row(d), "lme_cash_3m_spread_usd_t")),
+                "lme_backwardation": bool(float(getattr(H.row(d), "lme_cash_3m_spread_usd_t")) > 0),
                 "mcx_series": "MIRROR" if H.mcx_source == "mirror" else "PANEL_PROXY",
-                "note": "PANEL_PROXY: M2 > M1 on every panel day by construction, so every short roll is a gain "
-                        "by construction and `metal_inr_kg` is 0 — the gain is INR carry, not term structure",
+                "note": ("PANEL_PROXY: M2 > M1 on every panel day by construction, so every short roll is a gain "
+                         "by construction and `metal_inr_kg` is 0 — the gain is INR carry, not term structure. "
+                         "The lme_curve_* columns re-price the same roll on a parity curve carrying the LME's own "
+                         "cash-3M slope and CIP rupee points: a SENSITIVITY, not base P&L"
+                         if H.mcx_source != "mirror" else
+                         "MIRROR: `metal_inr_kg` is the mirror's term structure net of the proxy's INR carry; the "
+                         "lme_curve_* columns are the parity-with-LME-curve reference, identical to the base file"),
             })
     return (pd.DataFrame(rows).sort_values(["roll_date", "trade_id", "roll_from"], kind="mergesort")
             .reset_index(drop=True))
@@ -367,10 +499,33 @@ def basis_risk(base_att: pd.DataFrame, mirror_att: pd.DataFrame, base: MarketHis
         "read the RANGE, not the netted book total: the book total is one draw of a two-sided risk")
     add("per_trade_abs_mean_inr", "BOOK", float(np.abs(per_trade).mean()), "inr", "PROXY",
         "mean absolute per-ticket effect — the size of the basis risk the base run cannot see")
-    add("book_pnl_change_vs_base_inr", "BOOK",
-        float(m.loc[engine.BOOK_ID, "cum_pnl_inr"] - b.loc[engine.BOOK_ID, "cum_pnl_inr"]), "inr", "PROXY",
+    book_change = float(m.loc[engine.BOOK_ID, "cum_pnl_inr"] - b.loc[engine.BOOK_ID, "cum_pnl_inr"])
+    add("book_pnl_change_vs_base_inr", "BOOK", book_change, "inr", "PROXY",
         "the netted book number. It is POSITIVE here; that is one realisation of a two-sided risk, not evidence "
         "that a real basis would have helped")
+    add("book_pnl_change_adverse_image_inr", "BOOK", -abs(book_change), "inr", "PROXY",
+        "the same basis path with its sign reversed: nothing in one six-month mirror makes the favourable draw more "
+        "likely than its mirror image, so the book-level basis risk is quoted as +/- this number, not as a gain")
+    add("sum_of_losing_tickets_inr", "BOOK", float(per_trade[per_trade < 0].sum()), "inr", "PROXY",
+        "the tickets that lost on the mirror, summed without the winners that happened to net them out")
+
+    # (b) and (g) move TOGETHER when the MCX series is swapped: the mirror's different curve shape moves the executed
+    # roll spreads (g) as well as the basis (b), and the review found the (g) move was larger. Read them jointly.
+    bg = [(float(m.loc[t, "cross_exchange_basis"] + m.loc[t, "roll_term_structure"]
+                 - b.loc[t, "cross_exchange_basis"] - b.loc[t, "roll_term_structure"])) for t in trades]
+    for tid, v in zip(trades, bg):
+        add("basis_plus_roll_change_vs_base_inr", tid, v, "inr", "PROXY",
+            "(b) + (g) on the mirror minus (b) + (g) in the base run")
+    bg_arr = np.asarray(bg)
+    add("basis_plus_roll_change_worst_ticket_inr", "BOOK", float(bg_arr.min()), "inr", "PROXY",
+        "(b)+(g) jointly: the worst ticket")
+    add("basis_plus_roll_change_best_ticket_inr", "BOOK", float(bg_arr.max()), "inr", "PROXY",
+        "(b)+(g) jointly: the best ticket")
+    bg_book = float(m.loc[engine.BOOK_ID, "cross_exchange_basis"] + m.loc[engine.BOOK_ID, "roll_term_structure"]
+                    - b.loc[engine.BOOK_ID, "cross_exchange_basis"] - b.loc[engine.BOOK_ID, "roll_term_structure"])
+    add("basis_plus_roll_change_book_two_sided_inr", "BOOK", abs(bg_book), "inr", "PROXY",
+        "(b)+(g) jointly at book level, quoted as a +/- band: the mirror moved them by this much in the desk's favour, "
+        "and a curve that went the other way moves them by as much against it")
 
     beta = unit_beta_test(base, mirror)
     for k, v in beta.items():

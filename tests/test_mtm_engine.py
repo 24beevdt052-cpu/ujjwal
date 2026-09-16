@@ -262,3 +262,17 @@ def test_fx_forward_mtm_equals_covered_interest_parity(book, H, run):
                 assert float(row["mtm_inr"].iloc[0]) == pytest.approx(expected, abs=0.01)
                 checked += 1
     assert checked > 50
+
+
+# ------------------------------------------------------------------------------------ cross-phase schedules
+def test_phase_3_detention_matches_phase_2_slabbed_schedule(H):
+    """P2 plans demurrage with `desk.book.validate.demurrage_usd`; P3 books it with `lifecycle.detention_usd`.
+    Two phases publishing different detention for the same dwell is exactly the review finding this closes."""
+    from desk.book import validate as bv
+    from desk.mtm.lifecycle import detention_usd
+    day = dt.date(2022, 8, 1)
+    for boxes in (1, 39, 45):
+        for days in (0, 1, 5, 8, 10, 14, 31, 60):
+            assert detention_usd(boxes, days, day, H) == pytest.approx(bv.demurrage_usd(boxes, days, day), abs=1e-9)
+    # slabbed, not flat: a long dwell costs more per day than a short one
+    assert detention_usd(1, 31, day, H) / 31 > detention_usd(1, 2, day, H) / 2

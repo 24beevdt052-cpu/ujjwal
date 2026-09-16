@@ -282,6 +282,10 @@ def _doc_intro(r: Results) -> list[str]:
         "Helpers for later phases (`desk.parity.model`): `load_parity()`, `eligible_on(trade_date, grade, lane)` "
         "(latest `week_end ≤ trade_date`; returns `(trade_eligible, week_end, row)`), `parity_row(week_end, grade, "
         "lane, overrides)`, `market_shock_overrides(...)`; `desk.parity.quality.settle_weight_and_penalty(...)`.", "",
+        "**The Excel half of MASTER_SPEC row 1.1** (\"Python + Excel\") is `outputs/excel/Metals_Desk_Master.xlsx`, "
+        "built by `desk.excel.build` (run_all stage P3) from these same tables with formula-driven parity sheets "
+        "(CONTRACTS §2); `outputs/excel/reconciliation.json` records its tie-out to the CSVs. This page documents the "
+        "Python half; the workbook recomputes the weekly parity from the same register and panel.", "",
     ]
 
 

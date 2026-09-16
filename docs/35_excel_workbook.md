@@ -29,15 +29,15 @@ Window 2022-03-01 → 2022-08-31; engine horizon 2022-10-31; panel 2022-01-04 �
 | `Market_Daily` | panel | 2,761 | 32% | One row per LME trading day, 2022-01-03 → 2022-12-30: LME cash/3M/spread/stock, USD/INR and the 3-month rates, the MCX slots and their expiries, freight per lane. Four derived columns are formulas — contract months, the dated parameters resolved on the day, and the MCX parity price with its basis. |
 | `Market_Weekly` | panel | 817 | 84% | The CONTRACTS §3 weekly view (W-FRI, valued on the week's last panel day). Every cell is an INDEX/MATCH into Market_Daily. |
 | `Parity` | Component 1 | 14,706 | 92% | CONTRACTS §5 per MT of scrap, line by line, for every week × grade × lane, plus the three §5a eligibility flags. No computed value is pasted. |
-| `Sensitivity` | Component 1 | 7,920 | 78% | The two MASTER_SPEC Table 1.5 grids on 1,000 MT: LME × USD/INR, and freight × import duty under both FOB and CFR terms. Each cell re-derives the whole build-up at the shocked market. |
+| `Sensitivity` | Component 1 | 11,880 | 79% | The two MASTER_SPEC Table 1.5 grids on 1,000 MT: LME × USD/INR, and freight × import duty under both FOB and CFR terms. Each cell re-derives the whole build-up at the shocked market. |
 | `Term_Structure` | Component 1 | 838 | 61% | Table 1.7: Cash–3M weekly, the M+1 pricing basis implied by the curve, the realised M+1 average (labelled HINDSIGHT), and the MCX M1 → M2 roll. |
 | `Counterparties` | Component 2 | 0 | 0% | The SIM supplier and buyer register with credit limits and the Phase 5 profile features. |
 | `Trade_Book` | Component 2 | 45 | 2% | The nine SPA tickets and the hedge stack. Ticket fields are inputs; the §5a eligibility of each trade is re-tested live against the Parity sheet. |
-| `Cashflows` | Component 3 | 13,915 | 38% | The dated cash ledger with its FX conversion derived per settle date, and the MCX margin schedule (variation margin, initial margin, slippage and charges) derived end to end from Market_Daily. |
-| `MTM_Daily` | Component 3 | 9,825 | 26% | Leg valuations on the declared marking grid, including the unsold-cargo replacement mark and the FX-forward marks, and per-trade cumulative P&L. |
+| `Cashflows` | Component 3 | 13,930 | 38% | The dated cash ledger with its FX conversion derived per settle date, and the MCX margin schedule (variation margin, initial margin, slippage and charges) derived end to end from Market_Daily. |
+| `MTM_Daily` | Component 3 | 9,555 | 26% | Leg valuations on the declared marking grid, including the unsold-cargo replacement mark and the FX-forward marks, and per-trade cumulative P&L. |
 | `Attribution` | Component 3 | 1,044 | 30% | The daily bucket identities recomputed in Excel, lifetime P&L by trade and factor, and the eight-step attribution chain worked live on two legs. |
 | `Equity_Curve` | Component 3 | 1,034 | 47% | Book cumulative P&L every panel day, assembled by formula, with a native Excel line chart. |
-| `Checks` | controls | 3,621 | 51% | Every workbook result differenced against the Python engine, with a named tolerance and a PASS flag. Start here. |
+| `Checks` | controls | 4,071 | 50% | Every workbook result differenced against the Python engine, with a named tolerance and a PASS flag. Start here. |
 
 The formula share is formula cells ÷ all written cells on the sheet, counting row keys, labels, provenance strings and green check columns in the denominator. A sheet that is mostly a register (`Inputs`, `Counterparties`, `Trade_Book`) is *supposed* to be mostly input.
 
@@ -50,18 +50,18 @@ The formula share is formula cells ÷ all written cells on the sheet, counting r
 | `Market_Daily` | 2,761 | 4,267 | 0 | 1,577 | 8,605 |
 | `Market_Weekly` | 817 | 0 | 0 | 154 | 971 |
 | `Parity` | 14,706 | 0 | 0 | 1,355 | 16,061 |
-| `Sensitivity` | 7,920 | 0 | 0 | 2,173 | 10,093 |
+| `Sensitivity` | 11,880 | 0 | 0 | 3,223 | 15,103 |
 | `Term_Structure` | 838 | 328 | 0 | 204 | 1,370 |
 | `Counterparties` | 0 | 135 | 0 | 44 | 179 |
-| `Trade_Book` | 45 | 1,637 | 54 | 340 | 2,076 |
-| `Cashflows` | 13,915 | 802 | 3,811 | 17,858 | 36,386 |
-| `MTM_Daily` | 9,825 | 6,628 | 4,431 | 17,024 | 37,908 |
+| `Trade_Book` | 45 | 1,630 | 54 | 340 | 2,069 |
+| `Cashflows` | 13,930 | 802 | 3,817 | 17,905 | 36,454 |
+| `MTM_Daily` | 9,555 | 6,303 | 4,297 | 16,491 | 36,646 |
 | `Attribution` | 1,044 | 104 | 1,910 | 471 | 3,529 |
 | `Equity_Curve` | 1,034 | 0 | 656 | 510 | 2,200 |
-| `Checks` | 3,621 | 0 | 1,445 | 2,042 | 7,108 |
-| **Total** | **56,526** | **14,059** | **12,307** | **44,550** | **127,442** |
+| `Checks` | 4,071 | 0 | 1,595 | 2,552 | 8,218 |
+| **Total** | **60,681** | **13,727** | **12,329** | **45,624** | **132,361** |
 
-**56,526 formula cells of 127,442 written cells (44%)**, against 14,059 inputs and 12,307 pasted engine values. Of the pasted cells, roughly half are pure check columns that nothing depends on; the rest are the carried lifecycle amounts named in §7.
+**60,681 formula cells of 132,361 written cells (46%)**, against 13,727 inputs and 12,329 pasted engine values. Of the pasted cells, roughly half are pure check columns that nothing depends on; the rest are the carried lifecycle amounts named in §7.
 
 ## 5. Using it in an interview
 
@@ -82,8 +82,8 @@ The single best demonstration is the first one: `bcd_scrap_hs7602` 0.025 → 0.0
 | Check family | Rows | Tolerance |
 |---|---|---|
 | Parity — net arb, §5a cases and landed cost (every week × grade × lane) | 258 | tol_parity_inr_t = ₹1/t |
-| Sensitivity grid grid_lme_fx — P&L impact on 1,000 MT | 180 | tol_grid_inr = ₹10 |
-| Sensitivity grid grid_freight_duty — P&L impact on 1,000 MT | 120 | tol_grid_inr = ₹10 |
+| Sensitivity grid grid_lme_fx — P&L impact on 1,000 MT | 270 | tol_grid_inr = ₹10 |
+| Sensitivity grid grid_freight_duty — P&L impact on 1,000 MT | 180 | tol_grid_inr = ₹10 |
 | Term structure — implied and realised M+1 average of LME cash | 43 | tol_usd_t = USD 0.01/t |
 | Per-trade cumulative P&L at WINDOW_END and HORIZON_END | 18 | tol_trade_inr = ₹10 |
 | Book P&L by factor — lifetime, Σ trades and Σ book-days | 9 | tol_trade_inr = ₹10 |
@@ -102,7 +102,40 @@ One control is deliberately indirect and is stated as such on the sheet: the Pha
 3. no cell recalculates to `#REF!`, `#NAME?`, `#DIV/0!`, `#VALUE!`, `#N/A`, `#NULL!` or `#NUM!`;
 4. the workbook is byte-for-byte deterministic (CONTRACTS §1.5) — rebuilding it produces an identical file, which is why the zip entry timestamps and the document properties are pinned.
 
-_No reconciliation run has been recorded yet. Run `DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_excel_reconciliation.py` and re-run `desk.excel.build` to fill this section._
+**Scope of the recalculation: full workbook.** Every formula cell in every sheet is recalculated; nothing is sampled.
+
+* cells recalculated: **132,447**  ·  wall time **153 s**
+* `Checks` cells read: **3,998**, failures: **0**
+* scoreboard verdict recalculated from the formulas: **PASS**
+* error values after recalculation (`#REF!` / `#NAME?` / `#DIV/0!` / `#VALUE!` / `#N/A`): **0**
+
+Formula-vs-constant census of the written cells in the saved file (openpyxl read-back, independent of the recalculation):
+
+| Sheet | formula cells | constant cells | formula share |
+|---|---|---|---|
+| `Attribution` | 1,044 | 2,485 | 30% |
+| `Cashflows` | 13,930 | 22,524 | 38% |
+| `Checks` | 4,071 | 4,147 | 50% |
+| `Equity_Curve` | 1,034 | 1,166 | 47% |
+| `MTM_Daily` | 9,555 | 27,091 | 26% |
+| `Market_Daily` | 2,761 | 5,844 | 32% |
+| `Market_Weekly` | 817 | 154 | 84% |
+| `Parity` | 14,706 | 1,355 | 92% |
+| `Sensitivity` | 11,880 | 3,223 | 79% |
+| `Term_Structure` | 838 | 532 | 61% |
+| `Trade_Book` | 45 | 2,024 | 2% |
+
+Worst absolute differences the recalculated workbook reports, by family:
+
+| Check family | max |difference| | tolerance | status |
+|---|---|---|---|
+| Book P&L by factor — lifetime, Σ trades and Σ book-days | 0.0900 | tol_trade_inr = ₹10 | PASS |
+| Parity — net arb, §5a cases and landed cost (every week × grade × lane) | 0.0050 | tol_parity_inr_t = ₹1/t | PASS |
+| Per-trade cumulative P&L at WINDOW_END and HORIZON_END | 1.4989 | tol_trade_inr = ₹10 | PASS |
+| Sensitivity grid grid_freight_duty — P&L impact on 1,000 MT | 0.4990 | tol_grid_inr = ₹10 | PASS |
+| Sensitivity grid grid_lme_fx — P&L impact on 1,000 MT | 0.4986 | tol_grid_inr = ₹10 | PASS |
+| Structural controls (basis, ledger, margin, marks, equity, attribution, discipline) | 4.3792 | per row | PASS |
+| Term structure — implied and realised M+1 average of LME cash | 0.0000 | tol_usd_t = USD 0.01/t | PASS |
 
 ## 8. What stays in Python, and why
 
@@ -125,7 +158,7 @@ Two of these deserve the longer answer.
 
 1. **The marking grid is not every day.** Leg-level marks exist on 25 dates, not on all 164 book days. The `Equity_Curve` carries the engine's daily open-MTM and re-derives it from `MTM_Daily` only where the grid reaches; the difference column shows both. Per-trade cumulative P&L is reconciled at `WINDOW_END` and `HORIZON_END` as the brief requires.
 2. **Green cells that feed forward.** The colour convention would be cleaner if nothing downstream ever depended on a pasted value. It does not hold for the carried lifecycle amounts, so those rows carry an explicit `amount_src` / `value_src` column rather than relying on the reader to remember.
-3. **Rounding floors the tolerances.** The workbook reads the published CSVs, which are rounded for determinism (₹0.01, price 4 dp). Three of the six tolerances on `Checks` exist only because of that, and each says so on the sheet.
+3. **Rounding floors three of the tolerances.** The workbook reads the published CSVs, which are rounded for determinism (₹0.01 on money, 4 dp on prices). `tol_cashflow_inr`, `tol_usd_t` and part of `tol_grid_inr` exist only because of that; `Checks` says so row by row, and the observed differences sit one to three orders of magnitude inside every tolerance.
 4. **Phase 3 book parameters are still served from code.** `config/params/book.yaml` does not exist; `Inputs` §4 lists the eleven keys the workbook uses from `desk.mtm.constants.BOOK_PARAM_FALLBACKS`, with their flags and verification status, separately from the register so the two can never be confused. Three of them carry PENDING verification.
 5. **Recalculation is slow outside Excel.** Excel itself recalculates the file instantly; the `formulas` library takes minutes because it builds an explicit dependency graph over every cell. The reconciliation test therefore runs as one long test and reports its own wall time.
 6. **The workbook inherits every Phase 0 caveat.** Freight levels and the lag-2 grade mix are hindsight reconstructions; USD/INR is an ECB cross, PENDING a measured comparison against FBIL; the MCX panel series is import parity, so bucket (b) is zero by construction and the mirror run — which is the only way to see a real cross-exchange basis — is a Python sensitivity, not a workbook sheet.

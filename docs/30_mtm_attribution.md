@@ -16,14 +16,18 @@ Component 3 of `docs/spec/MASTER_SPEC_V3.md` (Table 5). Implements `docs/design/
 `CONTRACTS.md` §7 and §7a. Deviations from the design are listed and justified in §11.
 
 **The results are in §13**, on the real nine-ticket book. The adverse events have their own page,
-`docs/31_adverse_events.md`. The one-line answer: the book makes **₹194.9 m over 14,350 MT (₹13,580/MT)**, of which
-₹165.2 m is deal margin booked at inception and ₹29.6 m is what the market then did to it.
+`docs/31_adverse_events.md`. The one-line answer: the book makes **₹192.1 m over 14,350 MT (₹13,384/MT)** at the
+2022-10-31 horizon, of which ₹165.2 m is deal margin booked **at contract dates** — ₹94.3 m on the nine purchase
+trade dates and ₹70.9 m on later sale, fixture and hedge dates (§13.2) — and ₹26.8 m is what the market then did to
+it.
 
-Read §13.9 before quoting that number as a result. `new_deal` is not a quote from a counterparty — it is the desk's
-own sale rule applied to the desk's own parity model, and the rule is driven by an ASSUMPTION whose registered
-grid spans ₹68,000/t (`domestic_anchor_premium_sensitivity_inr_t` = −55,000 … +13,000). Re-priced through that
-band the same nine tickets make anywhere from **₹0.2 crore to ₹28.7 crore**.
-The sign survives the whole registered band; the magnitude does not.
+**That number is conditional on one ASSUMPTION, and it is not sign-robust to it.** `new_deal` is not a quote from a
+counterparty — it is the desk's own sale rule applied to the desk's own parity model, and the rule is driven by
+`domestic_anchor_premium_inr_t` = −9,000 ₹/t (ASSUMPTION, verification PENDING: no 2022 ADC12/LM6 India price
+series was retrievable), whose registered grid spans ₹68,000/t (−55,000 … +13,000). Re-priced through that grid the
+same nine tickets make anywhere from **−₹10.5 crore to +₹33.4 crore**: the book **loses money at two of the four
+registered values** and breaks even at an anchor premium of about **−₹38,700/t** (§13.9,
+`pnl_sensitivity_sign_robustness.csv`). Every other registered band leaves the sign positive.
 
 ---
 
@@ -38,8 +42,8 @@ DESK_OFFLINE=1 .venv/bin/python -m desk.mtm.run                 # the checked-in
 ```
 
 `main()` raises `ControlFailure` if any row of `outputs/tables/pnl_controls.csv` fails. The full 9-trade book takes
-about 20 s including the four counterfactual re-runs, both sensitivity variants and the charts; a re-run is
-byte-identical.
+about 45 s (peak memory ≈ 0.6 GB) including the seven counterfactual re-runs per variant, both sensitivity variants,
+the 24 re-pricing cases of §13.9 and the charts; a re-run is byte-identical.
 
 **Module map** (all of it inside `desk/mtm/`, see §11.1):
 
@@ -174,7 +178,7 @@ but never P&L, and their undiscounted lifetime sum per trade is asserted to be z
 `PLANNED_AT_TRADE_DATE` is the set of flows **already contracted on the trade date**, valued on trade-date CIP
 forwards — there is no hindsight in it (none of its USD rows uses a realised spot). It is **not an expected P&L**:
 a sale contracted later is simply absent, so summing its `PNL` rows gives a large negative number for every ticket
-sold after inception — T01 **−₹497.3 m** planned against **+₹70.9 m** realised, T07 −₹334.7 m against +₹8.2 m.
+sold after the trade date — T01 **−₹497.3 m** planned against **+₹70.9 m** realised, T07 −₹334.7 m against +₹7.9 m.
 Only T02 and T05 contract both legs on the trade date, and only there is the planned total a meaningful figure —
 **+₹38,922,624 and +₹47,622,723, exactly their day-one `new_deal`** — which is precisely what invites the
 misreading everywhere else.
@@ -247,13 +251,15 @@ on every chart and sheet:
   date, so it books demurrage and claims *and* the quantity restatement of the inventory mark (row above). It is
   also the **inception** value of those events: an event's later market drift leaves (f) and flows into (a), (e)
   and (g), so **(f) is not the lifetime cost of the events**. For that, read `event_cost_lifetime_*` in
-  `adverse_events_summary.csv` — on this book (f) is −₹0.25 crore while the lifetime event cost is −₹0.65 crore,
-  and the two answer different questions.
+  `adverse_events_summary.csv` — on this book (f) is −₹0.52 crore while the lifetime event cost is −₹0.94 crore,
+  and the two answer different questions. (f) also excludes a quality discount passed through to the buyer: that
+  is priced into the sale contract and lands in (0) on the sale date, which is why the lifetime counterfactual, not
+  (f), is the event's gross cost.
 * **(g) is "carry, roll and cross-terms", not "roll yield".** It is the last block swapped, so besides the funding
   accrual (−₹3.26 crore of the −₹5.66 crore by design, CONTRACTS §7a.1.2) and the executed roll spreads it
   absorbs every cross-term the documented order pushes to the end — above all ΔLME × ΔFX on USD-priced physical.
   A reader who takes (g) as a roll P&L gets it backwards: §13.10 shows the executed rolls were worth **+₹0.84
-  crore**, all of it INR carry, against a (g) of −₹5.66 crore.
+  crore**, all of it the proxy's INR carry, against a (g) of −₹5.66 crore.
 
 ### 4.2 Where the non-obvious items land
 
@@ -401,7 +407,7 @@ split by leg group, **plus** counterfactual re-runs of the same book with one co
 three separable causes — `without the dwell`, `without the payment delay` and `without the quality claims`
 individually. A hedge benefit is therefore the difference between two runs of one engine — margin-funding
 difference included — not a comparison of two models. The three event-3 components are additive to within
-₹11,378 of interaction, and that interaction is reported rather than allocated.
+₹5,031 of interaction, and that interaction is reported rather than allocated.
 
 **Event 3 is framed honestly** (CONTRACTS §7.6). Freight **fell** through the window: −35.6 % on JEA_NSA and
 −35.6 % on USEC_MUN from the first to the last window day. There was no 2022 container spike on these lanes, so
@@ -417,11 +423,14 @@ dwell, and (iii) the cost of fixtures locked above a falling market, measured as
 
 | File | Grain |
 |---|---|
-| `trade_cashflows.csv` | trade × leg × cashflow, two scenarios (`PLANNED_AT_TRADE_DATE`, `REALISED`) |
+| `trade_cashflows.csv` | trade × leg × cashflow, two scenarios (`PLANNED_AT_TRADE_DATE`, `REALISED`). Written by `run._write_cashflows` — an earlier build computed the frame and never wrote it, leaving a stale file; `tests/test_mtm_integration.py` now writes it into a temp directory and ties it out |
 | `mtm_daily.csv` | date × trade × leg (funding is a leg with `mtm_inr = 0`) |
-| `attribution_daily.csv` | date × trade (+ a `BOOK` row): `PNL_BUCKETS` + `residual` + totals |
+| `attribution_daily.csv` | date × trade (+ a `BOOK` row): `PNL_BUCKETS` + `residual` + totals. **Filter `trade_id != "BOOK"` before grouping by date**: the file has no `scope` column (CONTRACTS §7a.3 fixes its columns), and summing without the filter double-counts the book exactly |
 | `attribution_leg_daily.csv` | date × trade × leg, same buckets (sparse: a leg that moved nothing has no row) |
-| `book_exposures_daily.csv` | date × scope (`trade` / `book`) |
+| `book_exposures_daily.csv` | date × scope (`trade` / `book`). `buyer_id` is a compound string on a two-buyer ticket (T01): use the next two files for anything per counterparty |
+| `buyer_credit_exposure_by_trade_daily.csv` | date × trade × buyer: receivable, pre-settlement and contracted INR against that buyer's limit — one buyer per row |
+| `buyer_credit_exposure_daily.csv` | date × buyer: the same summed across trades, the grain the E3 limit test reads (asserted equal to the long table regrouped) |
+| `new_deal_timing.csv` | trade (+ `BOOK`): bucket (0) booked on the purchase trade date vs on later contract dates, by leg family (§13.2) |
 | `mcx_variation_margin.csv` | date × hedge line |
 | `adverse_event_windows.csv` | one row per derived window |
 | `adverse_event_1_lme_crash{,_daily}.csv` | E1 summary and daily |
@@ -431,7 +440,8 @@ dwell, and (iii) the cost of fixtures locked above a falling market, measured as
 | `adverse_events_summary.csv` | the three event tables in one scan |
 | `pnl_sensitivity_pricing.csv` | case × trade: the book **re-priced** through the desk's own S1/S2 rules under each registered band value (§13.9) |
 | `pnl_sensitivity_summary.csv` | case: the same at book level, with every bucket, the Δ vs base and a sign flag |
-| `mcx_roll_carry.csv` (+ `_mcx_mirror`) | roll: each executed roll split into INR carry and term structure (§13.10) |
+| `pnl_sensitivity_sign_robustness.csv` | band: P&L range, slope, linearity check and **break-even value** per registered band, plus an all-bands row (§13.9) |
+| `mcx_roll_carry.csv` (+ `_mcx_mirror`) | roll: each executed roll split into the proxy's INR carry and term structure, with the LME cash–3M spread beside it and the same roll re-priced on a parity curve carrying the LME's own slope (`lme_curve_*`: rate carry vs metal carry) (§13.10) |
 | `mcx_basis_risk.csv` | metric × scope: the LME–MCX basis as a two-sided per-ticket range, plus the unit-beta test (§13.11) |
 | `pnl_controls.csv` | date × check: value, tolerance, status |
 
@@ -451,6 +461,18 @@ Charts (all through `desk.reporting.style.save_fig`, so every one carries the SI
 `p3_equity_curve`, `p3_attribution_waterfall_{T01…T09,book}`, `p3_adverse_events`, `p3_mcx_vm_schedule`,
 `p3_event1_hedged_vs_unhedged`, `p3_event2_fx_offset`.
 
+**Two presentation traps in `mtm_daily.csv` and `attribution_leg_daily.csv`.** The `FUNDING` leg carries
+`status = settled`, `settle_date = HORIZON_END` and its whole accrual inside `realised_cum_inr`, so a reader summing
+`realised_cum_inr` picks up ₹32.6 m of "realised cash" that never moved on any date: the identity the engine closes is
+**realised + funding accrual + MTM** (CONTRACTS §7.3 states it without the funding term; §11.7 lists the amendment),
+and `trade_cashflows.csv` correctly carries no funding row. And `attribution_leg_daily.csv` has no `residual` column
+and omits legs on days they moved nothing (483 trade-days have no leg rows, all with zero P&L): the residual is a
+trade-grain control, and Σ legs equals the trade row to CSV rounding.
+
+**The workbook.** `outputs/excel/Metals_Desk_Master.xlsx` (built by `desk.excel.build`, stage P3) is the Excel half
+of MASTER_SPEC Components 1–3, formula-driven from these same tables; `outputs/excel/reconciliation.json` records its
+tie-out to the CSVs.
+
 `adverse_event_2_inr_depreciation.csv` and `adverse_event_3_payment_delay_demurrage.csv` are **aliases** with
 identical content, written because the Phase 3 brief names the files that way and CONTRACTS §7a.3 names them the
 other way. Sensitivity runs write `_mcx_mirror` and `_grade_pit` variants of `attribution_daily`,
@@ -466,12 +488,12 @@ other way. Sensitivity runs write `_mcx_mirror` and `_grade_pit` variants of `at
 |---|---|---|
 | `residual_max_abs` (per trade-day) | ₹1 | 1.9e-7 |
 | `ledger_identity_max_abs` (valuation vs cash ledger, per trade) | ₹0.01 | 1.8e-7 |
-| `final_pnl_vs_cashflows` (cum P&L at horizon vs Σ P&L cashflows + funding accrual, per trade) | ₹0.01 | 1.5e-7 |
+| `final_pnl_vs_cashflows` (cum P&L at horizon vs Σ P&L cashflows + funding accrual, per trade) | ₹0.01 | 1.8e-7 |
 | `proxy_basis_max_abs` (panel MCX vs parity theo) | 1e-3 ₹/kg | 5.0e-5 |
 | `bs_flows_lifetime_sum` (per trade) | ₹0.01 | 0.0 |
 | `terminal_mtm_abs` (per trade at `HORIZON_END`) | ₹0.01 | 0.0 |
-| `replacement_vs_p1_panelfx_max_abs` | ₹0.01/MT | 1.2e-10 |
-| `replacement_vs_p1_max_abs` (CIP forward) | ₹0.50/MT | 0.23 |
+| **`replacement_vs_p1_panelfx_max_abs`** — the row that meets CONTRACTS §7a.1.3's ₹0.01 letter | ₹0.01/MT | 1.2e-10 |
+| `replacement_vs_p1_max_abs` (CIP forward) — memo, looser by design (§11.2) | ₹0.50/MT | 0.23 |
 | `sensitivity_base_repricing_vs_book` | ₹0.01 | 0.00 |
 | `roll_carry_metal_component_max_abs` | ₹0.01 | 6.3e-8 |
 | `cashflow_reconciliation_vs_p2` | ₹0.01 when it applies | INFO: P3 owns the file (§11.5) |
@@ -502,13 +524,14 @@ the maximum per-trade realised-INR gap (§11.5).
 | Input | Flag | Where it bites |
 |---|---|---|
 | LME official cash and 3M (Westmetall) | **DIRECT** | fixings, curve, MCX parity, M+1 averages |
-| CBIC notified customs rate; BCD / SWS / IGST; MCX contract specs, expiries and position limit; SBI LC fee card; MSMED cap; FX no-documentation limit | **DIRECT** | duty base, flows, validation |
+| CBIC notified customs rate; BCD / SWS / IGST; MCX contract specs, expiries and position limit; SBI LC fee card; FX no-documentation limit | **DIRECT** | duty base, flows, validation |
+| `max_domestic_credit_days` (45) — a desk policy cap, **not** the MSMED Act, which binds a buyer paying a registered micro/small supplier and so reaches no sale here | **ASSUMPTION** | sale credit terms (validation) |
 | USD/INR (ECB cross); INR and USD 3M rates; CIP forwards; the usance benchmark | **PROXY** | all FX, forwards, MCX parity, usance interest |
 | MCX panel series (import-parity proxy) | **PROXY** | hedges and MCX-linked sales; factor (b) ≡ 0 by construction |
 | MCX third-party mirror | **PROXY** | the basis sensitivity only, never base P&L |
 | Grade factors (lag-2 mix + differentials) | **ASSUMPTION** (hindsight) | contract factors, the replacement mark, factor (c) |
 | Freight levels / shape | **ASSUMPTION / PROXY** | unbooked FOB freight, factor (d), the fixture memo |
-| Payloads, transit and clearance days, free days, demurrage rate, port charges, PSIC, WC rate path, usance spread, confirmation fee, margin used | **ASSUMPTION / PROXY** | dates, flows, funding, margin |
+| Payloads, transit and clearance days, free days, the slabbed detention schedule, the rejected-box hold (45 d) and re-export cost (USD 3,000), port charges, PSIC, WC rate path, usance spread, confirmation fee, margin used | **ASSUMPTION / PROXY** | dates, flows, funding, margin, the T08 radiation event |
 | The fifteen `book.yaml` keys of design §14 | **ASSUMPTION** (three PENDING verification) | dates and costs |
 | Counterparties, vessels, survey outcomes, delay magnitudes, payment slippage | **SIM** | factor (f), event 3, Phase 5 features |
 | July-2022 void calls at Nhava Sheva / Mundra, 27-Jul-2022 | **DIRECT** (Container News via `docs/research/freight_notes.md` S4) | the earliest permissible E3 known date |
@@ -528,20 +551,37 @@ first-order sensitivities of that same valuation, so risk and P&L cannot disagre
 **Doesn't.** It is **not evidence of what a 2022 desk earned.** Trades, counterparties and every operational
 outcome are simulated. Specifically:
 
-* **Bucket (0) `new_deal` is 85 % of the result, and it is not a traded margin.** It is `q × (P_contract − R)`:
+* **Bucket (0) `new_deal` is 86 % of the result, and it is not a traded margin.** It is `q × (P_contract − R)`:
   the desk's *typed* sale price minus the desk's *own* replacement mark. The sale price is not a quote — Phase 2
   sets it by rule at `replacement + 0.50 × (netback − replacement)`, and `netback` is dominated by
-  `domestic_anchor_premium_inr_t`, an **ASSUMPTION** whose own registered grid spans −55,000 to +13,000 ₹/t
-  (`docs/20_trade_book.md` §10). Unlike the grade reconstruction below, **this one does not net to zero**:
-  re-pricing the book through that band moves the result from **₹0.2 crore to ₹28.7 crore** (§13.9). The sign
-  survives the whole band; nothing else about the magnitude does. Nobody ever quoted this desk a price.
+  `domestic_anchor_premium_inr_t`, an **ASSUMPTION** (verification PENDING) whose own registered grid spans
+  −55,000 to +13,000 ₹/t (`docs/20_trade_book.md` §10). Unlike the grade reconstruction below, **this one does not
+  net to zero**: re-pricing the book through that band moves the result from **−₹10.5 crore to +₹33.4 crore**
+  (§13.9). **Neither the size nor the sign of the headline survives the band**: the book loses money at −55,000 and
+  −52,000 and breaks even at about −38,700 ₹/t. Both bounds of the pricing rule — the replacement mark (lag-2 grade
+  factors) and the netback (this premium) — are PENDING-verification reconstructions, and nobody ever quoted this
+  desk a price.
+* **Bucket (0) is booked at contract dates, not "at inception".** 57 % of it lands on the purchase trade dates and
+  43 % on later sale, fixture and hedge dates, at a market that had already moved (§13.2, `new_deal_timing.csv`);
+  the chart label now reads "(0) Deal margin at contract dates".
 * **Bucket (b) is empty by construction.** MCX is a duty-parity proxy in base runs; the real LME–MCX basis appears
   only in the mirror sensitivity, whose own provenance cannot be checked against MCX's bhavcopy. That sensitivity
   finishes **above** the base book, which is a two-sided risk drawn once, not a better result — read it as the
-  per-ticket range and the rejected unit-beta test in §13.11.
+  per-ticket range, the ±₹1.9 crore of (b)+(g) moved jointly, and the rejected unit-beta test in §13.11.
+* **The mirror moves attribution, not risk.** Every delta column of `book_exposures_daily_mcx_mirror.csv` is
+  identical to the base file (max |difference| 0.0), because the engine holds the basis as an additive state and
+  prices MCX at **unit beta** to LME and USD/INR in both runs — an assumption the mirror rejects (beta 0.45, §13.11).
+  Phase 4 must not treat the mirror as a risk sensitivity, and must not build FX VaR on the netted `fx_delta_usd`
+  alone: it averages −USD 0.42 m on book days, while the physical-plus-forwards delta averages **+USD 4.19 m**
+  (max +USD 13.3 m) against an MCX leg of −USD 4.61 m whose offset is exactly what the unit-beta assumption
+  asserts. No beta-≠-1 exposure variant is published; that is an open item for Phase 4.
 * **There is no curve risk in a base run.** The MCX proxy is in contango on every panel day by construction, so
-  all 13 rolls are gains and the entire ₹0.84 crore of roll P&L is INR carry (§13.10). A ticket rationale that
-  frames rolling as a cost is describing a market this engine cannot represent.
+  all 13 rolls are gains and the entire ₹0.84 crore of roll P&L is INR carry (§13.10). Re-priced on a parity curve
+  that carries the LME's own cash–3M slope and CIP rupee points, the same rolls make ₹0.73 crore — ₹0.59 crore of
+  rupee-over-dollar rate carry and ₹0.14 crore of metal contango — and the one roll dealt in LME backwardation (T07,
+  20-Jul) loses ₹0.33 crore of metal carry. So the proxy overstates roll P&L by ₹0.11 crore here, and the rate
+  differential, not the metal curve, is what keeps a short roll positive. A ticket rationale that frames rolling
+  as a cost is describing the metal half of a market this engine cannot represent.
 * **Bucket (c) is the largest market bucket in this book and it is a reconstruction — of the result, not only of
   the split.** Grade factors rest on a lag-2 DGCIS unit-value ratio published months after the fact; on the
   9-trade book the grade-spread bucket is **+₹103.3 m** against an LME-flat bucket of **−₹30.0 m**. Re-running with
@@ -549,14 +589,16 @@ outcome are simulated. Specifically:
   rupees (§13.6) — but that is because a re-mark leaves every typed price alone, and **the same reconstruction set
   those prices**: the purchase bids are trade-date parity (grade factor × LME) less a discount, and the sale
   prices are half the gap between a replacement mark and a netback that both move with it. Re-priced through the
-  point-in-time mix on both legs, the book makes **₹8.3 crore instead of ₹19.5 crore** (§13.9). So the correct
-  statement is the stronger one: the grade reconstruction is a **result exposure**, the published `_grade_pit`
-  re-mark understates it, and §13.6's "zero rupees" applies only to the attribution split.
+  point-in-time mix on both legs, the book makes **₹9.7 crore instead of ₹19.2 crore** (§13.9); the lag-1 and
+  lag-3 publications of the same hindsight mix give ₹18.7 and ₹22.0 crore, and the grade differentials at their
+  evidence quartiles ₹13.4–23.1 crore. So the correct statement is the stronger one: the grade reconstruction is a
+  **result exposure**, the published `_grade_pit` re-mark understates it, and §13.6's "zero rupees" applies only
+  to the attribution split.
 * **Bucket (d) is a hindsight-calibrated reconstruction** of freight levels, and once a fixture is booked a CFR
   cargo carries no freight price risk at all (design D12), so the book's freight sensitivity is small *by design*.
   The stop-loss layer on the three FOB tickets is unfalsifiable on this panel (`docs/31_adverse_events.md` §3.5).
 * **There is no funding, facility or position constraint anywhere in Phase 3.** The book's own minimum cash
-  balance is **−₹1,159,856,633 on 2022-07-20** on top of ₹95.8 m of initial margin, against ₹194.9 m of P&L. That
+  balance is **−₹1,159,856,633 on 2022-07-20** on top of ₹95.8 m of initial margin, against ₹192.1 m of P&L. That
   is an output, not a limit the book was tested against; Phase 4/5 own `risk.yaml`.
 * **A zero residual proves the arithmetic is closed, not that the model is right** — and it proves less than the
   first version of this page claimed. It is a settled-flow convergence control, and a dated market input that
@@ -567,7 +609,12 @@ outcome are simulated. Specifically:
   holds the funding accrual and every late cross-term, not a roll yield (§4.1).
 * **Forward curves are linear cash→3M and flat beyond**, MTM is undiscounted, and MCX settles at the proxy close
   with no SPAN, no daily price-limit locks and no MCX-vs-LME close-time gap. The near-month proxy moved −12.0 % on
-  08-Mar-2022 against a 9 % maximum slab: a real position would have been limit-locked.
+  08-Mar-2022 against a 9 % maximum slab: a real contract would have traded only at the limit, if at all.
+* **Operational events are costed, but as floors.** Detention is slabbed (carrier detention and CFS ground rent
+  combined, not separate tariffs); the rejected T08 box pays 45 days of hold and a USD 3,000 re-export at the
+  desk's cost first, recovered at 0.6; decontamination or disposal of a genuinely contaminated box is not modelled.
+  At 0.0 and 1.0 recovery the book moves by −₹5.7 m / +₹3.8 m (§13.9). No lot's bill of lading slips a month;
+  `docs/20_trade_book.md` §6.5 sizes what that would have been worth.
 * **The adverse-event windows were drawn after the fact** to report what the book went through. They describe this
   simulated book's behaviour, not a realised 2022 loss.
 
@@ -651,9 +698,11 @@ is treated as Phase 2's: the engine writes `trade_cashflows_p3.csv` beside it an
 * **No IGST differential on the final invoice.** The catalogue lists a customs-duty differential only. The IGST
   differential would be a balance-sheet pair netting to zero, so omitting it changes no P&L.
 * **Buyer credit-limit utilisation is rebuilt per counterparty** in `events.buyer_exposure`, because
-  `book_exposures_daily.csv` is at trade grain and a ticket may sell to two buyers. The limit is checked against
-  the **receivable** (invoiced, unpaid), with pre-settlement reported beside it rather than against the line —
-  see §13.8. Phase 5 owns the tracker.
+  `book_exposures_daily.csv` is at trade grain and a ticket may sell to two buyers (its `buyer_id` is then a
+  compound string no tracker can group). Both grains are now published — `buyer_credit_exposure_by_trade_daily.csv`
+  (date × trade × buyer) and `buyer_credit_exposure_daily.csv` (date × buyer) — and a test asserts the first
+  regroups exactly to the second. The limit is checked against the **receivable** (invoiced, unpaid), with
+  pre-settlement reported beside it rather than against the line — see §13.8. Phase 5 owns the tracker.
 * **Both hedge ratios are blanked, not clipped, when their denominator is negligible** (§13.8). The floors are
   named constants sized to the smallest position the desk could trade — one MCX lot, USD 100k.
 * **`_diff` sorts its keys.** Set iteration order over strings depends on `PYTHONHASHSEED`, which changed the order
@@ -670,14 +719,24 @@ is treated as Phase 2's: the engine writes `trade_cashflows_p3.csv` beside it an
   one-sided in the desk's favour on any cancelled line. The current book contains **no** cancelled line, so this
   costs the published P&L nothing; if one is added, either charge the margin on the unwind too (the conservative
   choice, one line in `lifecycle._fx_flows`) or quote the benefit.
-* **The SPA quantity tolerance and the LC amount tolerance are different terms the ticket grammar cannot yet tell
-  apart.** `lifecycle._lc_flows` sizes the credit on `purchase.spa.quantity_tolerance_frac` when a ticket states
-  one (T01, T03 at 0.05) and on the registered `lc_amount_tolerance_frac` (UCP 600 art. 30, 0.10) when it does
-  not. Because `schema.SpaTerms.quantity_tolerance_frac` defaults to `0.0` rather than `None`, a ticket that
-  deliberately typed a **strict 0.00** would be indistinguishable from one that stated nothing and would also take
-  the fallback — a latent falsy-zero. No ticket in this book types 0.00 (the seven that show 0.00 in
-  `trade_book.csv` omit the field), so no fee is affected today. The fix is `float | None = None` in the
-  Phase 2-owned schema, after which the `is None` test in `_lc_flows` is the whole rule.
+* **The SPA quantity tolerance and the LC amount tolerance are different terms, and now distinguishable.**
+  `lifecycle._lc_flows` sizes the credit on `purchase.spa.quantity_tolerance_frac` when a ticket states one (T01,
+  T03 at 0.05) and on the registered `lc_amount_tolerance_frac` (UCP 600 art. 30, 0.10) when it states none. The
+  schema field is `None` when omitted, and the engine tests `is None` rather than falsiness, so a deliberately
+  strict 0.00 SPA now sizes a strict credit instead of silently inheriting 10 % (review fix; no ticket in this book
+  types 0.00, so no published fee moved).
+* **Detention is charged up the registered slabs** (`lifecycle.detention_usd`, the same schedule as
+  `desk.book.validate.demurrage_usd`, asserted equal in `tests/test_mtm_engine.py`). The first build charged every
+  chargeable day at the first-slab rate, which understated any long dwell. The four keys price carrier detention and
+  CFS ground rent **combined**; they are not separate tariffs with separate free periods.
+* **A rejected box is not free.** It pays no duty and no port charges, but it is held for `rejected_box_hold_days`
+  (45, ASSUMPTION) accruing slabbed detention and then re-exported at `rejected_box_reexport_cost_usd_per_box`
+  (USD 3,000, ASSUMPTION): a `REJECTED_BOX_COST` flow the desk pays first (USD 5,730 on T08's one box), claimed back
+  at the event's `claim_recovery_frac`. Decontamination or disposal is not modelled.
+* **`claim_recovery_frac` now bites on a formula purchase.** A formula purchase nets the goods deduction off the
+  final invoice, so the engine used to give it 100 % recovery whatever the ticket typed. The claim flow now hands
+  back the unaccepted `(1 − recovery) × P_final × claim_mt` (and recovers the rejected-box costs at the same
+  fraction), so T08's typed 0.6 is effective.
 
 ### 11.7 Contract amendments this build needs (not Phase 3's edit to make)
 
@@ -688,6 +747,8 @@ is treated as Phase 2's: the engine writes `trade_cashflows_p3.csv` beside it an
 | §7a.1.3 replacement tolerance | ₹0.50/MT on the CIP variant, ₹0.01/MT on `_panelfx` | §11.2: the panel rounds `usdinr_fwd_1m` to 4 dp. Measured worst 0.227 ₹/MT on 14,350 MT ≈ ₹3,300 of book value — immaterial, but it is a deviation from a stated tolerance and is named here rather than absorbed. The alternative is a Phase 0 change (publish the forward at more decimals). |
 | §7a.3 E1 window rule | the argmin is bounded at `WINDOW_END` | §6: the post-window low is $2,080.0 on 2022-09-28, −47.8 %, inside the engine horizon |
 | §7a.3 `mtm_daily.csv` columns | `fixture_vs_market_inr` is a stock memo with no in-file marker | §7: summing it gives −₹1.26 bn. Renaming it `fixture_vs_market_stock_inr` needs the column list amended. |
+| §7.3 ledger identity | the identity closed is `cum P&L = realised + funding accrual + MTM`, and the `FUNDING` leg carries its accrual in `realised_cum_inr` | §7 presentation trap: amend §7.3 to name the funding term, or give the leg its own status and an `accrued_cum_inr` column |
+| §7a.3 `attribution_daily.csv` columns | no `scope` column; the `BOOK` row sits beside trade rows | §7: summing without filtering double-counts. Adding `scope` (as `book_exposures_daily.csv` has) needs the column list amended |
 
 ---
 
@@ -725,13 +786,21 @@ is treated as Phase 2's: the engine writes `trade_cashflows_p3.csv` beside it an
   carry (metal component < 1e-9 ₹/kg) while the mirror's is not; the basis sensitivity publishes a loss case as
   well as a gain case; `unit_beta_test` returns exactly 1 against the panel itself and rejects 1 against the
   mirror; and `sensitivity.reference` still ties to Phase 2's `trade_book.csv` parity columns.
-* **Integration on the real book** (`tests/test_mtm_integration.py`, 28 tests) — the engine's controller checks run
+* **Added in the Phase 1–3 review** — `trade_cashflows.csv` is actually written by `run._write_cashflows` and ties
+  out to the engine frame, and the published file matches the current engine; the per-counterparty exposure table
+  has no compound buyer ids and regroups exactly to the per-buyer table; `new_deal_timing` adds back to bucket (0)
+  per trade; the `lme_curve_*` roll columns decompose exactly and price a backwardation roll's metal carry as a cost;
+  the grade-differential quartile cases exist and the `lag2` grade source rebuilt as mix + differential reproduces
+  the base grade path; `sign_robustness` reports a break-even inside the band on a synthetic sign flip; and
+  (`tests/test_book.py`) P13 fires on a streak claim the tape does not show.
+* **Integration on the real book** (`tests/test_mtm_integration.py`, 32 tests) — the engine's controller checks run
   against `config/trades.yaml` rather than the fixtures: every ticket still eligible; residual, identity, legs and
   book rows; **final P&L = Σ cashflows + funding**, summed from the published cashflow table rather than from the
   daily ledger; MCX leg P&L = Σ variation margin + charges, per trade; variation margin telescopes and initial
   margin comes back; every forward settles inside the horizon and its P&L equals its settlement cash; exposures
   additive and signed as CONTRACTS §7a.4 declares; the net MCX book never long; funding counted exactly once;
-  buyer limits checked against the receivable so Phase 2 and Phase 3 agree; the published `pnl_controls.csv` names
+  buyer limits checked against the receivable, and neither phase's own limit test finding a breach (the two phases
+  measure different things and publish different peaks, §13.8); the published `pnl_controls.csv` names
   every required check and none fails; **the declared exposure signs are asserted at BOOK scope and asserted to
   flip at trade scope on T02**, so a Phase 4 author who codes to the book-scope claim fails a test rather than
   mis-signing a ticket; and **factor (d) moves when and only when the panel's freight column moves** — the
@@ -742,21 +811,23 @@ is treated as Phase 2's: the engine writes `trade_cashflows_p3.csv` beside it an
 ## 13. Results — the real book
 
 Nine tickets, **14,350 MT in 656 containers**, first trade 2022-03-08, last cashflow 2022-10-24, horizon
-2022-10-31. Every number below comes from `outputs/tables/attribution_daily.csv` and is reproducible with the
-command in §1. ₹1 crore = ₹10 m.
+2022-10-31. Every number below comes from `outputs/tables/attribution_daily.csv` (and the tables named beside it)
+and is reproducible with the command in §1. ₹1 crore = ₹10 m. **Every rupee of it is conditional on the ASSUMPTION
+bands in §13.9; read that section before quoting any number here.**
 
 ### 13.1 Book P&L
 
 | | ₹ crore | ₹ | ₹/MT |
 |---|---|---|---|
-| cumulative P&L at `WINDOW_END` (2022-08-31) | **19.87** | 198,688,706 | 13,846 |
-| … of which still **unrealised** at the window end | 32.51 | 325,086,091 | — |
-| cumulative P&L at `HORIZON_END` (2022-10-31), all positions closed | **19.49** | **194,867,858** | **13,580** |
+| cumulative P&L at `WINDOW_END` (2022-08-31) | **19.59** | 195,936,980 | 13,654 |
+| … of which still **unrealised** at the window end | 32.27 | 322,710,795 | — |
+| cumulative P&L at `HORIZON_END` (2022-10-31), all positions closed | **19.21** | **192,054,771** | **13,384** |
 
 The window-end figure is *higher* than the final one because three tickets were still open on 31 August and the
-last ₹3.8 m of the book's life (September–October) is net carry, the out-turn claims and the buyer's late payment.
-The unrealised ₹325.1 m at the window end is T08 (₹263.3 m), T07 (₹89.2 m) and T09 (−₹27.4 m) — receivables and an
-unfixed MCX-average sale, not open metal: **`terminal_mtm_abs` is 0.00 for every trade at the horizon.**
+last ₹3.9 m of the book's life (September–October) is net carry, the out-turn claims, the rejected T08 box's hold
+and re-export, and the buyer's late payment. The unrealised ₹322.7 m at the window end is T08 (₹260.9 m), T07
+(₹89.2 m) and T09 (−₹27.4 m) — receivables and an unfixed MCX-average sale, not open metal:
+**`terminal_mtm_abs` is 0.00 for every trade at the horizon.**
 
 ### 13.2 Attribution by factor
 
@@ -765,27 +836,48 @@ residual is **0.00** on every trade-day (control tolerance ₹1; the worst in-me
 
 | Bucket | Lifetime ₹ crore | In-window (≤ 2022-08-31) ₹ crore | Share of gross |
 |---|---|---|---|
-| (0) `new_deal` — deal margin at inception | **+16.52** | +16.52 | 85 % of the result (§13.9) |
+| (0) `new_deal` — deal margin **at contract dates** | **+16.52** | +16.52 | 86 % of the result (§13.9) |
 | (a) `lme_flat` | −3.00 | −3.00 | |
 | (b) `cross_exchange_basis` | **0.00** | 0.00 | zero **by construction** (§13.11) |
 | (c) `grade_spread` | **+10.33** | +10.33 | the largest market bucket (§13.6) |
 | (d) `freight` | +0.12 | +0.12 | small **by design** (D12) |
-| (e) `fx` | +1.42 | +1.42 | |
-| (f) `demurrage_penalty` — events known that day | −0.25 | −0.18 | inception value, not lifetime cost (§4.1) |
+| (e) `fx` | +1.41 | +1.42 | |
+| (f) `demurrage_penalty` — events known that day | −0.52 | −0.46 | inception value, not lifetime cost (§4.1) |
 | (g) `roll_term_structure` — carry, roll and cross-terms | −5.66 | −5.35 | funding −3.20 of it |
 | `residual` | 0.00 | 0.00 | |
-| **total** | **+19.49** | **+19.87** | |
+| **total** | **+19.21** | **+19.59** | |
 
 Chart: `outputs/charts/p3_attribution_waterfall_book.png`, and one per trade.
 
-Reading it: **85 % of the result is `new_deal`** — margin the desk booked when it signed each purchase and sale,
-not market direction. The market added ₹2.96 crore net, and did it by nearly cancelling a −₹3.00 crore flat-price
-loss and a −₹5.66 crore carry cost against a +₹10.33 crore grade-spread gain. Bucket (g) is dominated by the
-funding accrual: **−₹3.20 crore of the −₹5.66 crore is interest on the desk's own dated cash balance** at
-`wc_rate_inr_pa` (the whole accrual is −₹3.26 crore; the other −₹0.06 crore sits in (f) as interest on an overdue
-receivable, per CONTRACTS §7a.1.2), on a book whose cash
+Reading it: **86 % of the result is `new_deal`** — margin the desk booked when it signed each purchase, sale,
+fixture and hedge, not market direction. The market added ₹2.68 crore net, and did it by nearly cancelling a
+−₹3.00 crore flat-price loss and a −₹5.66 crore carry cost against a +₹10.33 crore grade-spread gain — the last of
+which is a reconstruction (§13.6). Bucket (g) is dominated by the funding accrual: **−₹3.20 crore of the −₹5.66 crore
+is interest on the desk's own dated cash balance** at `wc_rate_inr_pa` (the whole accrual is −₹3.26 crore; the
+other −₹0.06 crore sits in (f) as interest on an overdue receivable, per CONTRACTS §7a.1.2), on a book whose cash
 balance reached **−₹115.99 crore on 2022-07-20**. The executed MCX rolls inside (g) were worth **+₹0.84 crore**,
-all of it the proxy's INR carry (§13.10) — (g) is not a roll yield.
+all of it the proxy's INR carry (§13.10) — (g) is not a roll yield. Bucket (f) is **negative** on this book
+(−₹0.52 crore: T07 −₹0.16 crore, T08 −₹0.37 crore); before the review it was +₹0.15 crore, because a rejected box was
+free, detention was charged flat and both claims recovered 100 %.
+
+**When bucket (0) was booked** (`new_deal_timing.csv`). The chart label used to say "at inception", and that
+overstated how much was locked at signature:
+
+| | ₹ m |
+|---|---|
+| booked on the nine purchase trade dates | **94.3** (57 %) |
+| booked on later contract dates | **70.9** (43 %) |
+| … sale contracts, net of the replacement mark they release (2,006.5 − 1,924.2) | 82.3 |
+| … MCX execution cost and forward bank margin | −5.5 |
+| … LC opening/confirmation fees and other purchase costs dated later | −5.1 |
+| … freight fixtures above the index | −0.8 |
+
+Per ticket, T01, T03 and T09 book 92 %, 93 % and 114 % of their `new_deal` after the trade date (T09's day one is
+−₹1.3 m: the purchase and its costs came to more than the replacement mark on day one, and the sale three weeks
+later made it back), while T02
+and T05 — both legs contracted the same day — book all of it on day one. A margin booked on a sale date three to
+seven weeks after the purchase was booked at a market that had already moved; it is margin at contract, not margin
+locked when the cargo was bought.
 
 ### 13.3 Per trade
 
@@ -797,10 +889,10 @@ all of it the proxy's INR carry (§13.10) — (g) is not a roll yield.
 | T04 | taint_tabor / USEC_MUN | 2022-04-06 | 1,260 | 0.65 | 0.00 | 0.65 | 5,145 |
 | T05 | tense / USEC_MUN | 2022-04-21 | 2,100 | 3.37 | 0.00 | 3.37 | 16,025 |
 | T06 | zorba / JEA_NSA | 2022-05-10 | 1,300 | 0.86 | 0.00 | 0.86 | 6,630 |
-| T07 | tense / USEC_MUN | 2022-05-25 | 1,890 | 0.25 | 8.92 | 0.14 | 763 |
-| **T08** | tense / USEC_MUN | 2022-06-08 | 1,680 | −0.60 | 26.33 | **−0.93** | **−5,532** |
+| T07 | tense / USEC_MUN | 2022-05-25 | 1,890 | 0.21 | 8.92 | 0.11 | 561 |
+| **T08** | tense / USEC_MUN | 2022-06-08 | 1,680 | −0.83 | 26.09 | **−1.17** | **−6,980** |
 | T09 | tense / JEA_NSA | 2022-08-03 | 1,200 | 0.95 | −2.74 | 1.00 | 8,374 |
-| **BOOK** | | | **14,350** | **19.87** | **32.51** | **19.49** | **13,580** |
+| **BOOK** | | | **14,350** | **19.59** | **32.27** | **19.21** | **13,384** |
 
 Bucket split per trade, lifetime, ₹ crore:
 
@@ -812,8 +904,8 @@ Bucket split per trade, lifetime, ₹ crore:
 | T04 | 0.28 | −2.15 | 0.00 | 2.67 | −0.00 | 0.10 | 0.00 | −0.26 | 0.65 |
 | T05 | 4.55 | −0.13 | 0.00 | 0.00 | 0.00 | 0.10 | 0.00 | −1.15 | 3.37 |
 | T06 | 0.43 | −0.56 | 0.00 | 1.01 | 0.00 | −0.12 | 0.00 | 0.09 | 0.86 |
-| T07 | 1.04 | 0.89 | 0.00 | 0.74 | 0.02 | −0.07 | −0.12 | −2.36 | 0.14 |
-| T08 | 2.01 | −0.86 | 0.00 | −1.09 | 0.00 | 0.44 | −0.13 | −1.30 | −0.93 |
+| T07 | 1.04 | 0.89 | 0.00 | 0.74 | 0.02 | −0.07 | −0.16 | −2.36 | 0.11 |
+| T08 | 2.01 | −0.86 | 0.00 | −1.09 | 0.00 | 0.44 | −0.37 | −1.30 | −1.17 |
 | T09 | 0.94 | 0.92 | 0.00 | 0.07 | 0.00 | −0.09 | 0.00 | −0.85 | 1.00 |
 
 **Best trade — T02, +₹42,122/MT.** A CFR Jebel Ali tense ticket bought on 2022-03-11 on an LME cash average at
@@ -822,14 +914,17 @@ It carries no grade-spread exposure at all (both legs are formula-priced) and no
 ₹3.80 crore of `new_deal` is almost the whole result, and the +₹0.65 crore of (a) and +₹0.28 crore of (g) come from
 the gap between the purchase and sale pricing windows. It is the cleanest structure on the book and it earned the
 most per tonne — which is the point worth making in an interview: **the money was in the structure, not the view.**
+It is also the most robust ticket in §13.9: positive in every registered case, +₹2.50 crore at the bottom of the
+anchor-premium grid.
 
-**Worst trade — T08, −₹5,532/MT.** Bought 2022-06-08 on an LME cash average (so the purchase price fell with the
+**Worst trade — T08, −₹6,980/MT.** Bought 2022-06-08 on an LME cash average (so the purchase price fell with the
 market, but the desk's *cost* fell only as fast as the formula), sold on an MCX average whose window had to be
-pushed to August because the buyer's line was full until T05 settled, and carrying the radioactivity rejection and
-the vessel delay on top. The result: −₹1.09 crore of grade spread (the only negative on the book — the modelled
-scrap discount *widened* over this ticket's life), −₹0.86 crore of flat price, −₹0.13 crore of events and
-−₹1.30 crore of carry on a 40-day USEC lane with a late sale. It is the trade the credit constraint made late, and
-the lateness cost more than the ticket earned at inception.
+pushed to August because the buyer's line was full until T05 settled, and carrying the radiation-portal rejection,
+the seven-day void-call arrival delays and a fourteen-day referral dwell on top. The result: −₹1.09 crore of grade
+spread (the only negative on the book — the modelled scrap discount *widened* over this ticket's life), −₹0.86 crore
+of flat price, −₹0.37 crore of events and −₹1.30 crore of carry on a 40-day USEC lane with a late sale. It is the
+trade the credit constraint made late, and the lateness cost more than the ticket earned at contract. T07 is the
+other ticket the events hit: +₹0.11 crore, and **negative (−₹0.18 crore) if its quality claim recovers nothing**.
 
 ### 13.4 Equity curve
 
@@ -843,12 +938,12 @@ unrealised mark, with the Mar–Aug window shaded and the derived event windows 
 | end March | 2022-03-31 | +6.87 |
 | end April | 2022-04-29 | +18.42 |
 | **peak** | **2022-06-09** | **+22.49** |
-| end July | 2022-07-29 | +18.89 |
-| window end | 2022-08-31 | +19.87 |
-| horizon | 2022-10-31 | +19.49 |
+| end July | 2022-07-29 | +18.85 |
+| window end | 2022-08-31 | +19.59 |
+| horizon | 2022-10-31 | +19.21 |
 | best single day | 2022-04-21 | +5.23 (T05 contracted) |
 | worst single day | 2022-03-14 | −0.91 |
-| maximum drawdown | trough 2022-08-08 | **−4.95** |
+| maximum drawdown | peak 2022-06-09 → trough 2022-08-08 | **−4.99** |
 
 The curve is a staircase, not a trend: it steps up when a ticket is contracted and drifts between. That is what a
 physical book should look like, and it is the visual argument that this is a margin business rather than a
@@ -859,11 +954,11 @@ rule — which is why §13.9 exists.
 
 Phase 1's `net_arb_inr_t` is the *whole* theoretical arbitrage in an open week. The desk's sale rule deliberately
 takes about half of it (`replacement + 0.50 × (netback − replacement)`), because the arb is dominated by
-`domestic_anchor_premium_inr_t`, an ASSUMPTION with an evidence range of −55k to +13k. So the right comparison is
-against **half** the Phase 1 arb, and the gap after that is market movement between contracting the purchase and
-contracting the sale:
+`domestic_anchor_premium_inr_t`, an ASSUMPTION with an evidence range of −52k to +13k (grid −55k to +13k). So the
+right comparison is against **half** the Phase 1 arb, and the gap after that is market movement between contracting
+the purchase and contracting the sale:
 
-| Trade | P1 net arb ₹/MT | × MT, half of it ₹cr | `new_deal` booked ₹cr | `new_deal` ₹/MT | market after inception ₹cr |
+| Trade | P1 net arb ₹/MT | × MT, half of it ₹cr | `new_deal` booked ₹cr | `new_deal` ₹/MT | market after contract ₹cr |
 |---|---|---|---|---|---|
 | T01 | 49,904 | 6.29 | 2.16 | 8,575 | +4.27 |
 | T02 | 63,523 | 3.81 | 3.80 | 31,648 | +1.26 |
@@ -871,10 +966,10 @@ contracting the sale:
 | T04 | 36,623 | 2.31 | 0.28 | 2,225 | +0.37 |
 | T05 | 42,670 | 4.48 | 4.55 | 21,664 | −1.18 |
 | T06 | 12,842 | 0.83 | 0.43 | 3,326 | +0.43 |
-| T07 | 22,935 | 2.17 | 1.04 | 5,509 | −0.90 |
-| T08 | 14,383 | 1.21 | 2.01 | 11,967 | −2.94 |
+| T07 | 22,935 | 2.17 | 1.04 | 5,509 | −0.94 |
+| T08 | 14,383 | 1.21 | 2.01 | 11,967 | −3.18 |
 | T09 | 15,206 | 0.91 | 0.94 | 7,862 | +0.06 |
-| **book** | | **24.60** | **16.52** | **11,515** | **+2.96** |
+| **book** | | **24.60** | **16.52** | **11,515** | **+2.68** |
 
 The pattern is largely explained by **how long each ticket stayed unsold**: every ticket contracted on both sides
 the same day books essentially the whole half-arb (T02 100 %, T05 102 %, T09 103 %), and every ticket that carried
@@ -885,8 +980,9 @@ average struck after the market had already fallen — and it is also the only l
 seen twice.
 
 What this table does **not** show is that the desk earned half of a real arbitrage. Both bounds of the rule are the
-desk's own model: the replacement mark is CONTRACTS §5 arithmetic and the netback is the same arithmetic plus an
-anchor premium nobody observed in 2022. §13.9 prices that.
+desk's own model: the replacement mark is CONTRACTS §5 arithmetic on a lag-2 grade reconstruction, and the netback
+is the same arithmetic plus an anchor premium nobody observed in 2022. Both are PENDING verification. §13.9 prices
+that, and finds the sign does not survive.
 
 ### 13.6 Sensitivities that re-mark the book
 
@@ -902,14 +998,17 @@ bucket (b) is **identically zero by construction**. Re-running the whole book on
 | (b) `cross_exchange_basis` | **0.00** | **−1.17** | −1.17 |
 | (g) carry, roll and cross-terms | −5.66 | −2.59 | +3.07 |
 | (0) `new_deal` | 16.52 | 16.47 | −0.05 |
+| (f) events | −0.52 | −0.53 | −0.00 (−₹13,966) |
 | every other bucket | | unchanged to the rupee | 0.00 |
-| **total** | **19.49** | **21.33** | **+1.84** |
+| **total** | **19.21** | **21.05** | **+1.84** |
 
 The mirror run finishes **above** the base book. **That is not a better result — it is a two-sided risk drawn
-once.** §13.11 publishes the per-ticket range, the loss case and a test of the unit-beta assumption the hedge
-sizing rests on, and that is the section to quote. The offsetting +₹3.07 crore in (g) is the mirror's different
-carry shape, not a second source of profit. **None of this validates the proxy:** the mirror's provenance cannot be
-checked against MCX's bhavcopy and its second-month series is partly stale; it is one PROXY measured against
+once.** The number that moves most is not (b), which the sensitivity exists to expose, but (g): swapping the MCX
+series changes the contract-month basis structure the chain holds in (b), and with it the carry and roll terms the
+chain assigns to (g) — ₹3.07 crore more in the short book's favour on this draw, of which only ₹0.10 crore is the
+executed roll spreads (§13.10). So (b) and (g) have to be read **together**, as a band: §13.11 publishes them jointly per ticket (worst −₹1.92 crore, best +₹1.58 crore) and
+at book level as **±₹1.89 crore**, with the adverse mirror image of the favourable draw. **None of this validates
+the proxy:** the mirror's provenance cannot be checked against MCX's bhavcopy; it is one PROXY measured against
 another.
 
 **Point-in-time grade mix, as a re-mark.** Grade factors are a lag-2 DGCIS unit-value reconstruction published
@@ -922,19 +1021,16 @@ months after the fact, and bucket (c) is the largest market bucket in the book. 
 | (a) `lme_flat` | −3.00 | −1.56 | +1.44 |
 | (c) `grade_spread` | **+10.33** | **−3.68** | **−14.01** |
 | (d) `freight` | 0.12 | 0.12 | 0.00 |
-| (e) `fx` | 1.42 | 0.99 | −0.43 |
-| (f) `demurrage_penalty` | −0.25 | −0.22 | +0.03 |
+| (e) `fx` | 1.41 | 0.98 | −0.43 |
+| (f) `demurrage_penalty` | −0.52 | −0.50 | +0.03 |
 | (g) `roll_term_structure` | −5.66 | −5.51 | +0.15 |
-| **total** | **19.49** | **19.49** | **0.00** |
+| **total** | **19.21** | **19.21** | **0.00** |
 
-(The six deltas sum to the stated zero; an earlier version of this table omitted the (f) row and left a
-three-lakh gap in the arithmetic.)
-
-**As a re-mark, the grade reconstruction moves ₹140 m between two buckets and changes the book's P&L by zero
-rupees** — at the horizon and at the window end, to the rupee, on every trade. That is not a coincidence: the grade
-factor enters only the *replacement-value mark* on unsold cargo (design D5), while every typed price is held
-fixed. Intra-life the two runs do diverge — up to **₹122.5 m** of cumulative P&L on 2022-06-15, when the book was
-carrying the most unsold cargo.
+**As a re-mark, the grade reconstruction moves ₹140.1 m out of (c) — ₹128.3 m of it into (0) and the rest into (a)
++₹14.4 m, (g) +₹1.5 m and (f) +₹0.3 m, less (e) −₹4.3 m — and changes the book's P&L by zero rupees**, at the horizon
+and at the window end, on every trade. That is not a coincidence: the grade factor enters only the
+*replacement-value mark* on unsold cargo (design D5), while every typed price is held fixed. Intra-life the two runs
+do diverge — up to **₹122.5 m** of cumulative P&L on 2022-06-15, when the book was carrying the most unsold cargo.
 
 **Do not stop there.** The sentence an earlier version of this page ended on — "it is the attribution split that is
 a reconstruction, not the result" — is **wrong as stated**, and it is withdrawn. The same reconstruction that
@@ -942,7 +1038,7 @@ moves the mark also *set the typed prices*: every fixed purchase is trade-date p
 a discount, every formula purchase is a grade factor less a giveaway, and every fixed sale is half the gap between
 a replacement mark and a netback that both move with it. A re-mark holds all of that constant and therefore
 **understates** the exposure. The honest version is a **re-pricing**, and it is §13.9: on the point-in-time mix,
-re-derived through the same rules on both legs, the book makes **₹8.27 crore instead of ₹19.49 crore**.
+re-derived through the same rules on both legs, the book makes **₹9.73 crore instead of ₹19.21 crore**.
 
 ### 13.7 Controls on this book
 
@@ -956,24 +1052,26 @@ re-derived through the same rules on both legs, the book makes **₹8.27 crore i
 | `bs_flows_lifetime_sum` (per trade) | ₹0.01 | 0.00 |
 | `terminal_mtm_abs` (per trade at `HORIZON_END`) | ₹0.01 | 0.00 |
 | `proxy_basis_max_abs` | 1e-3 ₹/kg | 5.0e-5 |
-| `replacement_vs_p1_panelfx_max_abs` | ₹0.01/MT | 1.2e-10 |
-| `replacement_vs_p1_max_abs` (CIP forward) | ₹0.50/MT | 0.23 |
+| `replacement_vs_p1_panelfx_max_abs` (CONTRACTS §7a.1.3's ₹0.01) | ₹0.01/MT | 1.2e-10 |
+| `replacement_vs_p1_max_abs` (CIP forward, memo) | ₹0.50/MT | 0.23 |
 | `sensitivity_base_repricing_vs_book` | ₹0.01 | 0.00 |
 | `roll_carry_metal_component_max_abs` | ₹0.01 | 6.3e-8 |
 | `cashflow_reconciliation_vs_p2` | — | INFO: P3 owns the file (§8, §11.5) |
 | `book_param_fallback` | — | 9 INFO rows, one per design §14 key served from code (§11.4) |
 
-Two further ties a product controller would want, checked in `tests/test_mtm_integration.py` rather than in the
-controls file because they are cross-table:
+Ties a product controller would want, checked in `tests/test_mtm_integration.py` and re-derived independently from
+the published CSVs during the review:
 
+* **cumulative P&L = realised + funding + MTM**, per trade, every day, and **final P&L = Σ P&L cashflows + funding**
+  per trade from `trade_cashflows.csv` (the file is now actually written; §7).
 * **hedge P&L = margin cash.** The MCX legs' lifetime P&L is **+₹165,971,097**; the variation margin those same
   hedges posted is **+₹172,402,091**, less **₹6,430,995** of transaction charges and slippage. The two tie to
   **₹0.12 across the whole book** — that is the published CSVs at 2 dp over ~350 rows; in memory the tie is exact
   to float noise.
 * **forward P&L = settlement cash.** The FX legs' lifetime P&L equals the realised settlement of the 25 forward
-  lines, **+₹19,557,673**, per trade.
+  lines, **+₹19,557,673**, per trade, and no forward is open at the horizon.
 
-**Funding is counted once.** There is exactly one `FUNDING` leg per trade, worth **−₹32,611,194** over the book
+**Funding is counted once.** There is exactly one `FUNDING` leg per trade, worth **−₹32,627,695** over the book
 (−₹648,389 of it routed to (f) as interest on an overdue receivable, the rest to (g)); it appears in no cashflow
 row, and `funding_on_margin_inr` in `mcx_variation_margin.csv` is a **memo column** on the margin table, not a
 second accrual — the margin cash is already inside the trade's dated cash balance that the one accrual runs on.
@@ -983,27 +1081,32 @@ second accrual — the margin cash is already inside the trade's dated cash bala
 1. **Buyer credit is measured against the receivable, not against everything contracted.** The first version summed
    receivable *and* pre-settlement against `credit_limit_inr` and reported a 2.57× breach. That counted a ₹219.3 m
    advance the buyer had **not yet paid** as credit the desk had extended. CONTRACTS §7a.4 already separates the
-   two; the limit check now uses `buyer_receivable_inr` (peak **83.4 %**, no breach on any day). The contracted
-   measure is still published beside it, and it is **not** the same measure Phase 2's P04 rule uses — P04 checks
-   receivable plus uncovered contracted sales **at each booking** (peak 93 %, BUY_MUN_01). Both pages must quote
-   their own denominator; `docs/31_adverse_events.md` §3.4 sets the two side by side.
+   two; the limit check now uses `buyer_receivable_inr` (peak **83.4 %**, BUY_JNPT_01, no breach on any day). The
+   contracted measure is still published beside it, and it is **not** the same measure Phase 2's P04 rule uses —
+   P04 checks receivable plus uncovered contracted sales **at each booking** (peak 93 %, BUY_MUN_01). The two peaks
+   are different numbers for different quantities, not an agreement; each page quotes its own denominator
+   (`docs/31_adverse_events.md` §3.4), and per-buyer figures can now be reproduced from
+   `buyer_credit_exposure_by_trade_daily.csv`.
 2. **`hedge_ratio_fx_frac` is unstable for this book, and is disclosed rather than smoothed.** Design D5 marks
    unsold cargo at import replacement value, which is **long USD**, against a USD payable that is short USD, so the
    net physical USD delta oscillates through zero (book range −USD 3.45 m to +USD 9.48 m) while a full forward
    hedge sits on top of it. Unguarded, the published ratio printed values from −10,716 to +434. The engine now
    blanks both hedge ratios when the denominator is below the smallest position the desk could trade (one MCX lot
-   of metal, USD 100k of currency — `HEDGE_RATIO_MIN_PHYSICAL_MT` / `_USD`), which blanks 14 of 164 book days; the
-   guard only stops a division by nearly zero. On the 150 days that remain the ratio still runs from **−14.3 to
-   +49.5** and is above 5 in absolute value on **19** of them, because the measure itself is not meaningful here.
-   **Do not read this column as a hedge ratio.** Read `fx_delta_forwards_usd` against `fx_delta_physical_usd`
-   directly, and the two offset ratios in `adverse_event_2_usdinr.csv` (1.04× against the USD cash legs the
-   forwards were actually sized on; −2.29× against the net physical including the D5 mark). The metal ratio has no
-   such problem: median **0.903**, against the desk's stated 0.90 naked-long ratio.
+   of metal, USD 100k of currency — `HEDGE_RATIO_MIN_PHYSICAL_MT` / `_USD`), which blanks 14 of 164 book days. On
+   the 150 days that remain the ratio still runs from **−14.3 to +49.5** and is above 5 in absolute value on
+   **19** of them. **Not all of that is a small-denominator artefact.** On days like 2022-03-14 (physical
+   +USD 1.10 m, forwards +USD 5.91 m, ratio −5.4) the denominator is large and the reading is economics: the unsold
+   cargo's mark and the forwards bought against its payable are **both long USD**, so the forwards add to the
+   book's dollar length until the payable is struck — a hedge-design finding about D5, not noise. Read
+   `fx_delta_forwards_usd` against the contracted USD payable (what the forwards were sized on) and against
+   `fx_delta_physical_usd` separately, and use the two offset ratios in `adverse_event_2_usdinr.csv` (1.04× against
+   the USD cash legs; −2.29× against the net physical including the D5 mark). The metal ratio has no such problem:
+   median **0.903**, against the desk's stated 0.90 naked-long ratio.
 
 ### 13.9 Is the headline P&L sign-robust? — the re-pricing sensitivities
 
-`outputs/tables/pnl_sensitivity_summary.csv` and `pnl_sensitivity_pricing.csv`. **Every row is labelled
-`SENSITIVITY — not base P&L`.**
+`outputs/tables/pnl_sensitivity_summary.csv`, `pnl_sensitivity_pricing.csv` and
+`pnl_sensitivity_sign_robustness.csv`. **Every row is labelled `SENSITIVITY — not base P&L`.**
 
 §13.6's re-marks answer "what if the engine valued this book differently". They cannot answer the question a reader
 actually has, because the sale and purchase prices are *typed* in `config/trades.yaml`: swapping
@@ -1013,52 +1116,81 @@ netback out of the inventory mark. But that parameter **set** every typed sale p
 So these cases re-derive the prices and re-run the whole engine. `desk.mtm.sensitivity` applies the same two rules
 `docs/20_trade_book.md` states — sale `= replacement + share × (netback − replacement)`, purchase `= trade-date
 parity − discount` — under each registered band value, **holding each leg's own negotiation delta constant**, and
-runs `engine.run_book` on the rebuilt tickets. Trade dates, lots, hedges, events and §5a eligibility are untouched:
-this is a revaluation of the same decisions, not a different book. The control
-`sensitivity_base_repricing_vs_book` asserts that the base case of this machinery reproduces the published book to
-the paisa — without that, none of the rest would mean anything.
+runs `engine.run_book` on the rebuilt tickets. The three MCX-average sales (T02, T05, T08; 4,980 MT) are re-priced
+through their premium, which was struck to the same rule — an earlier version held those premiums fixed and
+silently exempted a third of the book, overstating the bottom of the anchor band by about ₹10 crore. Trade dates,
+lots, hedges, events and §5a eligibility are untouched: this is a revaluation of the same decisions, not a
+different book. The control `sensitivity_base_repricing_vs_book` asserts that the base case of this machinery
+reproduces the published book to the paisa — without that, none of the rest would mean anything.
 
 | Case | What moves | Book P&L ₹cr | Δ vs base ₹cr | ₹/MT | positive? |
 |---|---|---|---|---|---|
-| **base** (published book) | — | **19.49** | 0.00 | 13,580 | yes |
-| `anchor_premium_-55000` | sale rule | **0.22** | −19.27 | 152 | yes |
-| `anchor_premium_-52000` | sale rule | **1.47** | −18.01 | 1,028 | yes |
-| `anchor_premium_-9000` (base) | sale rule | 19.49 | 0.00 | 13,580 | yes |
-| `anchor_premium_+13000` | sale rule | **28.70** | +9.22 | 20,002 | yes |
-| `conversion_8000` | sale rule | 21.16 | +1.68 | 14,747 | yes |
-| `conversion_18000` | sale rule | 16.97 | −2.51 | 11,828 | yes |
-| `conversion_30000` | sale rule | 11.95 | −7.54 | 8,325 | yes |
-| `desk_share_0.25` | sale rule | 15.84 | −3.65 | 11,039 | yes |
-| `desk_share_0.10` | sale rule | 13.65 | −5.83 | 9,514 | yes |
-| `desk_share_0.00` | sale rule | 12.19 | −7.29 | 8,498 | yes |
-| `desk_margin_5000` | sale rule (flat ₹/MT margin over replacement) | 16.90 | −2.59 | 11,776 | yes |
-| `desk_margin_8000` | sale rule (flat ₹/MT margin over replacement) | 19.72 | +0.23 | 13,742 | yes |
-| `purchase_discount_0` | purchase bid at parity | 18.55 | −0.93 | 12,930 | yes |
-| `purchase_discount_30` | purchase bid 30 USD/t under parity | 20.85 | +1.37 | 14,532 | yes |
-| **`grade_mix_pit_repriced`** | **both legs + the mark** | **8.27** | **−11.22** | **5,764** | yes |
-| `grade_mix_pit_remark_only` | the mark only (the §13.6 run) | 19.49 | 0.00 | 13,580 | yes |
+| **base** (published book) | — | **19.21** | 0.00 | 13,384 | yes |
+| `anchor_premium_-55000` | sale rule | **−10.54** | −29.74 | −7,344 | **no** |
+| `anchor_premium_-52000` | sale rule | **−8.60** | −27.80 | −5,992 | **no** |
+| `anchor_premium_-9000` (base) | sale rule | 19.21 | 0.00 | 13,384 | yes |
+| `anchor_premium_+13000` | sale rule | **33.43** | +14.23 | 23,297 | yes |
+| `conversion_8000` | sale rule | 21.79 | +2.59 | 15,186 | yes |
+| `conversion_18000` | sale rule | 15.33 | −3.88 | 10,680 | yes |
+| `conversion_30000` | sale rule | 7.57 | −11.64 | 5,273 | yes |
+| `desk_share_0.25` | sale rule | 10.28 | −8.93 | 7,163 | yes |
+| `desk_share_0.10` | sale rule | 4.92 | −14.28 | 3,431 | yes |
+| `desk_share_0.00` | sale rule | 1.35 | −17.85 | 943 | yes |
+| `desk_margin_5000` | sale rule (flat ₹/MT margin over replacement) | 8.54 | −10.66 | 5,952 | yes |
+| `desk_margin_8000` | sale rule (flat ₹/MT margin over replacement) | 12.85 | −6.35 | 8,957 | yes |
+| `purchase_discount_0` | purchase bid at parity | 18.27 | −0.93 | 12,734 | yes |
+| `purchase_discount_30` | purchase bid 30 USD/t under parity | 20.57 | +1.37 | 14,336 | yes |
+| **`grade_mix_pit_repriced`** | **both legs + the mark** | **9.73** | **−9.48** | **6,780** | yes |
+| `grade_mix_lag1_repriced` | both legs + the mark (lag-1 publication, as hindsight as lag-2) | 18.70 | −0.51 | 13,031 | yes |
+| `grade_mix_lag3_repriced` | both legs + the mark (lag-3 publication) | 22.00 | +2.79 | 15,329 | yes |
+| `grade_diff_q25_repriced` | both legs + the mark, every differential at its evidence lower quartile | 23.12 | +3.92 | 16,115 | yes |
+| `grade_diff_q75_repriced` | both legs + the mark, every differential at its evidence upper quartile | 13.38 | −5.83 | 9,323 | yes |
+| `claim_recovery_0.00` (SIM) | both quality events recover nothing | 18.63 | −0.57 | 12,985 | yes |
+| `claim_recovery_1.00` (SIM) | both quality events recover in full | 19.59 | +0.38 | 13,649 | yes |
+| `grade_mix_pit_remark_only` | the mark only (the §13.6 run) | 19.21 | 0.00 | 13,384 | yes |
 
-**The answer, stated plainly: the headline P&L is sign-robust across every registered band this desk's own rules
-depend on — and almost nothing else about it is.** At the bottom of the `domestic_anchor_premium_inr_t` grid the
-same nine tickets make ₹0.22 crore instead of ₹19.49 crore: 99 % of the result goes, and the book that remains is
-₹152/MT, well inside the noise of any of the other assumptions. At the top of the grid it makes ₹28.70 crore. The
-result therefore **rides almost entirely on one ASSUMPTION whose own registered grid spans ₹68,000/t**, and no reader should
-quote ₹19.49 crore without that sentence attached.
+**Sign robustness, band by band** (`pnl_sensitivity_sign_robustness.csv`). Book P&L is linear in every numeric band
+(the fitted line reproduces every case to the paisa), so each band has a break-even value:
+
+| Band | Registered range | Book P&L range ₹cr | Slope | Break-even value | Inside the band? | Sign-robust? |
+|---|---|---|---|---|---|---|
+| `domestic_anchor_premium_inr_t` (ASSUMPTION, PENDING) | −55,000 … +13,000 ₹/t | −10.54 … +33.43 | ₹6,466 per ₹/t | **−38,702 ₹/t** | **yes** | **NO** |
+| `conversion_cost_inr_t` | 8,000 … 30,000 ₹/t | +7.57 … +21.79 | −₹6,466 per ₹/t | +41,702 ₹/t | no | yes |
+| desk share of the arb (S1) | 0.00 … 0.50 | +1.35 … +19.21 | ₹35.7 crore per unit | −0.04 | no | yes |
+| flat desk margin | 5,000 … 8,000 ₹/t | +8.54 … +12.85 | ₹14,376 per ₹/t | −941 ₹/t | no | yes |
+| purchase discount (S2) | 0 … 30 USD/t | +18.27 … +20.57 | ₹766,391 per USD/t | −238 USD/t | no | yes |
+| grade mix (PIT / lag-1 / lag-3, re-priced) | three published variants | +9.73 … +22.00 | — | — | — | yes |
+| grade differentials (evidence quartiles, re-priced) | q25 … q75 | +13.38 … +23.12 | — | — | — | yes |
+| `claim_recovery_frac` (SIM) | 0.0 … 1.0 | +18.63 … +19.59 | ₹95.3 lakh per unit | −19.5 | no | yes |
+| **all registered bands, one at a time** | 24 cases | **−10.54 … +33.43** | | | | **NO** |
+
+**The answer, stated plainly: the headline P&L is not sign-robust.** It survives every registered band except the
+one that matters most. At the bottom two values of the `domestic_anchor_premium_inr_t` grid the same nine tickets
+**lose ₹8.6–10.5 crore**, and the book makes money only if the true 2022 premium was above about **−₹38,700/t** — a
+threshold inside a grid whose own evidence runs from −52,000 to +13,000 and whose base value is PENDING verification.
+At the top of the grid the book makes ₹33.43 crore. The result therefore **rides on one ASSUMPTION whose own
+registered grid spans ₹68,000/t**, and no reader should quote ₹19.21 crore without that sentence attached. At the
+anchor-premium floor, T02 (+₹2.50 crore), T01 (+₹1.37 crore) and T03 (+₹0.43 crore) still make money; the other six
+tickets lose, T08 by ₹4.66 crore.
 
 Three further readings worth having in an interview:
 
-* **The 50/50 arb split is worth ₹7.29 crore.** At a 0 % desk share — the sale priced at the desk's own replacement
-  value — the book still makes ₹12.19 crore, because the purchase bids are struck under parity and (c) and (a) do
-  the rest. A flat ₹5,000–8,000/MT trading margin, which is closer to what a competitive import market pays a
-  middleman, gives ₹16.90–19.72 crore. The 50 % rule is not doing as much work as its share of `new_deal` suggests.
+* **The 50/50 arb split is worth ₹17.85 crore.** At a 0 % desk share — every sale priced at the desk's own
+  replacement value — the book makes ₹1.35 crore, which is what the purchase discounts and the market buckets leave
+  once the rule's margin is removed. A flat ₹5,000–8,000/MT trading margin, closer to what a competitive import
+  market pays a middleman, gives ₹8.54–12.85 crore. Most of the book's result is the 50 % rule; the rule is a stated
+  convention, not a quote.
 * **The purchase-discount band the tickets used (10–15 USD/t of a registered 0–30) is worth ₹2.30 crore** across
   its full width — small next to the anchor premium, and it moves the result in the direction you would expect.
-* **The grade mix, re-priced, costs ₹11.22 crore.** That is the number §13.6's re-mark cannot show and the one to
-  quote when asked how much of this book is a reconstruction.
+* **The grade reconstruction, re-priced, costs up to ₹9.48 crore** (the point-in-time mix), and moves the book by
+  −₹5.83 to +₹3.92 crore across the differentials' evidence quartiles. That is the number §13.6's re-mark cannot
+  show and the one to quote when asked how much of this book is a reconstruction.
 
 None of these cases is a book Phase 2 could have published: at a 0 % share or a −55,000 anchor premium the
 re-derived sale prices fall outside the `[replacement, netback]` band that validation rule P09 enforces. They are
-revaluations of the published decisions under another parameter, which is exactly what a sensitivity is.
+revaluations of the published decisions under another parameter, which is exactly what a sensitivity is. Nor is any
+of them a joint scenario: no case moves two bands at once (a low premium *and* the point-in-time mix, say), and none
+is published.
 
 ### 13.10 The MCX roll: INR carry, not term structure
 
@@ -1073,23 +1205,34 @@ rolling M1 → M2 on day `d` therefore collects
 carry = spot_parity(d) x inr_rate_3m_pa(d) x (dte(M2) - dte(M1)) / 365     ₹/kg
 ```
 
-with no market view whatsoever. That is INR interest on a duty-paid parity — the desk's own cost of carrying the
-physical, seen from the other side — and the table splits every executed roll into it and the remainder:
+with no market view whatsoever — while the DIRECT LME cash–3M spread was in **backwardation on 33 of the 126 window
+panel days** (36 of 148 through September). The table splits every executed roll into that carry and the remainder, prints the
+LME spread beside it, and re-prices the same roll on a **reference curve that carries the LME's own term structure**:
+`F(T) = LME cash forward to T (linear cash→3M) × CIP USD/INR forward to T × duty uplift + premium`, built from the
+engine's own `curves.cash_fwd` and `curves.fx_x`. That reference roll splits into **rate carry** (the rupee-over-
+dollar forward points) and **metal carry** (the LME slope, which itself contains USD financing, storage and
+convenience yield):
 
-| 13 executed rolls | Panel proxy (base) | Third-party mirror (PROXY) |
-|---|---|---|
-| total roll P&L | **+₹8,421,697** | +₹9,469,250 |
-| … of which INR carry by construction | **+₹8,421,697** | +₹8,421,697 |
-| … of which genuine term structure | **₹0** | **+₹1,047,553** |
-| rolls that were gains | **13 of 13** | 10 of 13 |
-| roll spread range | 0.870–1.022 ₹/kg | — |
+| 13 executed rolls | Panel proxy (base) | Reference: parity with the LME curve | Third-party mirror (PROXY) |
+|---|---|---|---|
+| total roll P&L | **+₹8,421,697** | +₹7,332,004 | +₹9,469,250 |
+| … INR carry (proxy) / rate carry INR over USD (reference) | +₹8,421,697 | +₹5,942,233 | +₹8,421,697 |
+| … term structure (proxy: none) / **metal carry** (reference) | **₹0** | **+₹1,389,771** | +₹1,047,553 |
+| rolls that were gains | **13 of 13** | 13 of 13 | 10 of 13 |
+| rolls dealt in LME backwardation | 1 (T07, 2022-07-20, cash–3M +8.5) | metal carry **−₹327,394** on it | — |
+| proxy minus reference | | **+₹1,089,693** | |
 
-The `roll_carry_metal_component_max_abs` control asserts the zero. **Every roll in this book is a gain by
-construction**, so any ticket rationale that frames rolling as "what holding unsold cargo on a forty-day lane
-actually costs" is describing something this engine did not measure — the roll *earned* ₹0.84 crore, and the
-holding cost is in the funding accrual inside (g), not in the roll. Real LME/MCX aluminium went into backwardation
-from 20-Jul-2022 (the panel's own cash−3M is +8.5 on 20-Jul and +21.5 on 01-Aug) and **a short rolling through
-backwardation pays**; the proxy cannot represent that, and neither can any P&L built on it.
+The `roll_carry_metal_component_max_abs` control asserts the proxy's zero. So the honest statement is narrower
+than "the roll is an artefact": **the proxy's roll P&L is almost entirely rate carry, which is real** — a rupee
+future carried at Indian rates against a dollar metal carried at US rates — **and it contains no metal term
+structure at all.** On this book the LME curve was not in backwardation on 12 of the 13 roll dates, so a curve that
+carried it would have paid the desk a little metal carry as well, and the proxy overstates the rolls by only
+₹10.9 lakh. The
+one roll dealt in backwardation (T07-MCX-2 on 20-Jul) shows the other state of the world: it loses ₹3.3 lakh of
+metal carry and stays positive only because of the rate differential. A deep backwardation would have made rolling
+a short cost money, and **the proxy cannot represent that**; any ticket rationale that frames rolling as "what
+holding unsold cargo on a forty-day lane actually costs" is describing the metal half this engine did not measure.
+The holding cost this book did bear is in the funding accrual inside (g), not in the roll.
 
 ### 13.11 Basis risk, two-sided — and the unit-beta assumption tested
 
@@ -1104,11 +1247,20 @@ risk. The per-ticket figures are the measure:
 | best ticket — the gain case (T05) | +19,173,462 |
 | **range across the nine tickets** | **38,379,835** |
 | mean absolute effect per ticket | 6,607,842 |
-| netted book total | +18,402,493 |
+| sum of the tickets that lost (T01, T04) | −20,534,042 |
+| netted book total — one draw | +18,402,493 |
+| **the same path with its sign reversed (the adverse image)** | **−18,402,493** |
+
+| (b) + (g) moved **jointly** by the MCX series, lifetime | ₹ |
+|---|---|
+| worst ticket (T01) | −19,210,220 |
+| best ticket (T05) | +15,811,470 |
+| **book, quoted as a two-sided band** | **± 18,949,834** |
 
 Per-ticket bucket (b) on the mirror runs from −₹1.84 crore (T01) to +₹1.79 crore (T05). On a nine-ticket book the
-netting is luck; on one ticket the basis is worth about ±₹1.9 crore against ₹2–5 crore of trade P&L. **Read the
-range.**
+netting is luck; on one ticket the basis is worth about ±₹1.9 crore against −₹1.2 to +₹6.4 crore of trade P&L. **Read
+the range, and read (b) and (g) together**: nothing in one six-month mirror makes the favourable draw more likely
+than its mirror image, so the book-level basis-and-curve risk is **±₹1.9 crore**, not a gain.
 
 **The unit-beta assumption.** The engine hedges by holding the MCX basis and letting LME and FX drive the MCX
 price — which is precisely an assumption that an MCX contract moves one-for-one with duty-paid LME parity. On the
@@ -1124,9 +1276,12 @@ fails:
 | observations (daily changes) | 125 |
 | share of a parity move a beta-1-sized short does **not** offset | **0.548** |
 
-Read with `docs/10_parity_model.md` §11, which finds the same thing from the other side: mirror-versus-parity daily
-return correlation is only 0.50–0.57 (weekly 0.84–0.93) and the basis standard deviation is ₹6,277–7,678/t, larger
-than the desk's own ₹5,000/t hurdle. A weekly parity decision can live with that; a daily hedge P&L cannot. So the
-honest statement about hedge effectiveness in this book is: **+₹197.1 m of hedge benefit measured on a series whose
-basis is zero by construction, against a measured hedge slope of 0.45 on the only observed-ish alternative.** The
-hedge worked in the model. Whether it would have worked on MCX is not something this project can show.
+And because the basis is held as an additive state in **both** runs, the mirror sensitivity moves the attribution
+but **no risk number**: every delta column of `book_exposures_daily_mcx_mirror.csv` equals the base file exactly
+(§10). Read with `docs/10_parity_model.md` §11, which finds the same thing from the other side: mirror-versus-parity
+daily return correlation is only 0.50–0.57 (weekly 0.84–0.93) and the basis standard deviation is ₹6,277–7,678/t,
+larger than the desk's own ₹5,000/t hurdle. A weekly parity decision can live with that; a daily hedge P&L cannot. So
+the honest statement about hedge effectiveness in this book is: **+₹197.1 m of hedge benefit over the crash window,
+measured on a series whose basis is zero and whose beta is 1 by construction, against a measured hedge slope of 0.45
+on the only observed-ish alternative.** The hedge worked in the model. Whether it would have worked on MCX is not
+something this project can show, and Phase 4 should not size a VaR as if it had.

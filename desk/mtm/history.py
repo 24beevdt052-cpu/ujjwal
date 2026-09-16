@@ -47,7 +47,13 @@ LANE_FREIGHT_COL = {"JEA_NSA": "freight_jea_nsa_usd_t", "USEC_MUN": "freight_use
 LANE_BOX = {"JEA_NSA": "20ft", "USEC_MUN": "40ft"}
 
 MCX_SOURCES = ("panel", "mirror")
-GRADE_SOURCES = ("base", "pit")
+GRADE_SOURCES = ("base", "pit", "lag1", "lag3", "lag2")
+# The published mix variants a sensitivity may re-price with. Only "pit" is point-in-time; lag-1 and lag-3 are the
+# same hindsight construction as the base lag-2 mix at a different publication lag (scrap_grades.yaml). "lag2" is the
+# base mix rebuilt as mix + differential, so a sensitivity can move `grade_factor_diff_<g>` through the param provider
+# (the base source reads the pre-summed `grade_factor_<g>` path and would never see such an override).
+GRADE_MIX_KEYS = {"pit": "grade_factor_mix_pit", "lag1": "grade_factor_mix_lag1", "lag3": "grade_factor_mix_lag3",
+                  "lag2": "grade_factor_mix"}
 
 ParamProvider = Callable[[str, dt.date | None], object]
 _MISS = object()
@@ -96,9 +102,9 @@ class MarketHistory:
         dates = [to_date(d) for d in self.panel["date"]]
         if self.grade_source == "base":
             paths = {g: [float(config.value(f"grade_factor_{g}", d)) for d in dates] for g in GRADES}
-        else:  # D13: the point-in-time mix plus each grade's registered differential
-            mix = [float(config.value("grade_factor_mix_pit", d)) for d in dates]
-            paths = {g: [m + float(config.value(f"grade_factor_diff_{g}", d)) for m, d in zip(mix, dates)]
+        else:  # D13: a published mix variant (normally the point-in-time one) plus each grade's registered differential
+            mix = [float(self.params(GRADE_MIX_KEYS[self.grade_source], d)) for d in dates]
+            paths = {g: [m + float(self.params(f"grade_factor_diff_{g}", d)) for m, d in zip(mix, dates)]
                      for g in GRADES}
         return {d: {g: paths[g][i] for g in GRADES} for i, d in enumerate(dates)}
 

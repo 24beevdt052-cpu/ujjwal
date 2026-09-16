@@ -526,8 +526,8 @@ class QualityEvent:
     out (the whole of this book), the engine derives it as arrival + `survey_lag_days`, which is the normal case.
     It is typed only when the survey was late, disputed or re-sampled, because that is an executed fact and not a
     derived one — CONTRACTS §7a.2 requires the field, and without it a late survey cannot be expressed at all
-    (review finding, trader lens, minor). An engine that reads a typed `known_date` must use it in place of the
-    derived survey date; `desk/mtm/lifecycle.py` does not yet, which is why no ticket types one.
+    (review finding, trader lens, minor). `desk.mtm.lifecycle.lot_dates` uses a typed date in place of the derived
+    survey date (clamped to the arrival); no ticket in this book needs one.
     """
 
     lot_id: str

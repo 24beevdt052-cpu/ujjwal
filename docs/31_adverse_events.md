@@ -1,8 +1,9 @@
 # 31 — Adverse events on the real book (MASTER_SPEC Table 5, rows 3.4–3.6)
 
 **ACADEMIC SIMULATION — not actual trades.** Every counterparty, vessel, dwell day and payment delay in this
-document is simulated and labelled (SIM). The *market* moves are real and dated; the *book* that lived through them
-is not.
+document is simulated and labelled (SIM). The LME moves and the dated news are real; USD/INR and the MCX series are
+PROXIES, and the grade factors and freight levels are hindsight-calibrated reconstructions. The *book* that lived
+through them is not real at all.
 
 This page is the results companion to `docs/30_mtm_attribution.md` (the method). It takes the nine tickets in
 `config/trades.yaml`, runs them through `desk.mtm.engine` over the real Mar–Oct 2022 panel, and reports what three
@@ -36,11 +37,11 @@ content under the names the Phase 3 brief uses.
 |---|---|---|---|
 | Window | 2022-03-07 → 2022-07-15 | 2022-04-05 → 2022-07-14 | 2022-07-28 → 2022-10-11 |
 | Market move | LME cash 3,984.5 → 2,320.5 USD/t, **−41.8 %** | USD/INR 75.3350 → 80.0352, **+6.24 %** | container freight **−35.6 %** on both lanes |
-| Book P&L over the window | **+₹210.5 m** | +₹130.1 m | +₹4.25 m |
-| The factor that carried it | (a) LME flat **−₹44.8 m** net | (e) USD/INR **+₹6.9 m** net | (f) events known **−₹1.96 m** |
+| Book P&L over the window | **+₹210.5 m** | +₹130.1 m | +₹1.81 m |
+| The factor that carried it | (a) LME flat **−₹44.8 m** net | (e) USD/INR **+₹6.9 m** net | (f) events known **−₹4.34 m** |
 | Unhedged counterfactual | +₹13.4 m (no MCX) | +₹113.6 m (no forwards) | +₹7.65 m (no events) |
-| **Isolated hedge / event impact** | **hedge benefit +₹197.1 m** | **forward-book benefit +₹16.5 m** | **event cost −₹6.54 m lifetime** |
-| Cash strain | peak margin outflow **−₹105.7 m on 2022-03-24**; max book IM ₹95.8 m | 25 forwards, all settled inside the horizon | 25 days past due; buyer line 83 % drawn |
+| **Isolated hedge / event impact** | **hedge benefit +₹197.1 m** | **forward-book benefit +₹16.5 m** | **event cost −₹9.35 m lifetime** |
+| Cash strain | peak margin outflow **−₹105.7 m on 2022-03-24**; max book IM ₹95.8 m | 25 forwards, all settled inside the horizon | 26 days late (25 at the last overdue close); buyer line 74 % drawn |
 
 Every window is **derived by rule after the fact and is reporting-only**. No trade decision saw one:
 `desk.book.validate` never imports `desk.mtm.events`, and a trade dated `d` prices only on information published on
@@ -180,13 +181,17 @@ of initial margin. Phase 5 owns the liquidity buffer; this is the input.
   duty-paid parity — not metal contango, and not a view. All **13 rolls in this book are gains, ₹8,421,697 in
   total, of which ₹8,421,697 is that carry and ₹0 is term structure** (`mcx_roll_carry.csv`, and the
   `roll_carry_metal_component_max_abs` control asserts the split). On the third-party mirror the same 13 rolls are
-  worth ₹9,469,250, of which **₹1,047,553 is genuine term structure and three of the thirteen are losses**. Real
-  LME/MCX aluminium went into backwardation from 20-Jul-2022 (the panel's own cash−3M is +8.5 on 20-Jul and +21.5
-  on 01-Aug) and **a short rolling through backwardation pays** — the proxy cannot represent that, so any "the
-  roll costs me carry" framing in a ticket rationale is aspirational rather than something this engine measured.
+  worth ₹9,469,250, of which **₹1,047,553 is genuine term structure and three of the thirteen are losses**. The
+  table also re-prices each roll on a parity curve that carries the **LME's own cash–3M slope** and CIP rupee
+  points: **₹7,332,004**, of which ₹5,942,233 is rupee-over-dollar rate carry and ₹1,389,771 metal carry, so the
+  proxy overstates roll P&L by ₹1.09 m. LME aluminium went into backwardation from 20-Jul-2022 (DIRECT: cash−3M
+  +8.5 on 20-Jul, +21.5 on 01-Aug), and the one roll dealt in it (T07, 20-Jul) loses **₹327,394 of metal carry** on
+  that reference, kept positive only by the rate differential. **In a deep backwardation a short roll pays** — the
+  proxy cannot represent that, so any "the roll costs me carry" framing in a ticket rationale describes the metal
+  half of a market this engine did not measure (`docs/30_mtm_attribution.md` §13.10).
 * **Daily price limits are not modelled.** The near-month proxy moved −12.0 % on 2022-03-08 against MCX's 9 %
-  maximum slab (`mcx_al_dpl_max_frac`, DIRECT). A real position would have been limit-locked and unable to trade
-  that session. Phase 2 acknowledges this by hedging T01 on 2022-03-09, one session naked, and saying so. The same
+  maximum slab (`mcx_al_dpl_max_frac`, DIRECT). A real contract would have traded only at the limit, if at all,
+  and a seller would have found no bid inside the band — an inference from the proxy, not an MCX print. Phase 2 acknowledges this by hedging T01 on 2022-03-09, one session naked, and saying so. The same
   caveat applies to the margin schedule above: the proxy prints moves on several window days that the real
   contract could not have printed, and the −₹105.7 m peak is computed on it.
 * No SPAN margining, no intraday calls, no MCX-versus-LME close-time gap.
@@ -298,17 +303,32 @@ known date to the last settle those events move: **2022-07-28 → 2022-10-11**.
 
 | Component | What the ticket says | Lifetime cost vs the same book without it |
 |---|---|---|
-| **Vessel delay and extra CFS dwell** — T07-LOG-1/2 and T08-LOG-1/2/3, known 2022-07-28 and 2022-08-16 | the July void calls are real and dated; the delay and dwell days are **SIM**, attributed to them | **−₹3,989,183** |
-| **Buyer payment delay** — T07-PAY-1, 26 days on sale S1, known 2022-09-26 | **SIM**: the buyer's own castings receivables stretched as domestic ingot prices fell; four weeks given against post-dated cheques already held | **−₹588,482** |
-| **Out-turn quality claims** — T07 lot L1 and T08 lot L2 moisture / contamination / one rejected box | **SIM** survey outcomes against the SPA franchise, with a partial claim recovery | **−₹1,942,812** |
-| all three together | | **−₹6,539,686** (interaction −₹19,208) |
+| **Vessel delay and extra CFS dwell** — T07-LOG-1/2 and T08-LOG-1/2/3, known 2022-07-28 and 2022-08-16 | the July void calls and the radiation-portal referral procedure are real; the delay and dwell days are **SIM**, attributed to them | **−₹4,944,009** |
+| **Buyer payment delay** — T07-PAY-1, 26 days on sale S1, known 2022-09-26 | **SIM**: the buyer's own castings receivables stretched as domestic ingot prices fell; four weeks given against post-dated cheques already held | **−₹591,206** |
+| **Out-turn quality claims** — T07 lot L1 and T08 lot L2 moisture / contamination / one rejected box, including the rejected box's hold and re-export | **SIM** survey outcomes against the SPA franchise, recovered at 0.6 | **−₹3,812,527** |
+| all three together | | **−₹9,352,773** (interaction −₹5,031) |
 
-Supporting numbers: the demurrage leg costs **−₹2,336,396** over the book's life (chargeable dwell beyond
-`detention_free_days`, at the registered `demurrage_usd_per_box_day`); overdue funding routed to bucket (f) by the
-§7a.1 split is **−₹648,389**; maximum days past due **25**. Bucket (f) over the E3 window is **−₹1,962,983**; the
-lifetime column above is still the one to read, because (f) books an event at the value it has on the day it
-becomes known and the rest of its cost then flows through (a), (e) and (g) as the market moves
-(`docs/30_mtm_attribution.md` §4.2).
+Supporting numbers: the demurrage leg costs **−₹3,254,974** over the book's life — chargeable dwell beyond
+`detention_free_days` on the cleared boxes, **charged up the registered detention slabs** (T07 L1 45 boxes × 2 days
+USD 3,150; T07 L2 45 × 8 days USD 17,325; T08 L2 39 × 10 days USD 20,475). At the flat first-slab rate the first
+build used, the same dwell would have cost USD 11,550 less: that flat rate was a **floor** on the real bill, not an
+estimate of it, and the slabbed figure is still a single combined rate for carrier detention and CFS ground rent
+rather than two tariffs with their own free periods. The rejected T08 box is a separate `REJECTED_BOX_COST` leg:
+45 days of hold (`rejected_box_hold_days`, ASSUMPTION) at the slabbed rate plus a USD 3,000 re-export
+(`rejected_box_reexport_cost_usd_per_box`, ASSUMPTION), **USD 5,730 = −₹468,236**, paid by the desk and claimed back
+at 0.6; decontamination or disposal of a genuinely contaminated box is not modelled and would cost far more. Overdue
+funding routed to bucket (f) by the §7a.1 split is **−₹648,389**; the buyer paid **26 days** late, which
+`days_past_due` records as 25 because it is measured at the last overdue close. Bucket (f) over the E3 window is
+**−₹4,335,418**; the lifetime column above is still the one to read, because (f) books an event at the value it has
+on the day it becomes known, excludes the quality discount passed through to the buyer (that is priced into the
+sale contract, in (0)), and the rest of the cost then flows through (a), (e) and (g) as the market moves
+(`docs/30_mtm_attribution.md` §4.1–§4.2).
+
+**These events are no longer a source of profit.** Before the review bucket (f) was **+₹1.45 m** for the book: a
+rejected box left at no cost, detention was flat, and both claims recovered 100 % (on the formula-priced T08 the
+engine ignored the typed recovery altogether). The claim-recovery fraction is SIM, so it is published as a band:
+at 0.0 the book makes −₹5.72 m less and T07 turns to a loss (−₹1.8 m); at 1.0, +₹3.81 m more
+(`pnl_sensitivity_summary.csv`, `claim_recovery_*`).
 
 An event's effective known date is `min(stated known_date, the milestone it moves)`. T07-PAY-1 is dated 2022-09-26
 against a contractual due of 2022-09-15; taken literally the engine would have shown ₹89.6 m collected for eleven
@@ -317,13 +337,14 @@ days and then un-collected it. A desk learns a payment has not arrived on the da
 ### 3.3 Freight fixed early into a falling market
 
 The desk does not hedge freight (no accessible India-lane derivative). It floats under a stop at trade-date index
-+15 % and books by 10 days before the first bill of lading. The index fell monotonically, so all three FOB fixtures
-were taken on their book-by dates.
++15 % and books by 10 days before the first bill of lading. The index fell through the window with only four small
+up-weeks and never came closer to a stop than the 15 % it was set at, so all three FOB fixtures were taken on their
+book-by dates.
 
 | Counterfactual | ₹ |
 |---|---|
-| book as traded | (lifetime) **+194,867,858** |
-| counterfactual: no fixture, freight floats and fixes at each B/L | +197,365,015 |
+| book as traded | (lifetime) **+192,054,771** |
+| counterfactual: no fixture, freight floats and fixes at each B/L | +194,551,928 |
 | **fixture-timing cost, lifetime** | **−2,497,157** |
 
 This is a **competitiveness cost, not a loss on the cargo.** Under CONTRACTS §5 the CFR grade factor does not fall
@@ -387,8 +408,11 @@ risk, not a price risk.
 
 Two things follow that a reader should not have to infer. First, the risk layer the FOB tickets carry — a stop at
 the trade-date index +15 %, live for at most ten business days — **cannot be triggered on this panel**: the largest
-weekly rise in the reconstructed lane index anywhere in Jan–Sep 2022 is +1.6 %, so reaching the stop inside its
-window would need about nine consecutive record weeks. All three fixtures were therefore taken on their book-by
+weekly rise in the reconstructed USEC_MUN index anywhere in Jan–Sep 2022 is +3.0 % (week to 09-Sep, after every
+fixture) and between 04-Mar and 29-Jul only +0.4 %, so reaching the stop inside its window would need about five
+consecutive record weeks (`docs/20_trade_book.md` §6.4). Had each FOB index nevertheless gone straight to its stop,
+the same policy would have cost about USD 72,500 (≈ ₹5.6 m) — roughly five times what waiting to the book-by date
+gained (§6.6 there). All three fixtures were therefore taken on their book-by
 dates and the stop never bound. Second, the honest decision that *was* live — fix now or stay open to the book-by
 date — is already priced: §3.3's `counterfactual_fixture_at_bl_pnl_inr` is the other side of it.
 
@@ -424,7 +448,10 @@ least be sized. **This is a sensitivity. It is never presented as base P&L.**
 
 **This is a risk disclosure, and it must not be read as a better result.** Lifetime, the mirror run finishes
 **+₹18,402,493 above** the base book. That is one realisation of a two-sided risk, not evidence that a real basis
-would have helped, and the per-ticket spread says so (`outputs/tables/mcx_basis_risk.csv`):
+would have helped: the same path with its sign reversed is **−₹18,402,493**, and nothing in one six-month mirror makes
+the favourable draw more likely. Nor is (b) the bucket that moves most — (g) moves +₹30.7 m against (b)'s −₹11.7 m,
+so the two are published **jointly**: ±₹18.9 m at book level, from −₹19.2 m (T01) to +₹15.8 m (T05) per ticket. The
+per-ticket spread says the same (`outputs/tables/mcx_basis_risk.csv`):
 
 | Basis risk, lifetime, per ticket | ₹ |
 |---|---|
@@ -485,9 +512,10 @@ the evidence supports rather than the one the brief anticipated.
   t = −8.7 against 1).
 * **There is no curve risk anywhere in the base run.** The MCX proxy is in contango on every panel day by
   construction, so all 13 rolls are gains and the whole ₹8.42 m of roll P&L is INR carry rather than term
-  structure (§1.5). A real short rolling through the July–August backwardation would have paid.
+  structure (§1.5). On a curve carrying the LME's own slope the rolls make ₹7.33 m, and the one roll dealt in the
+  late-July backwardation loses ₹0.33 m of metal carry; a deep backwardation would have made a short roll pay.
 * **Event 1's margin schedule ignores daily price limits and SPAN.** The proxy's −12.0 % move on 2022-03-08
-  against a 9 % slab means a real short would have been locked that session, and the −₹105.7 m peak outflow is
+  against a 9 % slab means a real short could have traded only at the limit that session, and the −₹105.7 m peak outflow is
   computed on a series that could print moves the real contract could not.
 * **Event 2's rate is a PROXY.** "The rupee went through 80 on 14 July" is a statement about the ECB cross used
   here; the comparison to the official RBI/FBIL fixing is PENDING.
@@ -497,11 +525,14 @@ the evidence supports rather than the one the brief anticipated.
   the tracker and the liquidity buffer. Note in particular that a 2.57× *contracted* utilisation against a ₹120 m
   line is reported beside the limit, not against it (§3.4), and that no facility size, cash buffer or position
   limit is modelled anywhere in Phase 3: the book's own minimum cash balance is **−₹1,159,856,633 on 2022-07-20**
-  on top of ₹95.8 m of initial margin, against ₹194.9 m of lifetime P&L. That is an output of the book, not a
+  on top of ₹95.8 m of initial margin, against ₹192.1 m of lifetime P&L. That is an output of the book, not a
   constraint it was tested against.
-* **The adverse events are not the book's largest exposures.** All three together cost **−₹6.54 m**, 3.4 % of the
-  result. The registered ASSUMPTION bands move it by far more: `docs/30_mtm_attribution.md` §13.9 re-prices the
-  book through the desk's own sale rule under each registered value and finds a spread of **₹0.2 cr to ₹28.7 cr**.
+* **The adverse events are not the book's largest exposures.** All three simulated operational events together
+  cost **−₹9.35 m**, 4.9 % of the result. The registered ASSUMPTION bands move it by far more:
+  `docs/30_mtm_attribution.md` §13.9 re-prices the book through the desk's own rules under each registered value
+  and finds a spread of **−₹10.5 cr to +₹33.4 cr** — the book **loses money** at two of the four
+  `domestic_anchor_premium_inr_t` values and breaks even at about −₹38,700/t. Event 1's hedge benefit and event 2's
+  forward-book benefit are measured on a book whose headline sign that one assumption decides.
 
 ---
 
@@ -517,5 +548,5 @@ the evidence supports rather than the one the brief anticipated.
 | USD/INR, INR and USD 3-month rates, CIP forwards | **PROXY** |
 | MCX panel series (duty-paid import parity) — so bucket (b) ≡ 0 in base runs | **PROXY** |
 | MCX third-party mirror (§5 only) | **PROXY** |
-| Freight lane levels; grade factors; payloads, free days, demurrage rate, port charges, WC rate, margin used | **ASSUMPTION** (freight levels and the lag-2 grade mix are hindsight reconstructions) |
+| Freight lane levels; grade factors; payloads, free days, slabbed detention rates, rejected-box hold days and re-export cost, port charges, WC rate, margin used | **ASSUMPTION** (freight levels and the lag-2 grade mix are hindsight reconstructions) |
 | Counterparties, vessels, dwell days, survey outcomes, the payment delay and its length | **SIM** |

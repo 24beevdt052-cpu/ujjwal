@@ -159,6 +159,27 @@ def _ceil_months(days: int) -> int:
     return max(1, int(math.ceil(days / 30.0)))
 
 
+def detention_usd(boxes: int, chargeable_days: int, day: dt.date, H) -> float:
+    """Combined line detention + CFS ground rent on `boxes` for `chargeable_days` beyond free time, up the slabs.
+
+    `demurrage_usd_per_box_day` is the FIRST-slab rate and its own register note says carriers escalate after 5-10
+    days; the first build charged every day at it, which understates any long dwell (Phase 1-3 review, trader lens).
+    This is the same schedule as `desk.book.validate.demurrage_usd` — `tests/test_mtm_engine.py` asserts the two
+    agree — so Phase 2's plan and Phase 3's ledger publish the same number.
+    """
+    if chargeable_days <= 0 or boxes <= 0:
+        return 0.0
+    n1 = int(H.param("demurrage_slab1_days", day))
+    n2 = int(H.param("demurrage_slab2_days", day))
+    r1 = float(H.param("demurrage_usd_per_box_day", day))
+    r2 = float(H.param("demurrage_usd_per_box_day_slab2", day))
+    r3 = float(H.param("demurrage_usd_per_box_day_slab3", day))
+    d1 = min(chargeable_days, n1)
+    d2 = min(max(chargeable_days - n1, 0), n2)
+    d3 = max(chargeable_days - n1 - n2, 0)
+    return float(boxes * (d1 * r1 + d2 * r2 + d3 * r3))
+
+
 def effective_known_date(known: dt.date, affected: dt.date) -> dt.date:
     """An event is known no later than the day it bites (deviation from design D7, recorded in docs/30).
 
@@ -435,18 +456,57 @@ def _lot_flows(t: bs.Ticket, lot: bs.Lot, ld: LotDates, lq: LotQuantities, C: dt
                         formula="-(q_acc x (factor x A_P + premium) x (1 - disc) - provisional)",
                         weakest_input_flag="DIRECT"))
 
-    # ------------------------------------------------------------------------------------- supplier quality claim
+    # --------------------------------------------------------------------------------------- rejected boxes
+    # A rejected box is not free (Phase 1-3 review). It is not cleared, so it pays no duty and no port charges, but
+    # it sits under Customs/AERB hold until it is re-exported — accruing detention up the slabs for the whole hold —
+    # and the re-export itself costs freight, handling, a radiological survey and the permissions. The SPA puts all
+    # of that on the seller's account; the desk pays it first and claims it back at the event's recovery fraction.
     ev = _quality_event(t, lid)
-    if fixed_price and lq.survey_known and ev is not None and (
+    rejected_cost_usd = 0.0
+    reexport_date: dt.date | None = None
+    if lq.survey_known and ev is not None and lq.boxes_rejected > 0:
+        hold = int(H.param("rejected_box_hold_days", ld.survey))
+        free_r = int(H.param("detention_free_days", td))
+        reexport_date = H.cal.roll(ld.arrival_cal + dt.timedelta(days=hold))
+        per_box = (float(H.param("rejected_box_reexport_cost_usd_per_box", ld.survey))
+                   + detention_usd(1, max(0, hold - free_r), td, H))
+        rejected_cost_usd = lq.boxes_rejected * per_box
+        out.append(Flow(t.trade_id, f"REJECTED:{lid}", "REJECTED_BOX_COST", PNL, USD, td, reexport_date, ld.survey,
+                        lambda M, tau, HV: -rejected_cost_usd,
+                        lot_id=lid, counterparty_id=supplier, qty_mt=lq.q_rej_mt, event_ids=(f"QUALITY:{lid}",),
+                        formula="-rejected boxes x (rejected_box_reexport_cost_usd_per_box + slabbed detention "
+                                "over rejected_box_hold_days beyond detention_free_days)",
+                        weakest_input_flag="ASSUMPTION"))
+
+    # ------------------------------------------------------------------------------------- supplier quality claim
+    if lq.survey_known and ev is not None and (
             lq.q_rej_mt > 0 or lq.moisture_excess_frac > 0 or lq.discount_frac > 0):
         ratio = float(H.param("spa_moisture_deduction_ratio", ld.survey))
         claim_mt = lq.q_rej_mt + lq.q_clr_mt * ratio * lq.moisture_excess_frac + lq.q_acc_mt * lq.discount_frac
         recovery = ev.claim_recovery_frac
-        out.append(Flow(t.trade_id, f"CLAIM:{lid}", "QUALITY_CLAIM", PNL, USD, td, ld.claim_settle, ld.survey,
-                        lambda M, tau, HV: recovery * pr.price_usd_t * claim_mt,
-                        lot_id=lid, counterparty_id=supplier, qty_mt=claim_mt, event_ids=(f"QUALITY:{lid}",),
-                        formula="+recovery x price x (q_rej + q_clr x ratio x m_ex + q_acc x disc)",
-                        weakest_input_flag="SIM"))
+        claim_settle = max(ld.claim_settle, reexport_date) if reexport_date is not None else ld.claim_settle
+        if fixed_price:
+            out.append(Flow(t.trade_id, f"CLAIM:{lid}", "QUALITY_CLAIM", PNL, USD, td, claim_settle, ld.survey,
+                            lambda M, tau, HV: recovery * (pr.price_usd_t * claim_mt + rejected_cost_usd),
+                            lot_id=lid, counterparty_id=supplier, qty_mt=claim_mt, event_ids=(f"QUALITY:{lid}",),
+                            formula="+recovery x (price x (q_rej + q_clr x ratio x m_ex + q_acc x disc) "
+                                    "+ rejected-box costs)",
+                            weakest_input_flag="SIM"))
+        else:
+            # A formula purchase nets the goods deduction off the final invoice, so the desk holds the cash — but
+            # set-off secures the cash, not the claim. The seller disputes the survey, and the settlement hands
+            # back the share it does not accept. Before this review the engine gave a formula purchase 100 %
+            # recovery by construction whatever the ticket typed, so T08's `claim_recovery_frac` was inert.
+            def claim_formula_usd(M, tau, HV):
+                p_fin = purchase_unit_price(t, HV, M, tau, ld, provisional=False)
+                return recovery * rejected_cost_usd - (1.0 - recovery) * p_fin * claim_mt
+
+            out.append(Flow(t.trade_id, f"CLAIM:{lid}", "QUALITY_CLAIM", PNL, USD, td, claim_settle,
+                            max(ld.pricing_end, ld.survey), claim_formula_usd,
+                            lot_id=lid, counterparty_id=supplier, qty_mt=claim_mt, event_ids=(f"QUALITY:{lid}",),
+                            formula="+recovery x rejected-box costs - (1 - recovery) x P_final x (q_rej + q_clr x "
+                                    "ratio x m_ex + q_acc x disc)  [deduction already set off in PURCHASE_FINAL]",
+                            weakest_input_flag="SIM"))
 
     # --------------------------------------------------------------------------------------------------- freight
     if t.freight is not None:
@@ -533,11 +593,12 @@ def _lot_flows(t: bs.Ticket, lot: bs.Lot, ld: LotDates, lq: LotQuantities, C: dt
     free_days = int(H.param("detention_free_days", td))
     chargeable = max(0, ld.dwell_days - free_days)
     if chargeable > 0:
-        rate = float(H.param("demurrage_usd_per_box_day", td))
+        dem_usd = detention_usd(cleared_boxes, chargeable, td, H)
         out.append(Flow(t.trade_id, f"DEMURRAGE:{lid}", "DEMURRAGE", PNL, USD, td, ld.release, None,
-                        lambda M, tau, HV: -cleared_boxes * chargeable * rate, lot_id=lid,
+                        lambda M, tau, HV: -dem_usd, lot_id=lid,
                         event_ids=tuple(e.event_id for e in _active_logistics(t, lot, E, H)),
-                        formula="-cleared boxes x max(0, dwell - detention_free_days) x demurrage_usd_per_box_day",
+                        formula="-cleared boxes x slabbed detention+ground rent over max(0, dwell - "
+                                "detention_free_days) (demurrage_slab1/2_days, demurrage_usd_per_box_day[_slab2/3])",
                         weakest_input_flag="SIM"))
 
     # ------------------------------------------------------ unsold cargo marks at import replacement value (D5)
@@ -558,15 +619,13 @@ def _lc_flows(t: bs.Ticket, dates: Mapping[str, LotDates], C: dt.date, H, *, usa
         return []
     presentation = int(H.param("lc_presentation_period_days", lc.lc_open_date))
     validity_days = (t.shipment.laycan_end + dt.timedelta(days=presentation) - lc.lc_open_date).days
-    # Two different terms, and the ticket grammar cannot yet tell them apart. The SPA quantity tolerance is what the
-    # seller may ship; `lc_amount_tolerance_frac` is what the CREDIT will pay against (UCP 600 art. 30). A ticket
-    # that states an SPA tolerance sizes the credit on it (T01, T03 at 0.05); the other seven state none, so the
-    # credit takes the registered tolerance. `schema.SpaTerms.quantity_tolerance_frac` defaults to 0.0 rather than
-    # None, so a ticket that deliberately typed a strict 0.00 is today indistinguishable from one that stated
-    # nothing and would also take the fallback — a latent falsy-zero, not an error on this book (docs/30 §11.6).
-    # Fix in the Phase 2-owned schema: `float | None = None`, after which `is None` is the whole rule here.
+    # Two different terms. The SPA quantity tolerance is what the seller may ship; `lc_amount_tolerance_frac` is what
+    # the CREDIT will pay against (UCP 600 art. 30). A ticket that states an SPA tolerance sizes the credit on it
+    # (T01, T03 at 0.05); a ticket that states none (`None`) takes the registered tolerance. The schema now
+    # distinguishes the two, so a deliberately strict 0.00 SPA sizes a strict credit — `is None`, not a falsy test.
     spa_tol = t.purchase.spa.quantity_tolerance_frac
-    tol = float(spa_tol) if spa_tol else float(H.param("lc_amount_tolerance_frac", lc.lc_open_date))
+    tol = (float(spa_tol) if spa_tol is not None
+           else float(H.param("lc_amount_tolerance_frac", lc.lc_open_date)))
     ld0 = dates[t.shipment.lots[0].lot_id]
 
     def lc_value_usd(M, tau, HV):

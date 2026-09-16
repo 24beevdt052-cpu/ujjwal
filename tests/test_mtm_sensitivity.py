@@ -144,6 +144,59 @@ def test_the_mirror_roll_carries_some_real_term_structure(book, H):
     assert carry["carry_pnl_inr"].sum() == pytest.approx(sens.roll_carry(book, H)["carry_pnl_inr"].sum(), abs=0.01)
 
 
+def test_the_lme_curve_reference_prices_backwardation_as_a_cost_of_rolling_a_short(book, H):
+    """The proxy's roll gain is INR carry by construction; on a parity curve that carries the LME's own cash-3M slope
+    a short roll in LME backwardation pays for its metal carry. The columns must show that, sign and all."""
+    carry = sens.roll_carry(book, H)
+    for col in ("lme_curve_roll_spread_inr_kg", "lme_curve_rate_carry_inr_kg", "lme_curve_metal_carry_inr_kg",
+                "lme_curve_roll_pnl_inr", "lme_curve_metal_carry_pnl_inr", "proxy_minus_lme_curve_roll_pnl_inr"):
+        assert col in carry.columns
+    np.testing.assert_allclose(carry["lme_curve_rate_carry_inr_kg"] + carry["lme_curve_metal_carry_inr_kg"],
+                               carry["lme_curve_roll_spread_inr_kg"], atol=1e-9)
+    back = carry[carry["lme_backwardation"]]
+    cont = carry[~carry["lme_backwardation"]]
+    assert len(back) and len(cont)
+    assert (back["lme_curve_metal_carry_pnl_inr"] < 0).all()      # a short rolling through backwardation pays
+    assert (cont["lme_curve_metal_carry_pnl_inr"] >= 0).all()
+    np.testing.assert_allclose(carry["roll_pnl_inr"] - carry["lme_curve_roll_pnl_inr"],
+                               carry["proxy_minus_lme_curve_roll_pnl_inr"], atol=0.01)
+
+
+def test_the_grade_differential_quartiles_are_repricing_cases(cases):
+    from desk import config
+    for label, q in (("q25", 0), ("q75", 1)):
+        c = cases[f"grade_diff_{label}_repriced"]
+        assert c.mechanism == sens.REPRICE_BOTH and c.grade_source == "lag2"
+        over = dict(c.overrides)
+        for g in ("zorba", "taint_tabor", "tense"):
+            assert over[f"grade_factor_diff_{g}"] == float(config.value(f"grade_factor_diff_quartiles_{g}")[q])
+
+
+def test_the_lag2_source_rebuilt_from_mix_plus_differential_is_the_base_grade_path(H):
+    lag2 = MarketHistory(panel=H.panel, grade_source="lag2")
+    for d in [x for x in H.cal.days if WINDOW_START <= x <= WINDOW_END][::10]:
+        for g, v in H.state_at(d).grade_factor_frac.items():
+            assert lag2.state_at(d).grade_factor_frac[g] == pytest.approx(v, abs=1e-9)
+
+
+def test_sign_robustness_reports_a_breakeven_inside_the_band_when_the_sign_flips(book):
+    """Synthetic summary: linear P&L in the premium crossing zero inside the grid must be flagged, not averaged."""
+    import pandas as pd
+    rows = [{"case": "base", "family": "base", "mechanism": sens.REPRICE_SALE, "param_key": "—",
+             "param_value": float("nan"), "flag": "—", "cum_pnl_horizon_inr": 100.0}]
+    for v in (-55000.0, -52000.0, -9000.0, 13000.0):
+        rows.append({"case": f"anchor_premium_{v:+.0f}", "family": "anchor_premium",
+                     "mechanism": sens.REPRICE_SALE, "param_key": "domestic_anchor_premium_inr_t",
+                     "param_value": v, "flag": "ASSUMPTION", "cum_pnl_horizon_inr": 100.0 + 0.01 * (v + 9000.0)})
+    params = lambda k, d=None: {"domestic_anchor_premium_inr_t": -9000.0, "conversion_cost_inr_t": 12000.0}[k]
+    out = sens.sign_robustness(pd.DataFrame(rows), book, params=params).set_index("family")
+    r = out.loc["anchor_premium"]
+    assert r["breakeven_value"] == pytest.approx(-19000.0)
+    assert bool(r["breakeven_inside_band"]) and not bool(r["sign_robust_within_band"])
+    assert r["linear_max_dev_inr"] < 1e-6
+    assert not bool(out.loc["ALL_REGISTERED_BANDS", "sign_robust_within_band"])
+
+
 # ------------------------------------------------------------------------------------------------- basis risk
 def test_the_basis_sensitivity_publishes_a_loss_case_not_only_a_net_gain(book, H):
     try:
@@ -201,4 +254,4 @@ def test_the_reference_used_for_repricing_matches_phase_2(book, H):
 def test_case_names_are_stable_and_unique(cases):
     assert len(cases) == len(set(cases))
     assert "base" in cases
-    assert not any(np.isnan(c.param_value) and c.family not in ("base", "grade_mix") for c in cases.values())
+    assert not any(np.isnan(c.param_value) and c.family not in ("base", "grade_mix", "grade_diff") for c in cases.values())

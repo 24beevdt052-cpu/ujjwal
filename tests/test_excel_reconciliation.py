@@ -140,12 +140,14 @@ def _header_row(ws, name: str) -> int:
 
 
 # ------------------------------------------------------------------------------------------------- the tests
+@pytest.mark.slow
 def test_recalculation_has_no_error_values(recalc):
     bad = [(sheet, coord, v) for sheet, cells in recalc["values"].items() for coord, v in cells.items()
            if isinstance(v, str) and v in ERROR_VALUES]
     assert not bad, f"{len(bad)} error cells after recalculation, e.g. {bad[:10]}"
 
 
+@pytest.mark.slow
 def test_every_check_cell_passes(workbook, recalc):
     fails = []
     n = 0
@@ -159,6 +161,7 @@ def test_every_check_cell_passes(workbook, recalc):
     assert not fails, f"{len(fails)} failing check cells, e.g. {fails[:20]}"
 
 
+@pytest.mark.slow
 def test_scoreboard_recalculates_to_pass(workbook, recalc):
     ws = workbook["Checks"]
     hr = _header_row(ws, "family")
@@ -180,6 +183,21 @@ def test_scoreboard_recalculates_to_pass(workbook, recalc):
     _write_report(workbook, recalc, families)
 
 
+def test_published_reconciliation_report_passes():
+    """The workbook's published control — the recalculated scoreboard — as the slow run last wrote it.
+
+    Fast by design so the default suite covers it; it proves the last full recalculation passed, not that it is
+    current. After a rebuild of the tables, run the slow tests (DESK_RUN_SLOW=1) to refresh the report.
+    """
+    if not RECON_JSON.exists():
+        pytest.skip(f"{RECON_JSON} not written yet — run DESK_RUN_SLOW=1 pytest tests/test_excel_reconciliation.py")
+    rep_ = json.loads(RECON_JSON.read_text(encoding="utf-8"))
+    assert rep_["scoreboard"] == "PASS"
+    assert rep_["n_check_failures"] == 0 and rep_["n_errors"] == 0
+    assert rep_["n_check_cells"] > 3000 and rep_["scope"] == "full workbook"
+    assert rep_["families"] and all(f["status"] == "PASS" for f in rep_["families"].values()), rep_["families"]
+
+
 def test_computed_sheets_are_formula_driven(census):
     """A future edit cannot quietly swap a formula for a pasted number."""
     for sheet, floor in FORMULA_FLOOR.items():
@@ -193,7 +211,8 @@ def test_computed_sheets_are_formula_driven(census):
 def test_no_cached_values_are_relied_on():
     """openpyxl writes formulas without cached results, so every number the tests below read is recalculated.
 
-    A cached result would appear in the sheet XML as a `<v>` element immediately after the `</f>` that produced it.
+    A cached result would appear in the sheet XML as a non-empty `<v>` element immediately after the `</f>` that
+    produced it.
     """
     import zipfile
 
@@ -203,13 +222,20 @@ def test_no_cached_values_are_relied_on():
         with_formulas = 0
         for name in sheets:
             xml = z.read(name).decode("utf-8", "replace")
-            assert "</f><v>" not in xml, f"{name} carries cached formula results"
+            # Evaluate to a bool BEFORE asserting. `assert "</f><v>" not in xml` on a multi-megabyte sheet made pytest's
+            # assertion rewriting run difflib over the whole XML when it failed — over ten minutes of CPU for one
+            # failing check, which is most of why the suite had become so slow.
+            # openpyxl writes an EMPTY `<v></v>` after some formulas; that carries no cached result, so only a
+            # non-empty value counts (the old substring test failed on the empty element).
+            cached = len(re.findall(r"</f><v>[^<]+</v>", xml))
+            assert cached == 0, f"{name} carries {cached} cached formula results"
             with_formulas += "<f>" in xml
     assert with_formulas >= 10, f"only {with_formulas} sheets contain formulas"
 
 
-def test_named_ranges_are_used_and_resolve(workbook, recalc):
-    """Key parameters are addressed by name, and a name that did not resolve would have produced #NAME?."""
+def test_named_ranges_are_used_and_resolve(workbook):
+    """Key parameters are addressed by name. (A name that did not resolve would recalculate to #NAME?, which the slow
+    `test_recalculation_has_no_error_values` catches; this check needs no recalculation.)"""
     names = set(workbook.defined_names)
     for expected in ("bcd_scrap_hs7602", "sws_rate_on_bcd", "igst_rate_hs7602", "conversion_cost_inr_t",
                      "margin_threshold_inr_t", "conv_step_5a", "param_keys", "param_values",
@@ -270,6 +296,7 @@ def _write_report(workbook, recalc, families) -> None:
 
 
 # ------------------------------------------------------------------------------ determinism (runs last: it rebuilds)
+@pytest.mark.slow
 def test_workbook_is_byte_for_byte_deterministic(tmp_path):
     """CONTRACTS §1.5: re-running the stage reproduces the file exactly (fixed zip stamps and doc properties).
 

@@ -58,3 +58,23 @@ def p0_outputs():
             pytest.fail(f"offline P0 rebuild did not produce {still}")
     elif os.environ.get("DESK_REQUIRE_P0") == "1":
         pytest.fail(f"DESK_REQUIRE_P0=1 but P0 outputs {missing} are missing and the raw cache is incomplete")
+
+
+# ---------------------------------------------------------------------------------------------- slow tests
+# The full suite used to take more than ten minutes, almost all of it in the Excel workbook's full recalculation
+# (`formulas` builds a graph of millions of objects: ~4 minutes and several GB on this machine) and its byte-for-byte
+# rebuild. Those tests are marked `@pytest.mark.slow` and skipped by default. Every published control is still
+# covered by the default run: the P3 sign-off controls by tests/test_mtm_*.py, and the workbook's own recalculated
+# scoreboard by test_excel_reconciliation.py::test_published_reconciliation_report_passes, which reads the report
+# the slow recalculation writes. Run the slow ones with DESK_RUN_SLOW=1 (or `-m slow`).
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: long-running or memory-heavy; skipped unless DESK_RUN_SLOW=1 or -m slow")
+
+
+def pytest_collection_modifyitems(config, items):
+    if os.environ.get("DESK_RUN_SLOW") == "1" or "slow" in (config.getoption("-m") or ""):
+        return
+    skip = pytest.mark.skip(reason="slow test: set DESK_RUN_SLOW=1 (or pass -m slow) to run it")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip)

@@ -288,7 +288,23 @@ def test_buyer_credit_limits_are_checked_against_the_receivable(book, run):
     assert u["presettlement_inr"].max() > u["receivable_inr"].max()
 
 
-def test_phase_2_and_phase_3_agree_that_no_limit_is_breached(book, run):
+def test_per_counterparty_exposure_regroups_exactly_to_the_buyer_table(book, run):
+    """`book_exposures_daily.csv` writes T01's buyers as one compound id; the long table must not, and must re-add."""
+    long = ev.buyer_exposure_by_trade(book, run)
+    assert not long["buyer_id"].str.contains(",").any()
+    assert set(long["buyer_id"]) <= {c.cp_id for c in book.counterparties}
+    t01 = long[long["trade_id"] == "T01"]
+    assert {"BUY_MUN_01", "BUY_RJK_01"} <= set(t01["buyer_id"])
+    agg = long.groupby(["date", "buyer_id"])[["receivable_inr", "presettlement_inr"]].sum()
+    u = ev.buyer_exposure(book, run).set_index(["date", "buyer_id"])[["receivable_inr", "presettlement_inr"]]
+    assert agg.index.equals(u.sort_index().index) or set(agg.index) == set(u.index)
+    gap = (agg.sort_index() - u.sort_index()).abs().to_numpy().max()
+    assert gap < LEDGER_TOL_INR, gap
+
+
+def test_neither_phase_finds_a_breach_on_its_own_limit_measure(book, run):
+    """P2's P04 (at bookings, receivable + uncovered contracted) and P3's daily receivable are different measures
+    with different peaks; what both must show is no breach of their own test (docs/31 §3.4)."""
     p2 = bv.credit_exposure_frame(book)
     assert bool(p2["within_limit"].all())
     p3 = ev.buyer_exposure(book, run)
@@ -325,3 +341,44 @@ def test_window_end_and_horizon_are_reported_separately(run):
     bookrow = run.attribution[run.attribution["trade_id"] == engine.BOOK_ID].set_index("date")
     assert dt.date(2022, 8, 31) == WINDOW_END
     assert WINDOW_END in bookrow.index and HORIZON_END in bookrow.index
+
+
+# ---------------------------------------------------------------------------------- published-file regressions
+def test_trade_cashflows_csv_is_actually_written_and_reconciles(book, H, run, cashflows, tmp_path, monkeypatch):
+    """Review finding: `_write_cashflows` built the frame and never wrote it. Write into a temp dir and tie out."""
+    import pandas as pd
+    monkeypatch.setattr(mrun, "TABLES_DIR", tmp_path)
+    ctl = mrun._write_cashflows(book, H, run)
+    out = tmp_path / "trade_cashflows.csv"
+    assert out.exists(), "the cashflow table must be written"
+    assert ctl["check"].iloc[0] == "cashflow_reconciliation_vs_p2" and ctl["status"].iloc[0] == "INFO"
+    pub = pd.read_csv(out)
+    assert len(pub) == len(cashflows) and (pub["written_by"] == "P3").all()
+    a = pub.groupby(["scenario", "trade_id"])["amount_inr"].sum()
+    b = cashflows.groupby(["scenario", "trade_id"])["amount_inr"].sum()
+    assert (a - b).abs().max() < 0.01 * len(pub)
+
+
+def test_the_published_trade_cashflows_file_is_the_current_engine_output(cashflows):
+    import pandas as pd
+    from desk.paths import TABLES_DIR
+    path = TABLES_DIR / "trade_cashflows.csv"
+    if not path.exists():
+        pytest.skip("trade_cashflows.csv not written yet — run desk.mtm.run")
+    pub = pd.read_csv(path)
+    assert len(pub) == len(cashflows)
+    real = pub[pub["scenario"] == "REALISED"].groupby("trade_id")["amount_inr"].sum()
+    mem = cashflows[cashflows["scenario"] == "REALISED"].groupby("trade_id")["amount_inr"].sum()
+    assert (real - mem).abs().max() < 1.0
+
+
+def test_new_deal_timing_splits_bucket_zero_exactly(book, run):
+    """The '(0) at inception' label overstated day one; the split must add back to the lifetime bucket per trade."""
+    t = mrun.new_deal_timing(book, run)
+    att = run.attribution
+    for _, r in t.iterrows():
+        life = float(att.loc[att["trade_id"] == r["trade_id"], "new_deal"].sum())
+        assert abs(r["new_deal_total_inr"] - life) < 1.0, r["trade_id"]
+        assert abs(r["new_deal_on_trade_date_inr"] + r["new_deal_after_trade_date_inr"] - life) < 1.0
+    bk = t[t["trade_id"] == engine.BOOK_ID].iloc[0]
+    assert 0.0 < bk["after_trade_date_share_frac"] < 1.0

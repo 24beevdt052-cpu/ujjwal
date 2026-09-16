@@ -669,6 +669,23 @@ def test_p13_fires_on_a_provenance_claim_the_ticket_cannot_support(raw, tmp_path
     assert hit and "grade factor" in hit[0].message and "freight" in hit[0].message
 
 
+def test_p13_fires_on_a_streak_the_tape_does_not_show(raw, tmp_path, panel_days):
+    """The review's two streak claims: T01's index 'fallen five weeks running' and T06's rupee 'weakened three
+    sessions running'. The weekly lane index shows a one-week fall; the rupee strengthened on T06's trade date."""
+    doc = copy.deepcopy(raw)
+    t = _ticket(doc, "T06")
+    t["rationale"]["text"] += " The rupee has weakened three sessions running."
+    issues = _mutated(doc, tmp_path, panel_days)
+    hit = [i for i in issues if i.code == "P13"]
+    assert hit and "three sessions running" in hit[0].message and "0-session streak" in hit[0].message
+
+
+def test_p13_streak_check_reads_the_ticket_lane_and_accepts_a_true_claim(book):
+    t01 = book.trade("T01")
+    assert V.numeric_claim_hits(t01, "the US-India index has fallen five weeks running", t01.trade_date)
+    assert V.numeric_claim_hits(t01, "the US-India index has fallen one week running", t01.trade_date) == []
+
+
 def test_p14_warns_when_the_desk_leans_on_an_advance_bigger_than_the_line(book, issues):
     """The receivable limit cannot see an advance; P14 can, and it fires three times on the real book."""
     warned = [i for i in issues if i.code == "P14"]
@@ -805,7 +822,14 @@ def test_methods_doc_is_generated_and_complete(book):
     assert "(SIM)" in md
     # the change logs are the last thing on the page: integration first, then the independent review
     assert "**No ticket was changed by the integration.**" in md
-    assert md.rstrip().endswith("the numbers on this page are complete as published.")
+    assert md.rstrip().endswith("this page should not be quoted without it.")
+    # review findings pinned: the header no longer calls every decision input real, the lane index is not called
+    # monotonic, a multi-lot dwell renders per lot, and the unflagged favourable calls are quantified
+    head = "\n".join(md.splitlines()[:12])
+    assert "hindsight-calibrated" in head and "proxies" in head
+    assert "monotonic" not in md
+    assert "Chargeable dwell L1 2 d, L2 8 d" in md
+    assert "### 6.6 What went right that the desk did not choose" in md
 
 
 def test_trade_hedges_table_covers_every_instrument(book):

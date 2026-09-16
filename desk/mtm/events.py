@@ -365,18 +365,27 @@ def event3_logistics_credit(book: bs.Book, H: MarketHistory, run: engine.BookRun
         {"metric": "overdue_funding_inr", "value": float(funding_f),
          "note": "interest on receivables past their contractual due date, routed to (f) by the §7a.1 split"},
         {"metric": "demurrage_leg_lifetime_inr", "value": float(dem["daily_pnl_inr"].sum()),
-         "note": "chargeable dwell beyond detention_free_days; the dwell magnitude is SIM, anchored to the real "
-                 "27-Jul-2022 void calls at Nhava Sheva / Mundra"},
+         "note": "chargeable dwell beyond detention_free_days on cleared boxes, charged up the registered detention "
+                 "slabs (carrier detention + CFS ground rent combined); the dwell magnitude is SIM, anchored to the "
+                 "real 27-Jul-2022 void calls at Nhava Sheva / Mundra and to the radiation referral on T08. The "
+                 "rejected box's own hold and re-export are a separate REJECTED_BOX_COST leg"},
         {"metric": "max_buyer_limit_utilisation_frac", "value": max_util,
          "note": f"worst name: {worst_name}; RECEIVABLE (invoiced, unpaid) summed ACROSS trades for one buyer "
-                 f"against that buyer's credit_limit_inr — the same measure Phase 2's P04 rule enforces"},
+                 f"against that buyer's credit_limit_inr, measured DAILY (CONTRACTS §7a.4). NOT the measure Phase "
+                 f"2's P04 rule uses: P04 checks receivable plus uncovered contracted sales at each booking, and "
+                 f"publishes a different, higher peak (trade_credit_exposure.csv). Neither shows a breach"},
         {"metric": "max_buyer_contracted_utilisation_frac", "value": max_util_all,
          "note": f"worst name: {worst_name_all}; receivable PLUS pre-settlement (contracted, not yet invoiced, "
                  f"including an advance the buyer still owes). Pre-settlement is a performance risk, not credit "
                  f"extended, so it is reported beside the limit rather than against it"},
         {"metric": "credit_limit_breach_days", "value": float(breach_days),
          "note": "panel days on which at least one buyer's receivable was over its limit (Phase 5 owns the tracker)"},
-        {"metric": "max_days_past_due", "value": float(max_dpd)},
+        {"metric": "max_days_past_due", "value": float(max_dpd),
+         "note": "measured at the previous panel close, inside the funding-accrual interval that ends on the settle "
+                 "date, so a receivable settled N calendar days late shows N-1 here on its last overdue close"},
+        {"metric": "max_ticketed_payment_delay_days",
+         "value": float(max([b.delay_days for t in book.trades for b in t.events.buyer_payment_delay] or [0])),
+         "note": "the delay typed on the ticket (settle date minus contractual due date), for comparison"},
         {"metric": "counterfactual_no_events_pnl_inr", "value": cf_events["daily_pnl_inr"]},
         {"metric": "event_cost_inr", "value": tot["daily_pnl_inr"] - cf_events["daily_pnl_inr"],
          "note": "book minus the same book without the simulated quality, dwell and payment-delay events"},
@@ -425,6 +434,36 @@ def _part_rows(parts: dict[str, engine.BookRun] | None, life: float) -> list[dic
             for name, cf in sorted(parts.items())]
 
 
+def buyer_exposure_by_trade(book: bs.Book, run: engine.BookRun) -> pd.DataFrame:
+    """Date x trade x buyer, long form — the grain a per-counterparty credit tracker can group.
+
+    `book_exposures_daily.csv` is at trade grain and writes a multi-buyer ticket's `buyer_id` as a compound string
+    (T01 sells to BUY_MUN_01 and BUY_RJK_01), which nothing can aggregate by counterparty (Phase 1-3 review, trader
+    lens). This table splits every unsettled sale flow onto its own buyer, one row per (date, trade_id, buyer_id),
+    so Σ over trade_id for a buyer reproduces `buyer_exposure` exactly — `tests/test_mtm_integration.py` asserts it.
+    """
+    rows = []
+    for d in run.days:
+        acc: dict[tuple[str, str], list[float]] = {}
+        for tid, tr in run.per_trade.items():
+            a = tr.atts.get(d)
+            if a is None or a.value_today is None:
+                continue
+            for f, v in zip(a.value_today.schedule.flows, a.value_today.per_flow):
+                if not f.sale_id or f.settle_date is None or f.settle_date <= d:
+                    continue
+                slot = acc.setdefault((tid, f.counterparty_id), [0.0, 0.0])
+                slot[0 if (f.fixing_date is not None and f.fixing_date <= d) else 1] += v
+        for (tid, buyer), (receivable, presettlement) in sorted(acc.items()):
+            limit = book.counterparty(buyer).credit_limit_inr or 0.0
+            rows.append({"date": d, "trade_id": tid, "buyer_id": buyer, "receivable_inr": receivable,
+                         "presettlement_inr": presettlement, "contracted_inr": receivable + presettlement,
+                         "credit_limit_inr": limit,
+                         "receivable_share_of_limit_frac": (receivable / limit) if limit > 0 else float("nan")})
+    return pd.DataFrame(rows, columns=["date", "trade_id", "buyer_id", "receivable_inr", "presettlement_inr",
+                                       "contracted_inr", "credit_limit_inr", "receivable_share_of_limit_frac"])
+
+
 def buyer_exposure(book: bs.Book, run: engine.BookRun) -> pd.DataFrame:
     """Date x buyer: unsettled sale value against that buyer's credit limit, summed ACROSS trades.
 
@@ -437,8 +476,10 @@ def buyer_exposure(book: bs.Book, run: engine.BookRun) -> pd.DataFrame:
     has actually extended, which is what `credit_limit_inr` caps — while `buyer_presettlement_inr` is a contracted
     sale not yet invoiced, including an **advance the buyer still owes**. Summing them made the book look 2.58x over
     a line it never drew on: on 2022-07-26 T07's S1 books a Rs 220.3 m advance (received 2022-08-12, before any
-    truck moves) and a Rs 89.6 m credit balance, and only the second is credit. Phase 2's P04 rule nets the advance
-    out for exactly this reason, so the two phases now measure the same thing and agree.
+    truck moves) and a Rs 89.6 m credit balance, and only the second is credit. Phase 2's P04 rule also nets the
+    advance out, but it is a different measure — evaluated at each sale booking, and counting contracted-but-
+    uninvoiced sales not covered by an advance — so the two phases publish different peak utilisations and must each
+    quote their own denominator (docs/31_adverse_events.md §3.4). Neither measure shows a breach of its own test.
     """
     rows = []
     for d in run.days:

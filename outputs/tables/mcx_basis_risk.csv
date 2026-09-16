@@ -12,16 +12,30 @@ total_pnl_change_vs_base_inr,T05,19173461.80935929,inr,PROXY,the whole effect of
 basis_bucket_mirror_inr,T06,4307180.679876575,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
 total_pnl_change_vs_base_inr,T06,3465845.9187426623,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
 basis_bucket_mirror_inr,T07,-14981371.501086067,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
-total_pnl_change_vs_base_inr,T07,1692320.4805481452,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T07,1692320.4805481387,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
 basis_bucket_mirror_inr,T08,4910487.471676102,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
-total_pnl_change_vs_base_inr,T08,8946546.366765935,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T08,8946546.366765976,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
 basis_bucket_mirror_inr,T09,-1740400.9859377458,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
 total_pnl_change_vs_base_inr,T09,1742998.8620370515,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
 per_trade_pnl_change_worst_inr,BOOK,-19206373.688759193,inr,PROXY,the LOSS case: T01 on the mirror,SENSITIVITY — not base P&L
 per_trade_pnl_change_best_inr,BOOK,19173461.80935929,inr,PROXY,the gain case: T05 on the mirror,SENSITIVITY — not base P&L
 per_trade_pnl_change_range_inr,BOOK,38379835.49811848,inr,PROXY,"read the RANGE, not the netted book total: the book total is one draw of a two-sided risk",SENSITIVITY — not base P&L
-per_trade_abs_mean_inr,BOOK,6607841.8053811975,inr,PROXY,mean absolute per-ticket effect — the size of the basis risk the base run cannot see,SENSITIVITY — not base P&L
-book_pnl_change_vs_base_inr,BOOK,18402493.171563566,inr,PROXY,"the netted book number. It is POSITIVE here; that is one realisation of a two-sided risk, not evidence that a real basis would have helped",SENSITIVITY — not base P&L
+per_trade_abs_mean_inr,BOOK,6607841.8053812,inr,PROXY,mean absolute per-ticket effect — the size of the basis risk the base run cannot see,SENSITIVITY — not base P&L
+book_pnl_change_vs_base_inr,BOOK,18402493.171563596,inr,PROXY,"the netted book number. It is POSITIVE here; that is one realisation of a two-sided risk, not evidence that a real basis would have helped",SENSITIVITY — not base P&L
+book_pnl_change_adverse_image_inr,BOOK,-18402493.171563596,inr,PROXY,"the same basis path with its sign reversed: nothing in one six-month mirror makes the favourable draw more likely than its mirror image, so the book-level basis risk is quoted as +/- this number, not as a gain",SENSITIVITY — not base P&L
+sum_of_losing_tickets_inr,BOOK,-20534041.538433604,inr,PROXY,"the tickets that lost on the mirror, summed without the winners that happened to net them out",SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T01,-19210223.163554817,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T02,4762457.286316061,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T03,2872548.7344072275,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T04,-1327784.6225122665,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T05,15811469.51805823,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T06,3468797.6063545076,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T07,1693789.7424078733,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T08,9135596.112339312,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_vs_base_inr,T09,1743180.0188968237,inr,PROXY,(b) + (g) on the mirror minus (b) + (g) in the base run,SENSITIVITY — not base P&L
+basis_plus_roll_change_worst_ticket_inr,BOOK,-19210223.163554817,inr,PROXY,(b)+(g) jointly: the worst ticket,SENSITIVITY — not base P&L
+basis_plus_roll_change_best_ticket_inr,BOOK,15811469.51805823,inr,PROXY,(b)+(g) jointly: the best ticket,SENSITIVITY — not base P&L
+basis_plus_roll_change_book_two_sided_inr,BOOK,18949831.232712936,inr,PROXY,"(b)+(g) jointly at book level, quoted as a +/- band: the mirror moved them by this much in the desk's favour, and a curve that went the other way moves them by as much against it",SENSITIVITY — not base P&L
 unit_beta_beta,BOOK,0.452250978604,frac,PROXY,OLS slope of daily mirror M1 changes on duty-paid-parity changes over the window; the engine's hedge sizing assumes 1.0,SENSITIVITY — not base P&L
 unit_beta_beta_se,BOOK,0.063198003674,frac,PROXY,OLS standard error of the slope,SENSITIVITY — not base P&L
 unit_beta_beta_t_vs_one,BOOK,-8.667188669769,t,PROXY,t statistic for H0: beta = 1. |t| > ~2 rejects the unit-beta assumption the hedge is sized on,SENSITIVITY — not base P&L
