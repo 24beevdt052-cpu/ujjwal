@@ -122,14 +122,15 @@ def landed_cost_waterfall(row: pd.Series, ref_label: str) -> str:
             color = PALETTE["lme"] if i < 8 else PALETTE["mcx"]
             ax.bar(i, val / 1000, color=color, alpha=0.85)
             level = val
-            ax.text(i, val / 1000 + 3, f"{val / 1000:,.1f}", ha="center", fontsize=8)
+            ax.text(i, val / 1000 + 3, _fmt_num(val / 1000, 1), ha="center", fontsize=8)
         else:
             bottom = level if val >= 0 else level + val
             raises_cost = i < 8
             good = (val < 0) if raises_cost else (val > 0)
             ax.bar(i, abs(val) / 1000, bottom=bottom / 1000, color=PALETTE["gain"] if good else PALETTE["loss"],
                    alpha=0.8)
-            ax.text(i, (level + max(val, 0)) / 1000 + 3, f"{val / 1000:+,.1f}", ha="center", fontsize=8)
+            ax.text(i, (level + max(val, 0)) / 1000 + 3, _fmt_num(val / 1000, 1) if val < 0
+                    else f"+{val / 1000:,.1f}", ha="center", fontsize=8)
             level += val
     ax.set_xticks(range(len(steps)))
     ax.set_xticklabels([s[0] for s in steps], fontsize=8)
@@ -139,14 +140,19 @@ def landed_cost_waterfall(row: pd.Series, ref_label: str) -> str:
     ax.set_title(f"Landed cost vs domestic realisation — {ref_label} (y-axis truncated)")
     net = float(row["net_arb_inr_t"])
     ax2.bar([0], [net / 1000], color=PALETTE["gain"] if net > 0 else PALETTE["loss"])
-    ax2.axhline(row["margin_threshold_inr_t"] / 1000, color=PALETTE["loss"], ls="-.", lw=1, label="threshold")
-    ax2.text(0, net / 1000 + (1 if net >= 0 else -3), f"{net:,.0f}", ha="center", fontsize=9, fontweight="bold")
+    thr_k = row["margin_threshold_inr_t"] / 1000
+    ax2.axhline(thr_k, color=PALETTE["loss"], ls="-.", lw=1)
+    # labelled on the line: a legend box in this narrow panel sat on top of the bar
+    ax2.annotate(f"threshold ₹{thr_k:g}k/MT", xy=(0, thr_k), xytext=(0, 3), textcoords="offset points", ha="center",
+                 va="bottom", fontsize=8, color=PALETTE["loss"],
+                 bbox={"boxstyle": "round,pad=0.2", "fc": "white", "ec": "none", "alpha": 0.9})
+    ax2.text(0, net / 1000 + (1 if net >= 0 else -3), f"{_rupee(net)}/MT", ha="center", fontsize=9, fontweight="bold")
     ax2.axhline(0, color=PALETTE["neutral"], lw=0.6)
     ax2.set_xticks([0])
     ax2.set_xticklabels(["NET ARB\n= realisation − landed"], fontsize=8)
     ax2.set_ylabel("₹ '000 per MT")
-    ax2.legend(fontsize=8)
     fig.tight_layout()
+    fig.subplots_adjust(bottom=0.15)      # keep the two-line tick labels clear of the source footer
     note = (f"FX for goods = 1M forward {fx:.4f} (parity_goods_fx_basis); duties on customs rate "
             f"{row['customs_usdinr_import']:.2f}; anchor = MCX {row['mcx_contract']} proxy + premium")
     return save_fig(fig, "p1_landed_cost_waterfall", note)
@@ -154,7 +160,9 @@ def landed_cost_waterfall(row: pd.Series, ref_label: str) -> str:
 
 def _fmt_num(v: float, dec: int) -> str:
     txt = f"{v:,.{dec}f}"
-    return txt[1:] if txt.startswith("-") and float(txt.replace(",", "")) == 0 else txt
+    if txt.startswith("-") and float(txt.replace(",", "")) == 0:
+        return txt[1:]
+    return txt.replace("-", "−")
 
 
 def _rupee(v: float) -> str:
@@ -166,55 +174,71 @@ def _annotated_heatmap(ax, mat: np.ndarray, xlabels, ylabels, title: str, vmax: 
     ax.set_xticks(range(len(xlabels)))
     ax.set_xticklabels(xlabels, fontsize=8)
     ax.set_yticks(range(len(ylabels)))
-    ax.set_yticklabels(ylabels, fontsize=8)
+    ax.set_yticklabels([str(y).replace("-", "−") for y in ylabels], fontsize=8)
     for (i, j), v in np.ndenumerate(mat):
         ax.text(j, i, _fmt_num(v, dec), ha="center", va="center", fontsize=7)
     ax.grid(False)
-    ax.set_title(title, fontsize=10)
+    ax.set_title(title, fontsize=9.5)
     return im
+
+
+def _ref_title(ref: str, base: pd.Series, extra: str = "") -> str:
+    """Three short lines per panel: three wide two-line titles side by side ran into each other."""
+    return (f"{ref.replace('_', ' ')}\n{pd.Timestamp(base['week_end']).date()} · {GRADE_LABELS[base['grade']]} · "
+            f"{base['lane']}{extra}")
+
+
+def _heatmap_grid(n: int):
+    """One row of heatmaps sharing the y labels, with an explicit colour-bar axis so nothing overlaps."""
+    fig, axes = plt.subplots(1, n, figsize=(15, 6.6), sharey=True)
+    fig.subplots_adjust(left=0.08, right=0.9, bottom=0.11, top=0.8, wspace=0.07)
+    cax = fig.add_axes((0.915, 0.18, 0.012, 0.55))
+    return fig, np.atleast_1d(axes), cax
 
 
 def sensitivity_lme_fx(grid: pd.DataFrame) -> str:
     refs = list(dict.fromkeys(grid["ref_case"]))
-    fig, axes = plt.subplots(1, len(refs), figsize=(15, 6.5))
+    fig, axes, cax = _heatmap_grid(len(refs))
     vmax = float(np.abs(grid["pnl_impact_1000mt_inr"]).max() / 1e6)
-    for ax, ref in zip(np.atleast_1d(axes), refs):
+    for k, (ax, ref) in enumerate(zip(axes, refs)):
         g = grid[(grid["ref_case"] == ref) & (~grid["usdinr_is_base"])]
         piv = g.pivot_table(index="lme_shock_pct", columns="usdinr", values="pnl_impact_1000mt_inr").sort_index(
             ascending=False)
         base = grid[(grid["ref_case"] == ref) & grid["usdinr_is_base"]].iloc[0]
         im = _annotated_heatmap(
             ax, piv.to_numpy() / 1e6, [f"{c:.0f}" for c in piv.columns], [f"{i:+d}%" for i in piv.index],
-            f"{ref}: {pd.Timestamp(base['week_end']).date()} {base['grade']} {base['lane']}\n"
-            f"base net arb {_rupee(base['net_arb_base_inr_t'])}/t; base USD/INR {base['usdinr']:.2f}", vmax)
+            _ref_title(ref, base) + f"\nbase net arb {_rupee(base['net_arb_base_inr_t'])}/t at USD/INR "
+            f"{base['usdinr']:.2f}", vmax)
         ax.set_xlabel("USD/INR level")
-        ax.set_ylabel("LME shock (3M and cash)")
-    fig.colorbar(im, ax=axes, shrink=0.8, label="Δ net arb on 1,000 MT, ₹ million")
+        if k == 0:
+            ax.set_ylabel("LME shock (3M and cash)")
+    fig.colorbar(im, cax=cax, label="Δ net arb on 1,000 MT, ₹ million")
     fig.suptitle("Table 1.5(a) — parity P&L impact on 1,000 MT: LME × USD/INR (both legs re-priced), ₹ million",
-                 fontsize=12, fontweight="bold", y=1.0)
+                 fontsize=12, fontweight="bold", y=0.97)
     return save_fig(fig, "p1_sensitivity_lme_fx",
                     "MCX proxy anchor, by-product, duty base and finance re-derived from shocked LME/FX")
 
 
 def sensitivity_freight_duty(grid: pd.DataFrame) -> str:
     refs = list(dict.fromkeys(grid["ref_case"]))
-    fig, axes = plt.subplots(1, len(refs), figsize=(15, 6.5))
+    fig, axes, cax = _heatmap_grid(len(refs))
     fob = grid[grid["freight_terms"] == "FOB_desk_books_freight"]
     vmax = float(np.abs(fob["pnl_impact_1000mt_inr"]).max() / 1e6)
-    for ax, ref in zip(np.atleast_1d(axes), refs):
+    for k, (ax, ref) in enumerate(zip(axes, refs)):
         g = fob[fob["ref_case"] == ref]
         piv = g.pivot_table(index="freight_shock_pct", columns="bcd_rate_pct", values="pnl_impact_1000mt_inr"
                             ).sort_index(ascending=False)
         base = g.iloc[0]
         im = _annotated_heatmap(
             ax, piv.to_numpy() / 1e6, [f"{c:g}%" for c in piv.columns], [f"{i:+d}%" for i in piv.index],
-            f"{ref}: {pd.Timestamp(base['week_end']).date()} {base['grade']} {base['lane']}, FOB terms\n"
-            f"base net arb {_rupee(base['net_arb_base_inr_t'])}/t (CFR terms: rows identical)", vmax, dec=2)
+            _ref_title(ref, base, ", FOB terms") + f"\nbase net arb {_rupee(base['net_arb_base_inr_t'])}/t "
+            "(CFR terms: rows identical)", vmax, dec=2)
         ax.set_xlabel("BCD rate on HS 7602 (base 2.5%)")
-        ax.set_ylabel("ocean freight shock")
-    fig.colorbar(im, ax=axes, shrink=0.8, label="Δ net arb on 1,000 MT, ₹ million")
+        if k == 0:
+            ax.set_ylabel("ocean freight shock")
+    fig.colorbar(im, cax=cax, label="Δ net arb on 1,000 MT, ₹ million")
     fig.suptitle("Table 1.5(b) — parity P&L impact on 1,000 MT: ocean freight × BCD, ₹ million", fontsize=12,
-                 fontweight="bold", y=1.0)
+                 fontweight="bold", y=0.97)
     return save_fig(fig, "p1_sensitivity_freight_duty",
                     "Freight levels are hindsight reconstructions (CONTRACTS §4.3); FOB = desk books freight")
 
@@ -258,12 +282,13 @@ def sensitivity_band(cases_long: pd.DataFrame) -> str:
 def term_structure(weekly: pd.DataFrame, rolls: pd.DataFrame) -> str:
     fig, axes = plt.subplots(3, 1, figsize=(12, 11))
     ax = axes[0]
-    colors = [PALETTE["gain"] if v > 0 else PALETTE["loss"] for v in weekly["lme_cash_3m_spread_usd_t"]]
+    # same colour convention as the Phase 0 market panel: backwardation red, contango green
+    colors = [PALETTE["loss"] if v > 0 else PALETTE["gain"] for v in weekly["lme_cash_3m_spread_usd_t"]]
     ax.bar(weekly["week_end"], weekly["lme_cash_3m_spread_usd_t"], width=5, color=colors)
     _window_span(ax)
     ax.axhline(0, color=PALETTE["neutral"], lw=0.6)
     ax.set_ylabel("Cash − 3M, USD/t")
-    ax.set_title("LME aluminium Cash–3M on the parity value date (green = backwardation, red = contango)")
+    ax.set_title("LME aluminium Cash–3M on the parity value date (red = backwardation, green = contango)")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b-%y"))
 
     ax = axes[1]

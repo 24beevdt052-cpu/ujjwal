@@ -34,7 +34,8 @@ LIMITS_TABLE = "margin_liquidity_policy_limits"
 FLOAT_DECIMALS = 6
 M = 1e6
 NB = "\u00a0"  # non-breaking space: a number never wraps away from its unit in the one-page layout
-MEMO_STYLE = PdfStyle(font_size=7.9, table_font_size=7.25, title_size=12.0, h2_size=8.6, h3_size=8.0,
+# sized to fill about 94 % of the page: readable, with room for the numbers to move without a second page
+MEMO_STYLE = PdfStyle(font_size=8.3, table_font_size=7.6, title_size=12.0, h2_size=8.6, h3_size=8.0,
                       margin_left_mm=11.0, margin_right_mm=11.0, margin_top_mm=9.0, margin_bottom_mm=11.0,
                       leading_ratio=1.18, paragraph_space_after=2.2, heading_space_before=2.6,
                       footer_font_size=6.3)
@@ -427,7 +428,7 @@ def render_md(limits: pd.DataFrame, ev: dict) -> str:
 
 > **{SIM_LABEL}.** Book P&L was {inr_m(ev['pnl_horizon'])} at {day(str(HORIZON_END))}-2022, but it is **not sign-robust**: {inr_m(ev['pnl_band_min'])} to {inr_m(ev['pnl_band_max'], sign=True)} across the registered domestic anchor-premium grid (break-even {num(ev['breakeven_anchor'])} ₹/t inside it). So every limit below is sized on the risk the book ran, not on what it earned. Evidence is from the published tables; checks that include the MCX leg skip the {ev['n_stale_dates']} MCX exit/roll position dates P3 flags. Hedge effectiveness is measured on a unit-beta MCX proxy, so the MCX basis is under-represented in every hedge number here. The third-party mirror's beta is {ev['mcx_beta_weekly']:.2f} on weekly closes and {ev['mcx_beta']:.2f} on daily data, which the MCX evening close biases down: mean GARCH VaR is {inr_m(ev['var_beta_weekly_mean'])} at the weekly beta and {inr_m(ev['var_beta_mean'])} at the daily one (the pessimistic end, not a hedge ratio anyone would use), against {inr_m(ev['var_mean_garch'], 2)} on the proxy.
 
-<!-- widths: 0.112, 0.28, 0.314, 0.294 -->
+<!-- widths: 0.124, 0.276, 0.31, 0.29 -->
 | Area | Limit / rule proposed | Book evidence (2022) | Book vs limit → remediation |
 |---|---|---|---|
 | **Position** | Gross physical LME exposure ≤ {mt(float(v('policy_max_physical_open_mt')))} and ≤ {usd_m(float(v('policy_max_physical_open_usd')), 0)} | Peak {mt(ev['phys_mt_peak'])} / {usd_m(ev['phys_usd_peak'], 1)} on {day(ev['phys_usd_peak_date'])}; unsold cargo {mt(ev['unsold_peak'])} on {day(ev['unsold_peak_date'])} | Within by construction — the limit was set just above the book's own peak, so this is not evidence; not raised, because that size already used the whole working-capital line (Liquidity row) |

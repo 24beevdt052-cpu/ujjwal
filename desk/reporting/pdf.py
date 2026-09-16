@@ -33,6 +33,12 @@ Design choices worth knowing:
 * **Footer.** Every page carries `desk.SIM_LABEL` on the left and "Page n of N" on the right. N is known only after
   layout, so pages are buffered by `_NumberedCanvas` and stamped at save time; the same count is returned to the
   caller, which lets a stage assert a one-page limit without parsing the PDF.
+* **Alignment.** Documents are built on `DeskDocTemplate`, whose frame has no inner padding, so paragraphs, tables,
+  side-by-side figure rows and the footer all share the same left and right edges (reportlab's default frame pads text
+  by 6 pt but not the full-width tables, which then overhang the text column on both sides). Callout boxes are inset
+  so their border, not their text, sits on those edges.
+* **Page flow.** Headings are kept with what follows them. A style with `keep_sections=True` also keeps each `##`
+  section together when it fits on one page (used by the question-by-question interview pack).
 * `count_pdf_pages(path)` re-counts from the file bytes (page objects), for tests that should not trust the renderer.
 """
 
@@ -53,11 +59,14 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import (
+    BaseDocTemplate,
+    Frame,
     HRFlowable,
+    KeepTogether,
     ListFlowable,
     ListItem,
+    PageTemplate,
     Paragraph,
-    SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
@@ -112,6 +121,11 @@ class PdfStyle:
     table_grid: colors.Color = field(default_factory=lambda: colors.HexColor("#b7c3d0"))
     callout_bg: colors.Color = field(default_factory=lambda: colors.HexColor("#f3f6fa"))
     footer_color: colors.Color = field(default_factory=lambda: colors.HexColor("#7f7f7f"))
+    keep_sections: bool = False     # keep each "##" section on one page when it fits
+
+
+CALLOUT_PAD = (2.5, 3.0, 2.5, 3.0)  # top, right, bottom, left (pt): the box's padding around the callout text
+CALLOUT_GAP = 3.0                   # visible gap between two stacked callout boxes, pt
 
 
 # ------------------------------------------------------------------------------------------------ inline markup
@@ -268,11 +282,16 @@ def _styles(st: PdfStyle) -> dict[str, ParagraphStyle]:
                                 leading=st.title_size * 1.18, textColor=st.accent, spaceAfter=2.5),
         "h2": ParagraphStyle("h2", parent=base, fontName="DeskSans-Bold", fontSize=st.h2_size,
                              leading=st.h2_size * 1.2, textColor=st.accent, spaceBefore=st.heading_space_before,
-                             spaceAfter=1.6),
+                             spaceAfter=1.6, keepWithNext=1),
         "h3": ParagraphStyle("h3", parent=base, fontName="DeskSans-Bold", fontSize=st.h3_size,
-                             leading=st.h3_size * 1.2, spaceBefore=st.heading_space_before * 0.6, spaceAfter=1.2),
-        "callout": ParagraphStyle("callout", parent=base, backColor=st.callout_bg, borderPadding=(2.5, 3, 2.5, 3),
-                                  borderColor=st.rule_color, borderWidth=0.4, spaceBefore=5.5, spaceAfter=5.5),
+                             leading=st.h3_size * 1.2, spaceBefore=st.heading_space_before * 0.6, spaceAfter=1.2,
+                             keepWithNext=1),
+        # reportlab collapses adjacent spaceAfter/spaceBefore to the larger one, and the box padding eats into it, so
+        # the spacing is padding + gap; the indents put the box border (not the text) on the column edges
+        "callout": ParagraphStyle("callout", parent=base, backColor=st.callout_bg, borderPadding=CALLOUT_PAD,
+                                  borderColor=st.rule_color, borderWidth=0.4, leftIndent=CALLOUT_PAD[3],
+                                  rightIndent=CALLOUT_PAD[1], spaceBefore=CALLOUT_PAD[0] + CALLOUT_PAD[2] + CALLOUT_GAP,
+                                  spaceAfter=CALLOUT_PAD[0] + CALLOUT_PAD[2] + CALLOUT_GAP),
         "bullet": ParagraphStyle("bullet", parent=base, spaceAfter=0.9),
         "cell": ParagraphStyle("cell", parent=base, fontSize=st.table_font_size,
                                leading=st.table_font_size * 1.17, spaceAfter=0),
@@ -319,7 +338,12 @@ def markdown_to_flowables(md: str, style: PdfStyle | None = None) -> list:
     S = _styles(st)
     avail_w = st.pagesize[0] - (st.margin_left_mm + st.margin_right_mm) * mm
     out: list = []
+    sections: list[tuple[int, int]] = []            # (start index, end index) of each "##" section in `out`
     for b in parse_markdown(md):
+        if b.kind in ("title", "h2") and sections and sections[-1][1] < 0:
+            sections[-1] = (sections[-1][0], len(out))
+        if b.kind == "h2":
+            sections.append((len(out), -1))
         if b.kind in ("title", "h2", "h3"):
             out.append(Paragraph(inline_markup(b.text), S[b.kind]))
         elif b.kind == "para":
@@ -329,14 +353,33 @@ def markdown_to_flowables(md: str, style: PdfStyle | None = None) -> list:
         elif b.kind == "rule":
             out.append(HRFlowable(width="100%", thickness=0.5, color=st.rule_color, spaceBefore=1.5, spaceAfter=2.5))
         elif b.kind in ("bullets", "numbers"):
-            items = [ListItem(Paragraph(inline_markup(t), S["bullet"]), leftIndent=9) for t in b.items]
-            kw = dict(bulletType="bullet", start="•") if b.kind == "bullets" else dict(bulletType="1")
-            out.append(ListFlowable(items, leftIndent=9, bulletFontName="DeskSans", bulletFontSize=st.font_size * 0.9,
-                                    spaceAfter=st.paragraph_space_after, **kw))
+            indent = 9 if b.kind == "bullets" else 11.5         # "1." is wider than "•"
+            items = [ListItem(Paragraph(inline_markup(t), S["bullet"]), leftIndent=indent) for t in b.items]
+            kw = dict(bulletType="bullet", start="•") if b.kind == "bullets" else dict(bulletType="1",
+                                                                                       bulletFormat="%s.")
+            out.append(ListFlowable(items, leftIndent=indent, bulletFontName="DeskSans",
+                                    bulletFontSize=st.font_size * 0.9, spaceAfter=st.paragraph_space_after, **kw))
         elif b.kind == "table":
             out.append(_table(b, st, S, avail_w))
             out.append(Spacer(1, st.paragraph_space_after + 1))
+    if st.keep_sections and sections:
+        if sections[-1][1] < 0:
+            sections[-1] = (sections[-1][0], len(out))
+        for start, end in reversed(sections):
+            out[start:end] = [KeepTogether(out[start:end])]
     return out
+
+
+class DeskDocTemplate(BaseDocTemplate):
+    """One A4 page template whose frame has no inner padding: text, tables, figures and footer share both edges."""
+
+    def __init__(self, filename: str, style: PdfStyle, **meta):
+        super().__init__(filename, pagesize=style.pagesize, leftMargin=style.margin_left_mm * mm,
+                         rightMargin=style.margin_right_mm * mm, topMargin=style.margin_top_mm * mm,
+                         bottomMargin=style.margin_bottom_mm * mm, invariant=True, **meta)
+        frame = Frame(self.leftMargin, self.bottomMargin, self.width, self.height, id="normal", leftPadding=0,
+                      rightPadding=0, topPadding=0, bottomPadding=0)
+        self.addPageTemplates([PageTemplate(id="page", frames=[frame], pagesize=style.pagesize)])
 
 
 # ------------------------------------------------------------------------------------------------ canvas + build
@@ -385,10 +428,7 @@ def render_markdown_pdf(md: str, out_path: str | Path, *, title: str = "", autho
     st = style or PdfStyle()
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    doc = SimpleDocTemplate(str(out_path), pagesize=st.pagesize, leftMargin=st.margin_left_mm * mm,
-                            rightMargin=st.margin_right_mm * mm, topMargin=st.margin_top_mm * mm,
-                            bottomMargin=st.margin_bottom_mm * mm, title=title, author=author, subject=subject,
-                            creator="desk.reporting.pdf", invariant=True)
+    doc = DeskDocTemplate(str(out_path), st, title=title, author=author, subject=subject, creator="desk.reporting.pdf")
     sink: list[int] = []
     doc.build(markdown_to_flowables(md, st), canvasmaker=_numbered_canvas_class(footer_text, st, sink))
     return sink[-1] if sink else 0

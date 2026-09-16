@@ -1,20 +1,16 @@
 """Renders `docs/35_excel_workbook.md` from the same objects `build` used to write the workbook.
 
 Every count in the doc is read off the workbook that was just written, so the two cannot drift. The reconciliation
-section is filled from `outputs/excel/reconciliation.json`, which `tests/test_excel_reconciliation.py` writes when it
-recalculates the file; before the test has ever run, that section says so rather than quoting a stale number.
+section (§7) states `desk.excel.reconciliation_status.status()` first — VERIFIED, STALE, NOT_RUN or FAILED against the
+workbook just saved — and quotes the numbers of `outputs/excel/reconciliation.json` as a verification only when the
+record's SHA-256 matches that workbook. Otherwise it says what is missing and gives the exact command to verify.
 """
 
 from __future__ import annotations
 
-import json
-
 from desk import HORIZON_END, SIM_LABEL, WINDOW_END, WINDOW_START
-from desk.excel import sheet_readme, sources
+from desk.excel import reconciliation_status, sheet_readme, sources
 from desk.excel.layout import FORMULA, INPUT, KEY, PASTED, Counts
-from desk.paths import EXCEL_DIR
-
-RECON_JSON = EXCEL_DIR / "reconciliation.json"
 
 
 def _table(headers, rows) -> str:
@@ -157,16 +153,36 @@ def _recon() -> list[str]:
             "3. no cell recalculates to `#REF!`, `#NAME?`, `#DIV/0!`, `#VALUE!`, `#N/A`, `#NULL!` or `#NUM!`;",
             "4. the workbook is byte-for-byte deterministic (CONTRACTS §1.5) — rebuilding it produces an identical "
             "file, which is why the zip entry timestamps and the document properties are pinned.", ""]
-    if not RECON_JSON.exists():
-        return head + ["_No reconciliation run has been recorded yet. Run "
-                       "`DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_excel_reconciliation.py` and "
-                       "re-run `desk.excel.build` to fill this section._", ""]
-    r = json.loads(RECON_JSON.read_text())
+    st = reconciliation_status.status()
+    out = head + [f"**Status: {st.status}.** {st.reason}", ""]
+    if not st.verified:
+        out += [st.how_to_verify(), ""]
+    r = st.report
+    if r is None:
+        return out
+    try:
+        body = _recon_numbers(r, st)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return out + ["The record is incomplete, so no numbers are quoted from it.", ""]
+    if not st.verified:
+        body = [f"The numbers below are the **last recorded run, not a verification of the workbook this page "
+                f"describes** (status {st.status}).", ""] + body
+    return out + body
+
+
+def _recon_numbers(r: dict, st: reconciliation_status.ReconStatus) -> list[str]:
     rows = [[f"`{k}`", f"{v['formula']:,}", f"{v['constant']:,}", f"{v['ratio']:.0%}"]
             for k, v in sorted(r["sheets"].items())]
     scope = r.get("scope", "full workbook")
-    return head + [
+    if st.recorded_sha256:
+        size = f", {st.recorded_bytes:,} bytes" if st.recorded_bytes is not None else ""
+        source = f" — {st.hash_source}" if st.hash_source else ""
+        ident = f"* workbook recalculated: SHA-256 `{st.recorded_sha256}`{size}{source}"
+    else:
+        ident = "* workbook recalculated: not identified (the record carries no SHA-256)"
+    return [
         f"**Scope of the recalculation: {scope}.** {r.get('scope_note', '')}", "",
+        ident,
         f"* cells recalculated: **{r['n_recalculated']:,}**  ·  wall time **{r['seconds']:.0f} s**",
         f"* `Checks` cells read: **{r['n_check_cells']:,}**, failures: **{r['n_check_failures']}**",
         f"* scoreboard verdict recalculated from the formulas: **{r['scoreboard']}**",

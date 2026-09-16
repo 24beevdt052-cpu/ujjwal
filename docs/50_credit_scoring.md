@@ -7,7 +7,7 @@ evidence that the model predicts real defaults, and no probability of default on
 real company.
 
 ```sh
-cd /Users/sujaljindal/Desktop/ujjwal
+cd ujjwal   # the repository root
 DESK_OFFLINE=1 .venv/bin/python -c "import desk.risk.run_credit as m; m.main()"   # ~6 s, deterministic
 DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_risk_credit.py
 ```

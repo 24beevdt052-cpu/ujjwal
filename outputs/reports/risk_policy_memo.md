@@ -4,7 +4,7 @@
 
 > **ACADEMIC SIMULATION — not actual trades.** Book P&L was ₹192.1 m at 31-Oct-2022, but it is **not sign-robust**: −₹105.4 m to +₹334.3 m across the registered domestic anchor-premium grid (break-even −38,702 ₹/t inside it). So every limit below is sized on the risk the book ran, not on what it earned. Evidence is from the published tables; checks that include the MCX leg skip the 16 MCX exit/roll position dates P3 flags. Hedge effectiveness is measured on a unit-beta MCX proxy, so the MCX basis is under-represented in every hedge number here. The third-party mirror's beta is 0.75 on weekly closes and 0.45 on daily data, which the MCX evening close biases down: mean GARCH VaR is ₹8.5 m at the weekly beta and ₹17.3 m at the daily one (the pessimistic end, not a hedge ratio anyone would use), against ₹4.27 m on the proxy.
 
-<!-- widths: 0.112, 0.28, 0.314, 0.294 -->
+<!-- widths: 0.124, 0.276, 0.31, 0.29 -->
 | Area | Limit / rule proposed | Book evidence (2022) | Book vs limit → remediation |
 |---|---|---|---|
 | **Position** | Gross physical LME exposure ≤ 5,000 MT and ≤ USD 15 m | Peak 4,450 MT / USD 14.5 m on 21-Apr; unsold cargo 4,980 MT on 6-Apr | Within by construction — the limit was set just above the book's own peak, so this is not evidence; not raised, because that size already used the whole working-capital line (Liquidity row) |

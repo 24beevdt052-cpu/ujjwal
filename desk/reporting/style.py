@@ -78,11 +78,61 @@ def apply_style() -> None:
     )
 
 
+FOOTER_SEP = "  |  "
+FOOTER_GAP_PT = 6.0
+
+
+def _content_bboxes(fig, renderer, exclude) -> list:
+    boxes = [ax.get_tightbbox(renderer) for ax in fig.axes if ax.get_visible()]
+    boxes += [a.get_window_extent(renderer) for a in (*fig.texts, *fig.legends) if a is not exclude and a.get_visible()]
+    return [b for b in boxes if b is not None and b.width > 0 and b.height > 0]
+
+
+def _wrap_to_width(text, words: list[str], width_px: float, renderer) -> str:
+    lines, cur = [], ""
+    for w in words:
+        trial = f"{cur} {w}" if cur else w
+        text.set_text(trial)
+        if cur and text.get_window_extent(renderer).width > width_px:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = trial
+    return "\n".join(lines + [cur])
+
+
+def _place_footer(fig, footer: str) -> None:
+    """Stamp the footer at the bottom-left, and move it only where the default spot would look broken.
+
+    The default (figure y = 0.005, one line) is kept whenever it is clean, so a chart that was already legible renders
+    byte-identically. Two cases are corrected: a footer wider than the chart itself (which `bbox_inches="tight"` would
+    otherwise honour by padding the image with empty space, shrinking the plot wherever the PNG is scaled to a column)
+    is wrapped to the chart's width, source note under the label; and a footer that collides with tick labels, legends
+    or notes drawn low in the figure is moved just below everything else.
+    """
+    text = fig.text(0.01, 0.005, footer, fontsize=7, color="#7f7f7f", ha="left", va="bottom")
+    renderer = fig.canvas.get_renderer()
+    content = _content_bboxes(fig, renderer, text)
+    if not content:
+        return
+    right = max(b.x1 for b in content)
+    fb = text.get_window_extent(renderer)
+    if fb.x1 > right + 1.0 and FOOTER_SEP in footer:
+        label, note = footer.split(FOOTER_SEP, 1)
+        wrapped = _wrap_to_width(text, note.split(" "), max(right - fb.x0, 1.0), renderer)
+        text.set_text(f"{label}\n{wrapped}")
+        fb = text.get_window_extent(renderer)
+    if any(b.overlaps(fb) for b in content):
+        bottom = min(b.y0 for b in content)
+        text.set_verticalalignment("top")
+        text.set_y((bottom - FOOTER_GAP_PT * fig.dpi / 72.0) / fig.bbox.height)
+
+
 def save_fig(fig, name: str, source_note: str = "") -> str:
     """Stamp the SIM label (+ optional data-source note) and save to outputs/charts/<name>.png."""
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    footer = SIM_LABEL + (f"  |  {source_note}" if source_note else "")
-    fig.text(0.01, 0.005, footer, fontsize=7, color="#7f7f7f", ha="left", va="bottom")
+    footer = SIM_LABEL + (f"{FOOTER_SEP}{source_note}" if source_note else "")
+    _place_footer(fig, footer)
     out = CHARTS_DIR / f"{name}.png"
     fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)

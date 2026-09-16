@@ -11,7 +11,7 @@ adverse events did to the book — each one isolated against a counterfactual re
 component of the book removed.
 
 ```sh
-cd /Users/sujaljindal/Desktop/ujjwal
+cd ujjwal   # the repository root
 DESK_OFFLINE=1 .venv/bin/python run_all.py --only P3
 ```
 

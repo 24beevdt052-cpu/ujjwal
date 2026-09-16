@@ -241,7 +241,9 @@ def chart_margin(daily: pd.DataFrame, windows: list[lq.Window], fac: lq.Facility
     ax.axhline(0, color="black", lw=0.6)
     ax.set_ylabel("₹ m")
     ax.set_title("Funding need against the ASSUMPTION facilities (sized on the Feb-2022 plan, not on this book)")
-    ax.legend(loc="upper left", ncol=2, fontsize=7.5)
+    lo, hi = ax.get_ylim()
+    ax.set_ylim(lo, hi + 0.3 * (hi - lo))          # headroom so the legend sits above the May and July peaks
+    ax.legend(loc="upper left", ncol=3, fontsize=7.5)
 
     ax = axes[3]
     _shade(ax, windows, x)
@@ -255,6 +257,8 @@ def chart_margin(daily: pd.DataFrame, windows: list[lq.Window], fac: lq.Facility
     ax.axhline(0, color="black", lw=0.8)
     ax.set_ylabel("₹ m")
     ax.set_title("Headroom (below zero = breach)")
+    lo, hi = ax.get_ylim()
+    ax.set_ylim(lo - 0.3 * (hi - lo), hi)          # room under the July breach so the legend does not cover it
     ax.legend(loc="lower left", ncol=2, fontsize=7.5)
     fig.tight_layout()
     return save_fig(fig, "p5_liquidity_margin",

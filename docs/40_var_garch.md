@@ -13,7 +13,7 @@
 > (`pnl_sensitivity_sign_robustness.csv`). The headline is **not sign-robust**.
 
 ```sh
-cd /Users/sujaljindal/Desktop/ujjwal
+cd ujjwal   # the repository root
 DESK_OFFLINE=1 .venv/bin/python -c "import desk.risk.run_var as m; m.main()"   # ~10 s, ~200 MB
 DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_risk_var.py            # 23 tests
 ```

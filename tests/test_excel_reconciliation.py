@@ -13,8 +13,11 @@ the `formulas` library parses every formula, builds the dependency graph and eva
 4. **The workbook is byte-for-byte deterministic** (CONTRACTS §1.5): rebuilding it produces an identical file.
 
 Scope: the **whole workbook** is recalculated — 127k cells, about two minutes — so nothing is sampled and no result
-is quoted from a subset. The run writes `outputs/excel/reconciliation.json`, which `docs/35_excel_workbook.md` §7
-reports; re-run `desk.excel.build` after the test to refresh that section.
+is quoted from a subset. The run writes `outputs/excel/reconciliation.json`, including the SHA-256 and byte size of
+the exact workbook it recalculated (hashed before the recalculation and re-checked before writing). Everything that
+quotes the result — `docs/35_excel_workbook.md` §7, the interview pack, the README checklist — goes through
+`desk.excel.reconciliation_status`, which reports VERIFIED only while that hash matches the workbook on disk (else
+STALE, NOT_RUN or FAILED); re-run `desk.excel.build` and `run_all.py --only P6` after the test to refresh them.
 """
 
 from __future__ import annotations
@@ -28,10 +31,10 @@ import time
 import pytest
 
 from desk.excel import build, sources
-from desk.paths import EXCEL_DIR
+from desk.excel import reconciliation_status as rs
 
 WORKBOOK = build.WORKBOOK
-RECON_JSON = EXCEL_DIR / "reconciliation.json"
+RECON_JSON = rs.RECON_JSON
 
 ERROR_VALUES = ("#REF!", "#NAME?", "#DIV/0!", "#VALUE!", "#N/A", "#NULL!", "#NUM!")
 
@@ -95,6 +98,7 @@ def recalc():
     """
     import formulas
 
+    fingerprint = rs.workbook_record(WORKBOOK)         # what is about to be recalculated, before it is read
     gc.disable()
     try:
         t0 = time.time()
@@ -120,7 +124,7 @@ def recalc():
             v = str(v)
         values.setdefault(m.group(1), {})[m.group(2)] = v
     return {"values": values, "seconds": time.time() - t0,
-            "n_cells": sum(len(v) for v in values.values())}
+            "n_cells": sum(len(v) for v in values.values()), "workbook": fingerprint}
 
 
 def _cell(workbook, recalc, sheet: str, coord: str):
@@ -184,18 +188,58 @@ def test_scoreboard_recalculates_to_pass(workbook, recalc):
 
 
 def test_published_reconciliation_report_passes():
-    """The workbook's published control — the recalculated scoreboard — as the slow run last wrote it.
+    """The workbook's published control — the recalculated scoreboard — as the slow run last wrote it, tied by SHA-256
+    to the workbook on disk.
 
-    Fast by design so the default suite covers it; it proves the last full recalculation passed, not that it is
-    current. After a rebuild of the tables, run the slow tests (DESK_RUN_SLOW=1) to refresh the report.
+    Fast by design so the default suite covers it. It fails when the record passed for a *different* workbook (STALE)
+    or did not pass (FAILED), so a rebuilt workbook cannot keep quoting an old verification; it skips only when no
+    record exists (NOT_RUN), which every consumer then states in so many words.
     """
-    if not RECON_JSON.exists():
-        pytest.skip(f"{RECON_JSON} not written yet — run DESK_RUN_SLOW=1 pytest tests/test_excel_reconciliation.py")
-    rep_ = json.loads(RECON_JSON.read_text(encoding="utf-8"))
+    st = rs.status()
+    if st.status == rs.NOT_RUN:
+        pytest.skip(f"{st.reason} {st.how_to_verify()}")
+    assert st.status == rs.VERIFIED, f"{st.status}: {st.reason} {st.how_to_verify()}"
+    rep_ = st.report
     assert rep_["scoreboard"] == "PASS"
     assert rep_["n_check_failures"] == 0 and rep_["n_errors"] == 0
     assert rep_["n_check_cells"] > 3000 and rep_["scope"] == "full workbook"
     assert rep_["families"] and all(f["status"] == "PASS" for f in rep_["families"].values()), rep_["families"]
+    assert rep_["workbook"]["path"] == "outputs/excel/Metals_Desk_Master.xlsx"
+
+
+def test_report_writer_records_the_hash_of_the_recalculated_workbook(tmp_path, monkeypatch):
+    """`_write_report` (called by the slow scoreboard test) stamps the workbook's SHA-256 and size into the record, and
+    refuses to write if the file changed during the recalculation. Exercised on a tiny workbook, no recalculation."""
+    import openpyxl
+
+    wb_path, recon_path = tmp_path / "tiny.xlsx", tmp_path / "reconciliation.json"
+    wb = openpyxl.Workbook()
+    wb.active["A1"] = 1
+    wb.active["A2"] = "=A1*2"
+    wb.save(wb_path)
+    monkeypatch.setitem(globals(), "WORKBOOK", wb_path)
+    monkeypatch.setitem(globals(), "RECON_JSON", recon_path)
+    recalc = {"values": {"SHEET": {"A2": 2, "B1": "PASS"}}, "seconds": 1.0, "n_cells": 1,
+              "workbook": rs.workbook_record(wb_path)}
+    families = {"toy": {"max_abs_diff": 0.0, "tolerance": "tol", "status": "PASS"}}
+    _write_report(openpyxl.load_workbook(wb_path), recalc, families)
+
+    written = json.loads(recon_path.read_text(encoding="utf-8"))
+    assert written["workbook"]["sha256"] == hashlib.sha256(wb_path.read_bytes()).hexdigest()
+    assert written["workbook"]["bytes"] == wb_path.stat().st_size
+    assert written["workbook"]["hash_source"] == rs.HASH_RECORDED_BY_RUN
+    assert rs.status(recon_path, wb_path).status == rs.VERIFIED
+
+    with wb_path.open("ab") as fh:                       # the workbook changes after it was recalculated
+        fh.write(b"\0")
+    assert rs.status(recon_path, wb_path).status == rs.STALE
+    with pytest.raises(AssertionError, match="changed on disk"):
+        _write_report(wb, recalc, families)
+
+
+def test_status_helper_points_at_this_workbook_and_this_test():
+    assert rs.WORKBOOK == build.WORKBOOK and rs.RECON_JSON == RECON_JSON
+    assert "DESK_RUN_SLOW=1" in rs.VERIFY_COMMAND and "tests/test_excel_reconciliation.py" in rs.VERIFY_COMMAND
 
 
 def test_computed_sheets_are_formula_driven(census):
@@ -256,6 +300,10 @@ def _col(ws, header_row: int, name: str) -> int:
 
 # ------------------------------------------------------------------------------------- report for the methods doc
 def _write_report(workbook, recalc, families) -> None:
+    # The record names the exact bytes it verified; refuse to write it if the file changed while it was recalculated.
+    now = rs.fingerprint(WORKBOOK)
+    assert now["sha256"] == recalc["workbook"]["sha256"], (
+        f"{WORKBOOK} changed on disk during the recalculation — re-run the test with nothing else writing the workbook")
     census = {}
     for ws in workbook:
         f = c = 0
@@ -283,12 +331,14 @@ def _write_report(workbook, recalc, families) -> None:
         "n_errors": n_err,
         "scoreboard": "PASS" if n_fail == 0 else "FAIL",
         "sheets": census,
+        "workbook": recalc["workbook"],
         "families": {k: {"max_abs_diff": float(v["max_abs_diff"]), "tolerance": str(v["tolerance"]),
                          "status": str(v["status"])} for k, v in families.items()},
     }
     RECON_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"\nrecalculated {report['n_recalculated']:,} cells in {report['seconds']:.0f}s — "
-          f"{n_check:,} check cells, {n_fail} failures, {n_err} error values")
+          f"{n_check:,} check cells, {n_fail} failures, {n_err} error values — workbook SHA-256 "
+          f"{report['workbook']['sha256']}")
     for sheet, c in sorted(census.items()):
         print(f"  {sheet:<16} formula {c['formula']:>6,}  constant {c['constant']:>6,}  ratio {c['ratio']:.0%}")
     for name, f in families.items():

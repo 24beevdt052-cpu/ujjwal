@@ -1,0 +1,400 @@
+# Public-export policy for tools/export_public.py
+#
+# This file records which downloaded caches under data/raw/ may be republished in a public copy of the
+# repository, and which derived data files the strict profile also leaves out. It is a record of reasoning
+# for the repository owner. It is NOT legal advice and makes no claim of legal certainty. Terms of use change,
+# and a "public" web page is not automatically free to republish. Where a call is uncertain, it says so.
+#
+# How the exporter uses it:
+#   * raw_classification: every file under data/raw/ is matched against `pattern` (relative to data/raw/;
+#     `*` = one path segment, `**` = any depth). The FIRST matching entry wins, so specific entries come before
+#     general ones. A raw file that matches no entry is EXCLUDED (fail closed) and reported as unclassified.
+#   * Categories A and META are exported; B and C are excluded. An entry may override this with `export:`.
+#   * strict_content_rules: in the strict profile, a file under data/processed/, data/interim/ or data/manual/
+#     that matches any rule is excluded. The same rules are run over outputs/ only to REPORT what derived
+#     third-party data the recruiter-facing results still carry (outputs are never excluded).
+#   * certainty: high = the category is well established; likely = the most probable reading, not verified
+#     against the publisher's current terms; uncertain = the owner should check before publishing.
+
+version: 1
+
+categories:
+  A:
+    label: Public-domain, open government, or reuse-with-attribution data
+    export: true
+  B:
+    label: Third-party copyrighted editorial content (news, reports, web pages, RSS results, archived pages)
+    export: false
+  C:
+    label: Licensed or restricted market data (exchange prices, proprietary indices, price assessments)
+    export: false
+  META:
+    label: Project-generated or machine-generated index metadata (URLs, dates, hashes); no third-party content
+    export: true
+
+# Never copied in any profile (in addition to anything git ignores).
+always_exclude_prefixes:
+  - .venv/
+  - .git/
+  - dist/
+
+# Owner-only files left out of the strict (publishable) export; kept in full-local.
+strict_never_export:
+  - path: PUBLISHING.md
+    reason: Owner's private publishing checklist and open decisions; not part of the public project.
+
+raw_classification:
+  # ---------------------------------------------------------------- META
+  - id: download_manifest
+    pattern: _download_manifest.json
+    category: META
+    fetched_by: "desk.data._http (every fetcher)"
+    certainty: high
+    source: this project (desk/data/_http.py)
+    reason: >-
+      Written by this project. It records each cached file's URL, retrieval date, sha256 and size. It contains no
+      third-party content, and it is what lets anyone re-fetch every excluded file and check it byte for byte.
+      Always kept.
+  - id: manifest_lock
+    pattern: .download_manifest.lock
+    category: META
+    fetched_by: "desk.data._http"
+    certainty: high
+    source: this project
+    reason: Empty lock file used while the manifest is written. Git ignores it, so it is never exported.
+    export: false
+  - id: wayback_snapshot_map
+    pattern: freight/wayback/manifest.json
+    category: META
+    fetched_by: "desk.data.fetch_freight"
+    certainty: high
+    source: this project (desk/data/fetch_freight.py)
+    reason: >-
+      Written by this project. It maps each Internet Archive snapshot timestamp to the original Drewry URL. It holds
+      URLs only, with no page content.
+  - id: wayback_cdx_listings
+    pattern: freight/wayback/cdx_*.json
+    category: META
+    fetched_by: "desk.data.fetch_freight"
+    certainty: uncertain
+    source: Internet Archive CDX API (web.archive.org/cdx)
+    reason: >-
+      Machine-generated capture listings (URL key, timestamp, original URL, MIME type, status, digest, length). They
+      are factual metadata with no Drewry page text or index values. Kept so the snapshot selection can be reproduced
+      even if the archive's index changes later. Uncertain: the Internet Archive's terms of use govern the service.
+      This is not a licence grant.
+
+  # ---------------------------------------------------------------- A
+  - id: ecb_fx_reference_rates
+    pattern: ecb_exr_*.csv
+    category: A
+    fetched_by: "desk.data.fetch_fx"
+    certainty: likely
+    source: European Central Bank Data Portal (data-api.ecb.europa.eu), EXR dataset
+    attribution: "Source: ECB Data Portal (European Central Bank), euro foreign exchange reference rates."
+    reason: >-
+      ECB statistical data. The ECB's published terms allow statistics to be reused if the ECB is cited as the
+      source. Rated likely rather than high because the current ECB terms were not re-read for this export. Credit
+      the ECB wherever the rates are shown.
+  - id: ecb_fx_reference_rates_evidence
+    pattern: regulatory/ecb/**
+    category: A
+    fetched_by: "desk.data.fetch_price_evidence"
+    certainty: likely
+    source: European Central Bank Data Portal (data-api.ecb.europa.eu), EXR dataset
+    attribution: "Source: ECB Data Portal (European Central Bank), euro foreign exchange reference rates."
+    reason: Same ECB EXR series as the root ecb_exr_*.csv files, for later date ranges (price-evidence dating).
+  - id: us_treasury_bill_rates
+    pattern: rates/ust_daily_bill_rates_*.csv
+    category: A
+    fetched_by: "desk.data.fetch_fx"
+    certainty: high
+    source: U.S. Department of the Treasury, Daily Treasury Bill Rates (home.treasury.gov)
+    attribution: "Source: U.S. Department of the Treasury."
+    reason: >-
+      Work of the U.S. federal government, with no U.S. copyright under 17 U.S.C. 105. This is the standard reading
+      for Treasury rate data. Attribution is courteous rather than required.
+  - id: oecd_india_3m_interbank
+    pattern: rates/oecd_finmark_*.csv
+    category: A
+    fetched_by: "desk.data.fetch_fx"
+    certainty: uncertain
+    source: OECD Data Explorer (sdmx.oecd.org), Financial market indicators, India 3-month interbank rate
+    attribution: "Source: OECD (Financial market indicators), accessed via OECD Data Explorer."
+    reason: >-
+      Our understanding is that OECD data has been offered under CC BY 4.0 since 2024. OECD terms also carve out
+      third-party data, however, and an Indian national series redistributed by the OECD may carry its compiler's
+      conditions. Check the OECD terms and the dataset's metadata before publishing. If this entry is dropped, the
+      pipeline re-downloads the file.
+  - id: usgs_mineral_industry_surveys
+    pattern: regulatory/usgs/**
+    category: A
+    fetched_by: "manual (reference evidence for config/params/scrap_grades.yaml)"
+    certainty: likely
+    source: U.S. Geological Survey, Mineral Industry Surveys, Aluminum (monthly PDFs)
+    attribution: "Source: U.S. Geological Survey, Mineral Industry Surveys (Aluminum)."
+    reason: >-
+      USGS-authored publications are U.S. public domain (high certainty for the publication itself). Some price
+      tables in these PDFs credit third-party sources, such as trade-press and exchange prices, and those figures
+      can remain subject to their owners' terms. So the file as a whole is rated likely, not high.
+  - id: cbic_customs_notifications
+    pattern: regulatory/cbic_notifications/**
+    category: A
+    fetched_by: "manual (reference evidence for config/params/regulatory.yaml)"
+    certainty: likely
+    source: Central Board of Indirect Taxes and Customs (CBIC) Tax Information Portal; notifications in the Gazette of India
+    attribution: "Source: CBIC / Government of India, Ministry of Finance (Department of Revenue) notifications."
+    reason: >-
+      Indian customs tariff and IGST notifications, published in the Gazette of India. Section 52(1)(q) of the Indian
+      Copyright Act 1957 lets anyone reproduce or publish matter that appeared in the Official Gazette, except an Act
+      of a Legislature. These PDFs were downloaded from the CBIC portal rather than the e-Gazette, and the portal's
+      own terms were not checked, so the rating is likely.
+  - id: cbic_customs_exchange_rate_notifications
+    pattern: regulatory/cbic_exchange_rates_2022/**
+    category: A
+    fetched_by: "manual (reference evidence for config/params/regulatory.yaml)"
+    certainty: likely
+    source: CBIC fortnightly customs exchange-rate notifications (non-tariff), 2022
+    attribution: "Source: CBIC / Government of India, customs exchange-rate notifications."
+    reason: >-
+      Same reasoning as cbic_notifications. These are Gazette notifications under section 14 of the Customs Act,
+      downloaded from the CBIC portal.
+  - id: pib_press_release
+    pattern: regulatory/news/pib_*.html
+    category: A
+    fetched_by: "manual (reference evidence for config/params/regulatory.yaml)"
+    certainty: uncertain
+    source: Press Information Bureau, Government of India (pib.gov.in)
+    attribution: "Source: Press Information Bureau, Government of India."
+    reason: >-
+      A government press release, issued so the media can reproduce it. The cached file, however, is the whole HTML
+      page, including the site template, and PIB's reuse terms were not checked for this export. Keep it only if the
+      owner is comfortable. Otherwise add `export: false`, since the manifest URL is enough to re-fetch it.
+  - id: dgcis_tradestat_pages
+    pattern: regulatory/tradestat/**
+    category: A
+    fetched_by: "desk.data.fetch_price_evidence"
+    certainty: uncertain
+    source: Department of Commerce, Government of India, Export Import Data Bank (tradestat.commerce.gov.in), DGCI&S data
+    attribution: "Source: Department of Commerce, Government of India, Export Import Data Bank (TradeStat)."
+    reason: >-
+      Official Indian trade statistics, freely published. They are not Gazette matter, and the site's
+      copyright/reuse page was not checked. Indian government websites commonly allow reproduction with
+      acknowledgement, but that is not verified here. DGCI&S also sells detailed data commercially. The files are
+      whole HTML result pages. Rated uncertain: kept by default because the derived monthly unit values are central
+      and reproducible, but the owner should confirm the site terms.
+
+  # ---------------------------------------------------------------- B
+  - id: alcircle_articles
+    pattern: regulatory/alcircle/**
+    category: B
+    fetched_by: "desk.data.fetch_price_evidence"
+    certainty: high
+    source: AlCircle (alcircle.com) news and press-release pages, several republishing BigMint price assessments
+    reason: >-
+      Copyrighted commercial news pages. The embedded ADC12 and scrap price assessments are also a price-reporting
+      agency's proprietary data, which is category C in substance. The manifest keeps every URL.
+  - id: regulatory_news_articles
+    pattern: regulatory/news/**
+    category: B
+    fetched_by: "manual (reference evidence for config/params/regulatory.yaml)"
+    certainty: high
+    source: Argus Media, The Tribune, ELP (law-firm insight page)
+    reason: >-
+      Commercial news articles and a law firm's published commentary. They are copyrighted, with no reuse licence.
+      (The PIB press release in this folder is classified separately above.)
+  - id: crisil_industry_report
+    pattern: regulatory/cmr/**
+    category: B
+    fetched_by: "manual (reference evidence for config/params/commercial.yaml)"
+    certainty: likely
+    source: "'Assessment of secondary aluminium industry in India' (CRISIL Research, Sept 2021), as hosted on cmr.co.in"
+    reason: >-
+      A commercial research report. It is copyrighted, and being hosted publicly on a third party's site grants no
+      redistribution right. Authorship is as recorded in config/params/commercial.yaml and was not re-checked here.
+  - id: isri_scrap_specifications
+    pattern: regulatory/isri/**
+    category: B
+    fetched_by: "manual (reference evidence for config/params/scrap_grades.yaml)"
+    certainty: likely
+    source: ISRI Scrap Specifications Circular (Institute of Scrap Recycling Industries, now ReMA), isrispecs.org
+    reason: >-
+      An industry association's copyrighted publication. It is free to download from the publisher, but that is not
+      a licence to redistribute. Link to it instead: the manifest has the URL.
+  - id: sbi_bank_documents
+    pattern: regulatory/banks/**
+    category: B
+    fetched_by: "manual (reference evidence for config/params/commercial.yaml)"
+    certainty: uncertain
+    source: State Bank of India, forex service-charges notice (sbi.bank.in)
+    reason: >-
+      A bank's own customer notice. SBI is a statutory corporation and commercial bank, not a government department,
+      so the Gazette exception does not apply. The tariff figures are facts, but the document is SBI's website
+      content with no reuse licence found. Excluded to be safe, and re-fetchable from the manifest URL.
+  - id: sbi_mclr_page
+    pattern: rates/sbi_mclr_historical_data.html
+    category: B
+    fetched_by: "manual (reference evidence for config/params/rates.yaml)"
+    certainty: uncertain
+    source: State Bank of India MCLR historical data page (sbi.bank.in)
+    reason: >-
+      Same reasoning as sbi_bank_documents. The rates are facts that the project cites, but the cached file is SBI's
+      web page.
+  - id: freight_articles
+    pattern: freight/articles/**
+    category: B
+    fetched_by: "desk.data.fetch_freight (Container News, Maritime Gateway, AJOT); manual (Ship & Bunker, Xeneta)"
+    certainty: high
+    source: Container News, AJOT, Maritime Gateway, Ship & Bunker, Xeneta blog
+    reason: >-
+      Copyrighted trade-press and vendor blog pages. The rate figures quoted in them come from the publishers'
+      (or Xeneta's and Drewry's) proprietary data.
+  - id: drewry_wci_wayback_captures
+    pattern: freight/wayback/drewry_wci_*.html
+    category: B
+    fetched_by: "desk.data.fetch_freight"
+    certainty: high
+    source: Internet Archive captures of Drewry World Container Index pages (drewry.co.uk)
+    reason: >-
+      Archived copies of Drewry's copyrighted commercial web pages. The Internet Archive's hosting gives third parties
+      no reuse right. The WCI values on the pages are also Drewry's proprietary index, which is category C in
+      substance.
+  - id: google_news_rss_freight
+    pattern: freight/news/**
+    category: B
+    fetched_by: "manual (research queries behind docs/research/freight_notes.md)"
+    certainty: high
+    source: Google News RSS search results (news.google.com)
+    reason: >-
+      Each feed states it is provided solely for rendering results in a personal feed reader, for personal and
+      non-commercial use, and that any other use is prohibited. The headline titles belong to their publishers.
+  - id: google_news_rss_headlines
+    pattern: news/**
+    category: B
+    fetched_by: "desk.sentiment.fetch_news"
+    certainty: high
+    source: Google News RSS search results (news.google.com), 28 weekly windows x 12 queries
+    reason: Same feed terms as google_news_rss_freight. These are the source of every headline used by Phase 7.
+
+  # ---------------------------------------------------------------- C
+  - id: westmetall_lme_official_prices
+    pattern: westmetall_lme_al_*.html
+    category: C
+    fetched_by: "desk.data.fetch_lme"
+    certainty: likely
+    source: Westmetall (westmetall.com) yearly tables republishing LME aluminium official prices and stocks
+    reason: >-
+      LME official prices are proprietary to the London Metal Exchange. Redistributing them normally needs an LME
+      market-data licence, and Westmetall's page is its own copyrighted website. This export does not establish
+      whether a small historical academic extract would be tolerated, so the raw pages are excluded. Derived LME
+      values that remain in outputs/ are listed in DATA_NOTICE.md section 5.
+  - id: commoditieschart_mcx_lme_mirror
+    pattern: mcx_thirdparty/**
+    category: C
+    fetched_by: "desk.data.fetch_mcx_mirror"
+    certainty: likely
+    source: commoditieschart.net pages republishing MCX aluminium futures closes and LME aluminium prices
+    reason: >-
+      Exchange market data (MCX, and LME for the third page) republished by a third-party site whose redistribution
+      rights are unknown. The page itself is also that site's copyrighted content.
+
+# Rules for derived files. A rule matches a file when every clause it has matches: `paths` (glob over the
+# repo-relative path), `columns` (regex searched against each CSV header name, or against the cell text of an
+# .xlsx sheet), and `content` (regex searched in the file text). Rules with `phrase_source: true` also feed the
+# verbatim-text scan. Their column values (six words or more) are searched for in every other exported text file.
+strict_content_rules:
+  - id: lme_price_levels
+    category: C
+    columns: '(^|_)lme_(cash|3m)(_[a-z0-9]+)*_usd_t(_prev)?$|^lme_stock_mt$'
+    reason: LME aluminium official cash, 3-month, spread or stock levels (Westmetall republication of LME data).
+  - id: lme_returns
+    category: C
+    columns: '^lme(_cash)?_(ret|logret)$'
+    reason: >-
+      Returns computed from LME official prices. Together with one price level they rebuild the series. In mc_*
+      tables these columns are simulated shocks, not observed returns.
+  - id: mcx_mirror_closes
+    category: C
+    columns: '^(m1|m2)_close_inr_kg$|^mirror_m[12]_inr_kg$'
+    reason: MCX aluminium futures closes taken from the commoditieschart.net mirror.
+  - id: mcx_mirror_variant_prices
+    category: C
+    paths: '**/*_mcx_mirror.csv'
+    columns: '^(px_from|px_to|px|settle|prev_settle|fill)_inr_kg$'
+    reason: Hedge prices in the MCX-mirror variant tables, which are mirror closes rather than the in-repo proxy.
+  - id: drewry_wci_values
+    category: C
+    columns: '^(index_value|value)$'
+    content: 'DREWRY_WCI_COMPOSITE|Drewry WCI composite'
+    certainty: uncertain
+    reason: >-
+      Drewry World Container Index composite values (a proprietary index; Drewry publishes it openly each week, but
+      no reuse licence was found).
+  - id: third_party_price_assessments
+    category: C
+    columns: '^(adc12_inr_t|price_usd_t)$'
+    content: 'alcircle\.com'
+    certainty: uncertain
+    reason: ADC12 and scrap price assessments (BigMint, republished by AlCircle), transcribed per article.
+  - id: headline_titles
+    category: B
+    columns: '^title$'
+    phrase_source: true
+    reason: Verbatim news headline titles from Google News RSS results (publishers' text; feed terms restrict reuse).
+  - id: article_snippets
+    category: B
+    columns: '^(snippet|snip|quote)$'
+    phrase_source: true
+    reason: Verbatim sentences quoted from cached articles (AlCircle, Container News and others).
+
+# Scan settings for the verbatim-text check.
+phrase_scan:
+  min_words: 6
+  source_globs:
+    - data/processed/*.csv
+    - data/interim/**/*.csv
+    - outputs/tables/*.csv
+  text_extensions: [.md, .txt, .csv, .json, .yaml, .yml, .py, .html, .tex, .toml, .cfg, .ini]
+
+# Charts are images and cannot be scanned for columns. This list was built by reading the plotting code, and the
+# exporter checks that each file exists. Charts that only plot P&L, VaR, credit or FX are not listed.
+known_derived_charts:
+  - path: outputs/charts/p0_market_overview.png
+    carries: [lme_price_levels, mcx_proxy_from_lme, drewry_wci_shape]
+    evidence: desk/data/build_panel.py plots lme_cash_usd_t, lme_3m_usd_t, the Cash-3M spread and WCI-shaped freight
+  - path: outputs/charts/p3_event1_hedged_vs_unhedged.png
+    carries: [lme_price_levels]
+    evidence: desk/mtm/charts.py event1_hedged_vs_unhedged plots LME cash on a twin axis
+  - path: outputs/charts/p4_var_garch_vs_hist.png
+    carries: [lme_price_levels]
+    evidence: desk/risk/run_var.py chart_var_paths plots lme_cash_usd_t over the window
+  - path: outputs/charts/p5_liquidity_fortnight.png
+    carries: [lme_price_levels]
+    evidence: desk/risk/run_liquidity.py plots lme_cash_actual_usd_t and the stressed path
+  - path: 'outputs/charts/p6_note_*_tape.png'
+    carries: [lme_price_levels]
+    evidence: desk/reporting/desk_notes.py tape chart plots LME cash to each note's Friday
+  - path: outputs/charts/p7_sentiment_vs_lme.png
+    carries: [lme_price_levels]
+    evidence: desk/sentiment/run.py plots daily and weekly lme_cash_usd_t
+
+# Where to find a source when a manifest entry has an empty `url` (entries back-filled from file times).
+url_fallbacks:
+  - pattern: regulatory/cbic_*/**
+    where: config/params/regulatory.yaml header (CBIC Tax Information Portal API) and docs/research/regulatory_contract_notes.md
+  - pattern: regulatory/usgs/**
+    where: USGS Mineral Industry Surveys, Aluminum (usgs.gov, National Minerals Information Center); file names give the issue month
+  - pattern: regulatory/tradestat/**
+    where: desk/data/fetch_price_evidence.py (TRADESTAT_URL form query; file names give HS code, month and report variant)
+  - pattern: regulatory/ecb/**
+    where: desk/data/fetch_price_evidence.py (ECB_EVIDENCE_URL)
+  - pattern: ecb_exr_*.csv
+    where: desk/data/fetch_fx.py (ECB EXR URL template)
+  - pattern: freight/news/**
+    where: docs/research/freight_notes.md (manual Google News RSS query for "World Container Index"); file names give the query and the window
+  - pattern: freight/**
+    where: desk/data/fetch_freight.py (WCI URLs, Wayback CDX queries, article list)
+  - pattern: news/**
+    where: desk/sentiment/fetch_news.py (query list and weekly windows)
+  - pattern: regulatory/alcircle/**
+    where: desk/data/fetch_price_evidence.py (article URL tables)

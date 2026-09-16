@@ -72,11 +72,12 @@ import numpy as np
 import pandas as pd
 import yaml
 from reportlab.lib.units import mm
-from reportlab.platypus import Image, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import Image, Table, TableStyle
 
 from desk import DESK_NAME, SIM_LABEL, WINDOW_END, WINDOW_START, config
 from desk.paths import CHARTS_DIR, CONFIG_DIR, PROCESSED_DIR, REPORTS_DIR, TABLES_DIR
 from desk.reporting.pdf import (
+    DeskDocTemplate,
     PdfStyle,
     _numbered_canvas_class,  # the shared footer (SIM label + "Page n of N"), as the post-mortem uses it
     count_pdf_pages,
@@ -1436,11 +1437,8 @@ def render_pdf(md: str, out_path: Path, chart: Path | None, title: str) -> tuple
     scale = 1.0
     while True:
         style = _style(scale)
-        doc = SimpleDocTemplate(str(out_path), pagesize=style.pagesize, leftMargin=style.margin_left_mm * mm,
-                                rightMargin=style.margin_right_mm * mm, topMargin=style.margin_top_mm * mm,
-                                bottomMargin=style.margin_bottom_mm * mm, title=title,
-                                author="Aluminium scrap desk (SIM)", subject=SIM_LABEL,
-                                creator="desk.reporting.desk_notes", invariant=True)
+        doc = DeskDocTemplate(str(out_path), style, title=title, author="Aluminium scrap desk (SIM)",
+                              subject=SIM_LABEL, creator="desk.reporting.desk_notes")
         sink: list[int] = []
         doc.build(_flow(md, chart, style), canvasmaker=_numbered_canvas_class(SIM_LABEL, style, sink))
         pages = sink[-1] if sink else 0

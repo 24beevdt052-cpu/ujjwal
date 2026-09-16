@@ -43,7 +43,7 @@
   "scope": "full workbook",
   "scope_note": "Every formula cell in every sheet is recalculated; nothing is sampled.",
   "scoreboard": "PASS",
-  "seconds": 167.3,
+  "seconds": 162.6,
   "sheets": {
     "Attribution": {
       "constant": 2485,
@@ -100,5 +100,11 @@
       "formula": 45,
       "ratio": 0.021749637506041565
     }
+  },
+  "workbook": {
+    "bytes": 1096259,
+    "hash_source": "hashed by tests/test_excel_reconciliation.py immediately before the recalculation it records",
+    "path": "outputs/excel/Metals_Desk_Master.xlsx",
+    "sha256": "2907d31dded09dd4cf70af113bdb7b4e4c7598fa4bc7150f841bc203b479269b"
   }
 }

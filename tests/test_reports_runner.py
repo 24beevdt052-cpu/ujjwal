@@ -6,6 +6,7 @@ What these protect:
 * the numbers in the answers are the tables' numbers, recomputed here straight from the CSVs (and the YAML register),
   not through the module;
 * the headline P&L never appears without its anchor-premium band, and no answer runs long;
+* the Excel reconciliation is quoted (pack and README) only when its record passed and hashes to the workbook on disk;
 * the runner calls desk notes → post-mortem → interview pack in that order and fails clearly if a step is missing;
 * every link in README.md and docs/INDEX.md resolves, the README's generated number blocks are current, and the index
   names every spec row.
@@ -13,6 +14,8 @@ What these protect:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sys
 import types
@@ -22,7 +25,7 @@ import pytest
 import yaml
 
 from desk import SIM_LABEL
-from desk.paths import DOCS_DIR, PARAMS_DIR, PROCESSED_DIR, REPORTS_DIR, ROOT, TABLES_DIR
+from desk.paths import DOCS_DIR, EXCEL_DIR, PARAMS_DIR, PROCESSED_DIR, REPORTS_DIR, ROOT, TABLES_DIR
 from desk.reporting import interview_pack as ip
 from desk.reporting import run_reports as rr
 from desk.reporting.pdf import count_pdf_pages
@@ -177,6 +180,29 @@ def test_headline_pnl_never_appears_without_its_band(published):
     assert len(quoting) >= 2
     for b in quoting:
         assert lo in b and hi in b, b[:80]
+
+
+def test_excel_reconciliation_is_quoted_only_when_verified(published, src):
+    """Recomputed independently of desk.excel.reconciliation_status: a pass is quoted only for this exact workbook."""
+    recon, workbook = EXCEL_DIR / "reconciliation.json", EXCEL_DIR / "Metals_Desk_Master.xlsx"
+    rec = json.loads(recon.read_text(encoding="utf-8")) if recon.exists() else None
+    independent = bool(
+        rec and workbook.exists() and rec.get("scoreboard") == "PASS" and rec.get("n_check_failures") == 0
+        and rec.get("n_errors") == 0 and rec.get("scope") == "full workbook"
+        and all(f["status"] == "PASS" for f in rec.get("families", {}).values()) and rec.get("families")
+        and rec.get("workbook", {}).get("sha256") == hashlib.sha256(workbook.read_bytes()).hexdigest())
+    st = src["recon"]
+    assert st.verified == independent, st.reason
+    head, q9 = published.split("\n## 1. ")[0], _q(published, "attribution")
+    readme = README.read_text(encoding="utf-8")
+    if independent:
+        assert "Excel reconciliation:" not in head
+        assert f"recalculates {_n(rec['n_recalculated'])} cells with {_n(rec['n_check_failures'])} failed checks" in q9
+        assert f"- [x] **Excel reconciliation PASS.** {_n(rec['n_recalculated'])} formula cells" in readme
+    else:
+        assert f"> **Excel reconciliation: {st.status}.**" in head and "DESK_RUN_SLOW=1" in head
+        assert "cells with" not in q9
+        assert "- [x] **Excel reconciliation" not in readme
 
 
 def test_sources_exist():

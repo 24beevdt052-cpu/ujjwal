@@ -280,8 +280,9 @@ def chart_tracker(tracker: pd.DataFrame) -> str:
         pd_days = g[g["days_past_due"] > 0]
         if len(pd_days):
             ax.axvspan(pd_days["date"].min(), pd_days["date"].max(), ymin=0, ymax=0.9, color="#c00000", alpha=0.08)
-            ax.text(pd_days["date"].min(), 0.08, f"past due (max {int(pd_days['days_past_due'].max())} d)",
-                    fontsize=7.5, color="#c00000")
+            # inside the top of the shaded span: on the zero line the label sat on the utilisation step
+            ax.text(pd_days["date"].min(), 0.86, f" past due (max {int(pd_days['days_past_due'].max())} d)",
+                    fontsize=7.5, color="#c00000", va="top", transform=ax.get_xaxis_transform())
         ev = g[g["events"].str.contains("SALE_CONTRACTED", na=False)]
         ymax = max(1.2, float(g[["utilisation_contracted_frac", "advance_reliance_multiple"]].max().max()) * 1.18)
         last, level = None, 0

@@ -1,5 +1,7 @@
 # Virtual Metals Trading Desk: importing aluminium scrap into India, March to August 2022
 
+**Short on time? Read the [one-page summary (PDF)](outputs/reports/one_pager.pdf)** ([Markdown](outputs/reports/one_pager.md)): the desk, its headline P&L with its sensitivity band, and the risk findings on one A4 page.
+
 > **ACADEMIC SIMULATION — not actual trades.** Every counterparty, vessel, bank, trade and operational event in
 > this repository is fictional and labelled (SIM). The market data is real where a public source exists and is
 > labelled PROXY or ASSUMPTION where it does not. Nothing here is investment advice.

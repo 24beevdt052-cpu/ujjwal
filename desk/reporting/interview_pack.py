@@ -25,11 +25,14 @@ Design choices worth knowing
   `domestic_anchor_premium_inr_t` band from `pnl_sensitivity_sign_robustness.csv` (asserted in the tests), because
   the headline is not sign-robust.
 * **Short.** Each answer is capped at `MAX_ANSWER_WORDS` words (asserted): an interview answer, not a doc page.
+* **The Excel reconciliation is quoted only when it is VERIFIED.** The full recalculation is a slow test a normal
+  build never runs. `desk.excel.reconciliation_status` compares the record's workbook SHA-256 with the workbook on
+  disk; unless they match and the record passed, Q9 says the check is not current and a note at the top gives the
+  status (STALE, NOT_RUN or FAILED) and the exact command to verify, instead of quoting old numbers or crashing.
 """
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -38,7 +41,8 @@ import numpy as np
 import pandas as pd
 
 from desk import DESK_NAME, HISTORY_START, HORIZON_END, SIM_LABEL, WINDOW_END, WINDOW_START, config
-from desk.paths import EXCEL_DIR, PROCESSED_DIR, REPORTS_DIR, ROOT, TABLES_DIR
+from desk.excel import reconciliation_status as recon_status
+from desk.paths import PROCESSED_DIR, REPORTS_DIR, ROOT, TABLES_DIR
 from desk.reporting.pdf import PdfStyle, count_pdf_pages, render_markdown_pdf
 from desk.reporting.style import PNL_BUCKETS
 
@@ -46,6 +50,7 @@ NAME = "interview_pack"
 N_QUESTIONS = 17                       # Table 8 row 6: "the original 15" plus the two named questions
 MAX_ANSWER_WORDS = 150
 ANCHOR_KEY = "domestic_anchor_premium_inr_t"
+RECON_SOURCE = "outputs/excel/reconciliation.json"   # written only by the slow Excel reconciliation test
 WORST_TRADE_OF_RECORD = "T08"          # the ticket Q10 was written for; check_claims fails if the book's worst changes
 RISKIEST_BUYER_OF_RECORD = "BUY_RJK_01"  # the buyer Q11 was written for
 MC_SNAP_ATH, MC_SNAP_APR, MC_SNAP_JUL = "ATH_PLUS_1", "PEAK_GROSS_LME", "PEAK_BUYER_CONTRACTED"
@@ -58,8 +63,10 @@ MINUS = "\u2212"
 M = 1e6
 GRADE_NAMES = {"zorba": "Zorba 95/5", "taint_tabor": "Taint/Tabor", "tense": "Tense"}
 LANE_NAMES = {"JEA_NSA": "Jebel Ali → Nhava Sheva", "USEC_MUN": "US East Coast → Mundra"}
+# keep_sections: a question, its answer and its sources never split across a page break
 PACK_STYLE = PdfStyle(font_size=8.6, table_font_size=7.6, title_size=13.0, h2_size=9.6, h3_size=8.8,
-                      paragraph_space_after=3.0, heading_space_before=6.0, margin_top_mm=13.0, margin_bottom_mm=14.0)
+                      paragraph_space_after=3.0, heading_space_before=6.0, margin_top_mm=13.0, margin_bottom_mm=14.0,
+                      keep_sections=True)
 
 
 # ------------------------------------------------------------------------------------------------ formatting
@@ -240,16 +247,15 @@ QUESTIONS: tuple[Question, ...] = (
         "attribution", "P&L attribution and deal margin",
         "Your book shows {book_pnl}. How much of that is real, and how do you know the attribution adds up?",
         "It adds up by construction: sequential full revaluation in a fixed factor order, a largest residual of "
-        "{q9_residual} on any trade-day, and a formula-driven Excel workbook that recalculates {q9_cells} cells with "
-        "{q9_fail} failed checks. Whether it is real is the better question. {q9_nd} of it — {q9_nd_share} — is "
-        "deal margin at contract dates, and that is my own sale-pricing rule on a domestic anchor premium still PENDING "
+        "{q9_residual} on any trade-day, and {q9_excel}. Whether it is real is the better question. {q9_nd} of it — "
+        "{q9_nd_share} — is deal margin at contract dates, and that is my own sale-pricing rule on a domestic anchor premium still PENDING "
         "verification. Across that premium's registered grid the book runs {band_lo} to {band_hi}, break-even "
         "{band_be}{NB}₹/MT inside the grid: not sign-robust. Grade spread adds {q2_grade} on a reconstructed grade "
         "path; flat price cost {q9_lme_abs} and carry {q5_g_abs}. {q9_nd_td} of the deal margin landed on trade dates and "
         "{q9_nd_later} on later bookings. So: the arithmetic is audited; the level is an assumption, and I would put "
         "a buyer quote under it before calling it profit.",
         ("outputs/tables/attribution_daily.csv", "outputs/tables/pnl_sensitivity_sign_robustness.csv",
-         "outputs/tables/new_deal_timing.csv", "outputs/tables/pnl_controls.csv", "outputs/excel/reconciliation.json",
+         "outputs/tables/new_deal_timing.csv", "outputs/tables/pnl_controls.csv", RECON_SOURCE,
          "docs/30_mtm_attribution.md"),
     ),
     Question(
@@ -387,7 +393,7 @@ HEADER = """# Interview pack — the {n_q} toughest questions a physical metal t
 > **The headline, always with its band.** The book made **{book_pnl}** to {horizon_end} ({book_pnl_mt}/MT; {book_pnl_we} at {window_end}). It is **not sign-robust**: across the registered `{anchor_key}` grid it runs **{band_lo} to {band_hi}**, break-even {band_be}{NB}₹/MT inside the grid. Every answer that quotes the book's P&L quotes this band.
 
 > **How to read the numbers.** Every number below is filled from the published tables by `desk/reporting/interview_pack.py` when the pack is built; none is typed by hand. The qualitative claims ("the only negative", "worse than every path") are re-tested against the data first, and the build fails if one no longer holds. Sources follow each answer.
-"""
+{recon_note}"""
 
 FOOTER = """## What this pack does and doesn't tell you
 
@@ -465,7 +471,7 @@ def load_sources() -> dict[str, object]:
                               dtype=str),
         "sent": pd.read_csv(T / "sentiment_summary.csv", usecols=["metric", "value"]),
         "params": config.params_frame()[["key", "flag", "verify"]],
-        "recon": json.loads((EXCEL_DIR / "reconciliation.json").read_text(encoding="utf-8")),
+        "recon": recon_status.status(),
         "post_mortem_md": (REPORTS_DIR / "post_mortem.md").read_text(encoding="utf-8")
         if (REPORTS_DIR / "post_mortem.md").exists() else "",
     }
@@ -739,8 +745,8 @@ def _raw_attribution(src: Mapping, br: dict) -> dict:
         "q9_residual": float(src["att"]["residual"].abs().max()),
         "q9_controls_all_pass": bool(controls["status"].isin(["PASS", "INFO"]).all())
         and bool((controls["status"] == "PASS").any()),
-        "q9_cells": int(recon["n_recalculated"]), "q9_fail": int(recon["n_check_failures"]),
-        "q9_scoreboard": str(recon["scoreboard"]),
+        "q9_recon": recon, "q9_recon_status": recon.status,
+        "q9_cells": recon.n_recalculated, "q9_fail": recon.n_check_failures, "q9_scoreboard": recon.scoreboard,
         "q9_nd": br["buckets"]["new_deal"], "q9_nd_share": br["buckets"]["new_deal"] / total,
         "q9_nd_largest": max(br["buckets"], key=br["buckets"].get) == "new_deal",
         "q9_nd_td": float(_one(nd, trade_id="BOOK")["new_deal_on_trade_date_inr"]),
@@ -1028,7 +1034,8 @@ def check_claims(r: Mapping) -> list[str]:
     need(r["q8_var_net"] < min(r["q8_var_pf"], r["q8_var_mcx"]), "Q8: netting hides two offsetting positions")
     # Q9
     need(r["q9_residual"] == 0 and r["q9_controls_all_pass"], "Q9: residual zero and controls pass")
-    need(r["q9_fail"] == 0 and r["q9_scoreboard"] == "PASS", "Q9: Excel reconciliation passes")
+    need(r["q9_recon_status"] != recon_status.VERIFIED or (r["q9_fail"] == 0 and r["q9_scoreboard"] == "PASS"),
+         "Q9: a VERIFIED Excel reconciliation passes")
     need(r["q9_nd_largest"], "Q9: deal margin is the largest bucket")
     need(abs(r["q9_bucket_total"] - r["book_pnl"]) < 1.0, "Q9: buckets sum to the headline")
     need(abs(r["q9_nd_td"] + r["q9_nd_later"] - r["q9_nd"]) < 1.0, "Q9: deal-margin timing adds up")
@@ -1086,6 +1093,40 @@ def check_claims(r: Mapping) -> list[str]:
     need(r["q17_n_sig"] == 0 and r["q17_n_boot"] == 0, "Q17: no lead test significant")
     need(r["q7_offset"] > 0.5, "Q17: the hedge offset most of the LME loss")
     return fails
+
+
+# ------------------------------------------------------------------------------------------------ Excel reconciliation
+def excel_clause(st: recon_status.ReconStatus) -> str:
+    """Q9's Excel clause. Only a VERIFIED record (passed, and hashed to the workbook on disk) is quoted as a result."""
+    if st.verified:
+        return (f"a formula-driven Excel workbook that recalculates {num(st.n_recalculated)} cells with "
+                f"{num(st.n_check_failures)} failed checks")
+    return {
+        recon_status.STALE: "a formula-driven Excel workbook, though its recorded recalculation is not of the current "
+                            "file and must be re-run",
+        recon_status.NOT_RUN: "a formula-driven Excel workbook, though its full recalculation has not been run on this "
+                              "build",
+        recon_status.FAILED: "a formula-driven Excel workbook, though its last recorded recalculation did not pass, so "
+                             "I would not cite it yet",
+    }[st.status]
+
+
+def recon_note(st: recon_status.ReconStatus) -> str:
+    """A header callout whenever the reconciliation is not VERIFIED (empty otherwise, leaving the header unchanged)."""
+    if st.verified:
+        return ""
+    again = "run" if st.status == recon_status.NOT_RUN else "re-run"
+    return (f"\n> **Excel reconciliation: {st.status}.** {st.reason} Until it is {again}, this pack quotes no Excel "
+            f"reconciliation figures. {st.how_to_verify()}\n")
+
+
+def readme_recon_item(st: recon_status.ReconStatus) -> str:
+    """The README verification-checklist line for the Excel reconciliation (ticked only when VERIFIED)."""
+    if st.verified:
+        return (f"- [x] **Excel reconciliation {st.scoreboard}.** {num(st.n_recalculated)} formula cells recalculated "
+                f"outside Excel, {num(st.n_check_cells)} check cells, {num(st.n_check_failures)} failures "
+                f"([`reconciliation.json`]({RECON_SOURCE})).")
+    return f"- [ ] **Excel reconciliation {st.status}.** {st.reason} {st.how_to_verify()}"
 
 
 # ------------------------------------------------------------------------------------------------ formatting facts
@@ -1188,7 +1229,8 @@ def format_facts(r: Mapping) -> dict[str, str]:
         "q8_fx_bucket": inr_m(r["q8_fx_bucket"], sign=True), "q8_var_pf": inr_m(r["q8_var_pf"], 2),
         "q8_var_mcx": inr_m(r["q8_var_mcx"], 2), "q8_var_net": inr_m(r["q8_var_net"], 2),
         # Q9
-        "q9_residual": inr(r["q9_residual"]), "q9_cells": num(r["q9_cells"]), "q9_fail": num(r["q9_fail"]),
+        "q9_residual": inr(r["q9_residual"]), "q9_excel": excel_clause(r["q9_recon"]),
+        "recon_note": recon_note(r["q9_recon"]),
         "q9_nd": inr_m(r["q9_nd"], sign=True), "q9_nd_share": pct(r["q9_nd_share"], 0),
         "q9_nd_td": inr_m(r["q9_nd_td"]), "q9_nd_later": inr_m(r["q9_nd_later"]),
         "q9_lme": inr_m(r["q9_lme"], sign=True), "q9_lme_abs": inr_m(abs(r["q9_lme"])),
@@ -1288,7 +1330,8 @@ def build_markdown(src: Mapping) -> tuple[str, dict]:
 def main() -> None:
     if len(QUESTIONS) != N_QUESTIONS or [q.question for q in QUESTIONS[-2:]] != list(REQUIRED_QUESTIONS):
         raise ValueError("the pack must hold exactly 17 questions ending with the two the spec names")
-    md, _raw = build_markdown(load_sources())
+    src = load_sources()
+    md, _raw = build_markdown(src)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     md_path, pdf_path = REPORTS_DIR / f"{NAME}.md", REPORTS_DIR / f"{NAME}.pdf"
     md_path.write_text(md, encoding="utf-8")
@@ -1296,8 +1339,15 @@ def main() -> None:
                             style=PACK_STYLE)
     if n < 1 or count_pdf_pages(pdf_path) != n:
         raise ValueError(f"interview pack PDF page count mismatch ({n})")
-    if not all((ROOT / s.split(" ")[0]).exists() for q in QUESTIONS for s in q.sources):
-        raise ValueError("an interview-pack source path does not exist")
+    st: recon_status.ReconStatus = src["recon"]
+    # the reconciliation record is written only by the slow test; with no record the pack says NOT_RUN at the top
+    missing = [s for q in QUESTIONS for s in q.sources if not (ROOT / s.split(" ")[0]).exists()
+               and not (s == RECON_SOURCE and st.status == recon_status.NOT_RUN)]
+    if missing:
+        raise ValueError(f"an interview-pack source path does not exist: {missing}")
+    print(f"[pack] Excel reconciliation: {st.status} — {st.reason}")
+    if not st.verified:
+        print(f"[pack] {st.how_to_verify()}")
 
 
 if __name__ == "__main__":

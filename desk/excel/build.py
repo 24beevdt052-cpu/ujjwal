@@ -29,9 +29,9 @@ import zipfile
 
 from openpyxl import Workbook
 
-from desk.excel import (doc, sheet_attribution, sheet_cashflows, sheet_checks, sheet_counterparties, sheet_equity,
-                        sheet_inputs, sheet_market, sheet_mtm, sheet_parity, sheet_readme, sheet_sensitivity,
-                        sheet_term, sheet_trade_book, sources)
+from desk.excel import (doc, reconciliation_status, sheet_attribution, sheet_cashflows, sheet_checks,
+                        sheet_counterparties, sheet_equity, sheet_inputs, sheet_market, sheet_mtm, sheet_parity,
+                        sheet_readme, sheet_sensitivity, sheet_term, sheet_trade_book, sources)
 from desk.excel.layout import Counts
 from desk.paths import DOCS_DIR, EXCEL_DIR, ensure_dirs
 
@@ -107,6 +107,10 @@ def main() -> None:
     wb, counts, ctx = build()
     save(wb)
     DOC_PATH.write_text(doc.render(counts, ctx), encoding="utf-8")
+    st = reconciliation_status.status()
+    print(f"[excel] reconciliation status: {st.status} — {st.reason}")
+    if not st.verified:
+        print(f"[excel] {st.how_to_verify()}")
 
 
 if __name__ == "__main__":

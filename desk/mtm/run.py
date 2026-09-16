@@ -246,9 +246,9 @@ def main() -> None:
     pit = MarketHistory(grade_source="pit")
     pit_res = build(book, pit, label="grade_pit", suffix="_grade_pit")
 
-    _charts(book, base, H)
-
     extra = _result_sensitivities(book, H, base, mirror, mirror_res, pit_res)
+    # after the sensitivities: the book-level charts quote the headline P&L with its sign-robustness band
+    _charts(book, base, H)
     controls = pd.concat([base["controls"], extra], ignore_index=True)
     write(controls, "pnl_controls")                       # rewritten with the §13.9-§13.11 control rows appended
     failed = controls[controls["status"] == "FAIL"]
@@ -306,7 +306,9 @@ def _result_sensitivities(book: bs.Book, H: MarketHistory, base: dict, mirror: M
 def _charts(book: bs.Book, base: dict, H: MarketHistory) -> None:
     run, windows = base["run"], base["windows"]
     split = engine.book_pnl_split(run)
-    charts.equity_curve(run, split, base["windows_df"])
+    robust = pd.read_csv(TABLES_DIR / "pnl_sensitivity_sign_robustness.csv")
+    caveat = charts.band_note(robust[robust["param_key"] == "domestic_anchor_premium_inr_t"].iloc[0])
+    charts.equity_curve(run, split, base["windows_df"], caveat=caveat)
     for ticket in book.trades:
         tr = run.per_trade[ticket.trade_id]
         totals = {b: float(run.attribution.loc[run.attribution["trade_id"] == ticket.trade_id, b].sum())
@@ -317,7 +319,7 @@ def _charts(book: bs.Book, base: dict, H: MarketHistory) -> None:
     book_totals = {b: float(run.attribution.loc[run.attribution["trade_id"] == engine.BOOK_ID, b].sum())
                    for b in PNL_BUCKETS}
     charts.attribution_waterfall(book_totals, "Phase 3 — book life-of-trade P&L attribution (SIM)",
-                                 "p3_attribution_waterfall_book")
+                                 "p3_attribution_waterfall_book", caveat=caveat)
     charts.adverse_events(base["e1"], base["e2"], base["e3"])
     f = windows.get("E1_CRASH_FORTNIGHT")
     charts.mcx_vm_schedule(base["vm"], (f.start, f.end) if f else None)

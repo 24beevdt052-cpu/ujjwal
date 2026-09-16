@@ -629,7 +629,8 @@ def chart_var_paths(book: pd.DataFrame, panel: pd.DataFrame, s: dict, ev: dict) 
     ax.set_ylim(floor, max(12.0, float(pnl.max()) * 1.15))
     clipped = held[-held[f"var_{g}_inr"] / MILLION < floor]
     for dte, r in clipped.iterrows():
-        ax.annotate(f"GARCH VaR ₹{r[f'var_{g}_inr'] / MILLION:.1f} m on {dte:%d-%b}\n(off scale; {s['w_base']}d: "
+        # three short lines: one long line ran across the 22-Apr exit-day VaR spike
+        ax.annotate(f"GARCH VaR ₹{r[f'var_{g}_inr'] / MILLION:.1f} m\non {dte:%d-%b} (off scale;\n{s['w_base']}d: "
                     f"₹{r[f'var_{hb}_inr'] / MILLION:.1f} m)", xy=(dte, floor), xytext=(30, 52),
                     textcoords="offset points", fontsize=7.5, color=PALETTE["garch"],
                     arrowprops={"arrowstyle": "->", "lw": 0.8, "color": PALETTE["garch"]})
@@ -653,12 +654,14 @@ def chart_var_paths(book: pd.DataFrame, panel: pd.DataFrame, s: dict, ev: dict) 
     ax2.annotate(f"{ath:%d-%b-%Y} all-time high {L.max():,.1f}\nnext day {next_day_simple:.1%}".replace("day -", "day −"),
                  xy=(ath, L.max()),
                  xytext=(18, -22), textcoords="offset points", fontsize=8, arrowprops={"arrowstyle": "->", "lw": 0.8})
-    ax2.annotate(f"window low {low:%d-%b} {L.min():,.1f} USD/t\n{L.min() / L.max() - 1:.1%} from the high",
+    ax2.annotate(f"window low {low:%d-%b} {L.min():,.1f} USD/t\n"
+                 f"{f'{L.min() / L.max() - 1:.1%}'.replace('-', '−')} from the high",
                  xy=(low, L.min()), xytext=(12, 48), textcoords="offset points", fontsize=8,
                  arrowprops={"arrowstyle": "->", "lw": 0.8})
     ax2.axvspan(ev["fortnight_start"], ev["fortnight_end"], color=PALETTE["band"], alpha=0.9, zorder=0)
     fret = L.at[ev["fortnight_end"]] / L.at[ev["fortnight_start"]] - 1
-    ax2.text(ev["fortnight_start"], L.min() + 30, f" E1 crash fortnight\n {fret:.1%}", fontsize=7.5, color="#555555")
+    ax2.text(ev["fortnight_start"], L.min() + 30, f" E1 crash fortnight\n {fret:.1%}".replace("-", "−"), fontsize=7.5,
+             color="#555555")
     _fmt_month(ax2)
     return save_fig(fig, "p4_var_garch_vs_hist", SOURCE_NOTE)
 
@@ -736,10 +739,15 @@ def chart_unit_backtest(unit: pd.DataFrame, s: dict) -> str:
             ax.plot(unit.index, h - n * P_EXCEPTION, color=col, ls=ls, lw=1.4,
                     label=f"{lbl}: {int(h.iloc[-1])} exceptions")
         ax.axhline(0, color="black", lw=0.6)
-        ax.set_title(f"{title}: cumulative 95% VaR exceptions minus expected (5% of days), n = {len(unit)}",
-                     loc="left")
+        ax.set_title(f"{title}: cumulative 95% VaR exceptions − expected, n = {len(unit):,} days", loc="left",
+                     fontsize=11)
         ax.set_ylabel("exceptions − expected")
-        ax.legend(loc=loc, fontsize=8, title=f"expected {len(unit) * P_EXCEPTION:.1f}", title_fontsize=8)
+        # headroom on the legend's side so the two-column legend sits clear of the lines
+        lo, hi = ax.get_ylim()
+        pad = 0.28 * (hi - lo)
+        ax.set_ylim(lo, hi + pad) if loc.startswith("upper") else ax.set_ylim(lo - pad, hi)
+        ax.legend(loc=loc, fontsize=8, ncol=2, title=f"expected {len(unit) * P_EXCEPTION:.1f} exceptions",
+                  title_fontsize=8, alignment="left")
     axes[1].xaxis.set_major_locator(mdates.YearLocator())
     axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     fig.text(0.5, 0.955, "Rising line = exceptions arriving faster than 5% (VaR too tight); falling = VaR too loose. "

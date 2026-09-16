@@ -13,7 +13,7 @@
 > receipt) does.
 
 ```sh
-cd /Users/sujaljindal/Desktop/ujjwal
+cd ujjwal   # the repository root
 DESK_OFFLINE=1 .venv/bin/python -c "import desk.risk.run_liquidity as m; m.main()"   # ~1.5 s, ~195 MB peak
 DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_risk_liquidity.py            # 20 tests
 ```

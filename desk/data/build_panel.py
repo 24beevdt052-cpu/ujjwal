@@ -439,11 +439,15 @@ def plot_overview(panel: pd.DataFrame) -> str:
     ax.set_title("MCX Aluminium (INR/kg) [PROXY] and lane freight (USD/MT) [PROXY shape / ASSUMPTION level]")
     ax2 = ax.twinx()
     ax2.plot(df.index, df["freight_usec_mun_usd_t"], color=PALETTE["freight"], lw=1.1,
-             label="Freight USEC->Mundra 40ft (ASSUMPTION level, WCI shape)")
+             label="Freight USEC → Mundra 40ft (ASSUMPTION level, WCI shape)")
     ax2.plot(df.index, df["freight_jea_nsa_usd_t"], color=PALETTE["freight"], lw=1.1, ls="--",
-             label="Freight Jebel Ali->Nhava Sheva 20ft (ASSUMPTION level)")
+             label="Freight Jebel Ali → Nhava Sheva 20ft (ASSUMPTION level)")
     ax2.set_ylabel("USD per MT of scrap")
     ax2.grid(False)
+    # headroom on both scales so the three-line legend sits above every series instead of across the freight line
+    for a in (ax, ax2):
+        lo, hi = a.get_ylim()
+        a.set_ylim(lo, hi + 0.32 * (hi - lo))
     h1, l1 = ax.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
     ax.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=8)

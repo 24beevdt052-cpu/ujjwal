@@ -44,11 +44,12 @@ import numpy as np
 import pandas as pd
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
-from reportlab.platypus import Image, PageBreak, SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import Image, PageBreak, Table, TableStyle
 
 from desk import DESK_NAME, HORIZON_END, SIM_LABEL, WINDOW_START, config
 from desk.paths import CHARTS_DIR, INTERIM_DIR, PROCESSED_DIR, REPORTS_DIR, TABLES_DIR
 from desk.reporting.pdf import (
+    DeskDocTemplate,
     PdfStyle,
     _numbered_canvas_class,  # the shared footer (SIM label + "Page n of N"); reused so every report looks the same
     count_pdf_pages,
@@ -848,11 +849,8 @@ def render_pdf(md: str, out_path: Path, style: PdfStyle = PM_STYLE) -> int:
         else:
             buf.append(line)
     flush()
-    doc = SimpleDocTemplate(str(out_path), pagesize=style.pagesize, leftMargin=style.margin_left_mm * mm,
-                            rightMargin=style.margin_right_mm * mm, topMargin=style.margin_top_mm * mm,
-                            bottomMargin=style.margin_bottom_mm * mm, title="Deal post-mortem (SIM)",
-                            author="Aluminium scrap desk (SIM)", subject=SIM_LABEL, creator="desk.reporting.post_mortem",
-                            invariant=True)
+    doc = DeskDocTemplate(str(out_path), style, title="Deal post-mortem (SIM)", author="Aluminium scrap desk (SIM)",
+                          subject=SIM_LABEL, creator="desk.reporting.post_mortem")
     sink: list[int] = []
     doc.build(flow, canvasmaker=_numbered_canvas_class(SIM_LABEL, style, sink))
     return sink[-1] if sink else 0

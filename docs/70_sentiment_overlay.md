@@ -11,7 +11,7 @@
 > **A supporting signal, not a forecasting model.** Nothing here is used by any trade decision, VaR or stress number.
 
 ```sh
-cd /Users/sujaljindal/Desktop/ujjwal
+cd ujjwal   # the repository root
 DESK_OFFLINE=1 .venv/bin/python -c "import desk.sentiment.run as m; m.main()"   # ~3 s, <200 MB
 DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_sentiment.py            # ~10 s
 ```

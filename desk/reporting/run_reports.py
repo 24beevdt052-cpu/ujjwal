@@ -9,6 +9,8 @@ Runs, in this order:
 3. `desk.reporting.interview_pack.main`  the 17-question interview pack (Table 8 row 6); it re-tests a claim against
                                          the post-mortem, so it runs after it
 4. `refresh_readme()`                    regenerates the number blocks in the root README.md (row 5.4)
+5. `desk.reporting.one_pager.main`       the one-page recruiter summary linked from the top of the README; last, so
+                                         it is built from the same tables the pack and README were just refreshed from
 
 The one-page risk policy memo (Table 6 row 4.6) is written by `desk.risk.run_liquidity`, not here.
 
@@ -16,7 +18,7 @@ Design choices worth knowing
 ----------------------------
 * **Fail before doing anything.** Every step's module is imported before the first one runs, so a missing module
   (the desk notes are built by a separate workstream) stops the stage with a message naming it, instead of
-  half-refreshing the pack.
+  half-refreshing the pack. The one-page summary (`SUMMARY_STEP`) is imported up front too.
 * **README numbers are generated, the prose is not.** README.md is hand-written, but every number in it sits inside
   a `<!-- BEGIN GENERATED: name -->` … `<!-- END GENERATED: name -->` block that `refresh_readme()` rewrites from the
   published tables (through the interview pack's own loaders, so the two can never disagree).
@@ -42,6 +44,7 @@ STEPS: tuple[tuple[str, str], ...] = (
     ("deal post-mortem", "desk.reporting.post_mortem"),
     ("interview pack", "desk.reporting.interview_pack"),
 )
+SUMMARY_STEP: tuple[str, str] = ("one-page summary", "desk.reporting.one_pager")   # runs after refresh_readme()
 BLOCK_NAMES = ("headline", "provenance", "verification", "caveats")
 _BLOCK = re.compile(r"(<!-- BEGIN GENERATED: (?P<name>[a-z_]+) [^>]*-->\n)(?P<body>.*?)(<!-- END GENERATED: (?P=name) -->)",
                     re.S)
@@ -69,11 +72,14 @@ def load_step(module: str) -> ModuleType:
 
 def main() -> None:
     modules = [(label, load_step(name)) for label, name in STEPS]
+    summary = load_step(SUMMARY_STEP[1])
     for label, mod in modules:
         print(f"[P6  ] {label}")
         mod.main()
     changed = refresh_readme()
     print(f"[P6  ] README generated blocks {'updated' if changed else 'already current'}")
+    print(f"[P6  ] {SUMMARY_STEP[0]}")
+    summary.main()
 
 
 # ------------------------------------------------------------------------------------------------ README blocks
@@ -180,9 +186,7 @@ def render_readme_blocks(src: Mapping | None = None) -> dict[str, str]:
         f"- [x] **Attribution closes.** Largest |residual| across {n_resid_days:,} trade-day rows: {f['q9_residual']} "
         f"(tolerance ₹1). Phase 3 controls: {n_ctrl_pass} of {n_ctrl} PASS, {n_ctrl_bad} failing, the rest INFO "
         f"({_t('pnl_controls.csv')}).",
-        f"- [x] **Excel reconciliation {r['q9_scoreboard']}.** {f['q9_cells']} formula cells recalculated outside "
-        f"Excel, {int(src['recon']['n_check_cells']):,} check cells, {f['q9_fail']} failures "
-        f"([`reconciliation.json`](outputs/excel/reconciliation.json)).",
+        ip.readme_recon_item(src["recon"]),     # ticked only when the record is VERIFIED against the workbook
         f"- [x] **Eligibility rule declared ex ante** (CONTRACTS §5a, before any Phase 1 result): "
         f"{int((elig['status'] == 'PASS').sum())} of {len(elig)} tickets pass ({_t('trade_eligibility_check.csv')}).",
         f"- [x] **Risk numbers tie to P&L.** Monte Carlo controls: {int((mc_status == 'PASS').sum())} of "

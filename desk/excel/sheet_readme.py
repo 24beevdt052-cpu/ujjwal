@@ -9,6 +9,7 @@ from __future__ import annotations
 from desk import DESK_NAME, HORIZON_END, SIM_LABEL, WINDOW_END, WINDOW_START
 from desk.excel import style
 from desk.excel.layout import FORMULA, INPUT, KEY, PASTED, Column, Counts, Sheet, Table
+from desk.excel.reconciliation_status import VERIFY_COMMAND
 
 SHEET = "README"
 
@@ -169,7 +170,7 @@ def fill(sh: Sheet, counts: Counts, ctx: dict) -> None:
     sh.after(nt)
 
     sh.note("Rebuild:  DESK_OFFLINE=1 .venv/bin/python -c \"import desk.excel.build as m; m.main()\"   ·   "
-            "Reconciliation test:  DESK_OFFLINE=1 .venv/bin/python -m pytest -q tests/test_excel_reconciliation.py"
+            f"Reconciliation test (slow, run alone, ~3 GB RAM):  {VERIFY_COMMAND}"
             "   ·   Methods: docs/35_excel_workbook.md")
     sh.note(SIM_LABEL + " — no number in this workbook is a record of a real trade, counterparty or vessel.")
 

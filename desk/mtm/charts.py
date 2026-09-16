@@ -29,6 +29,29 @@ SOURCE_NOTE = ("LME DIRECT; USD/INR, rates and MCX PROXY; grade factors and frei
                "counterparties and operational events SIM")
 
 
+def _signed(v: float, dp: int = 2, rupee: bool = False) -> str:
+    """+1.23 / −1.23 with a true minus, and a plain 0.00 where rounding leaves nothing (never "-0.00")."""
+    txt = ("₹" if rupee else "") + f"{abs(v):,.{dp}f}"
+    if not any(ch not in "₹0.," for ch in txt):
+        return txt
+    return f"−{txt}" if v < 0 else f"+{txt}"
+
+
+def band_note(robust: pd.Series) -> str:
+    """The headline caveat, read from pnl_sensitivity_sign_robustness.csv: the book P&L never appears without its band."""
+    verdict = "sign-robust" if bool(robust["sign_robust_within_band"]) else "NOT sign-robust"
+    return (f"Horizon book P&L ₹{robust['base_pnl_inr'] / CRORE:,.2f} crore is {verdict}: "
+            f"{_signed(robust['pnl_min_inr'] / CRORE, rupee=True)} to {_signed(robust['pnl_max_inr'] / CRORE, rupee=True)} "
+            "crore across the "
+            f"registered {robust['param_key']} grid (pnl_sensitivity_sign_robustness.csv)")
+
+
+def _caveat(ax, note: str | None) -> None:
+    if note:
+        ax.annotate(note, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 5), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=8, color=PALETTE["loss"])
+
+
 def _fmt_date_axis(ax) -> None:
     ax.xaxis.set_major_locator(mdates.MonthLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
@@ -38,7 +61,8 @@ def _shade_window(ax) -> None:
     ax.axvspan(WINDOW_START, WINDOW_END, color=PALETTE["band"], alpha=0.5, zorder=0)
 
 
-def equity_curve(run: engine.BookRun, split: pd.DataFrame, windows: pd.DataFrame, name: str = "p3_equity_curve"):
+def equity_curve(run: engine.BookRun, split: pd.DataFrame, windows: pd.DataFrame, name: str = "p3_equity_curve",
+                 caveat: str | None = None):
     """Cumulative book P&L, realised vs unrealised, with the derived event windows annotated."""
     fig, ax = plt.subplots()
     d = pd.to_datetime(split["date"])
@@ -59,13 +83,14 @@ def equity_curve(run: engine.BookRun, split: pd.DataFrame, windows: pd.DataFrame
                     xy=(pd.Timestamp(w["start"]), ax.get_ylim()[0]), xytext=(3, 6),
                     textcoords="offset points", fontsize=7, color=PALETTE["loss"], va="bottom")
     ax.set_ylabel("₹ crore")
-    ax.set_title("Phase 3 — cumulative book P&L (SIM book, Mar–Aug 2022 window shaded)")
-    ax.legend(loc="upper right", ncols=3, fontsize=8)
+    ax.set_title("Phase 3 — cumulative book P&L (SIM book, Mar–Aug 2022 window shaded)", pad=20 if caveat else 6)
+    _caveat(ax, caveat)
+    ax.legend(loc="lower right", fontsize=8)      # the lower right is empty after the book is sold; the top is not
     _fmt_date_axis(ax)
     return save_fig(fig, name, SOURCE_NOTE)
 
 
-def attribution_waterfall(totals: dict, title: str, name: str):
+def attribution_waterfall(totals: dict, title: str, name: str, caveat: str | None = None):
     """One trade's (or the book's) life-of-trade P&L, bucket by bucket, in the fixed FACTOR_ORDER."""
     fig, ax = plt.subplots(figsize=(11, 6.4))
     labels = [FACTOR_LABELS[b] for b in PNL_BUCKETS]
@@ -74,14 +99,14 @@ def attribution_waterfall(totals: dict, title: str, name: str):
     tops = []
     for i, (b, v) in enumerate(zip(PNL_BUCKETS, values)):
         ax.bar(i, v, bottom=running, color=FACTOR_COLORS[b], edgecolor="white")
-        ax.annotate(f"{v:+,.2f}", xy=(i, max(running, running + v)), xytext=(0, 5),
+        ax.annotate(_signed(v), xy=(i, max(running, running + v)), xytext=(0, 5),
                     textcoords="offset points", ha="center", fontsize=7.5)
         running += v
         tops.append(running)
         if i < len(values) - 1:
             ax.plot([i - 0.4, i + 1.4], [running, running], color=PALETTE["neutral"], lw=0.6, ls=":", zorder=0)
     ax.bar(len(values), running, color=PALETTE["pnl"], edgecolor="white")
-    ax.annotate(f"{running:+,.2f}", xy=(len(values), max(0.0, running)), xytext=(0, 5),
+    ax.annotate(_signed(running), xy=(len(values), max(0.0, running)), xytext=(0, 5),
                 textcoords="offset points", ha="center", fontsize=8.5, fontweight="bold")
     ax.axhline(0, color="black", lw=0.6)
     lo = min([0.0, running] + [t for t in tops] + [t - v for t, v in zip(tops, values)])
@@ -91,7 +116,8 @@ def attribution_waterfall(totals: dict, title: str, name: str):
     ax.set_xticks(range(len(values) + 1))
     ax.set_xticklabels(labels + ["Total"], rotation=22, ha="right", fontsize=8)
     ax.set_ylabel("₹ crore")
-    ax.set_title(title)
+    ax.set_title(title, pad=20 if caveat else 6)
+    _caveat(ax, caveat)
     fig.subplots_adjust(bottom=0.28)          # leave room for the rotated labels above the SIM footer
     return save_fig(fig, name, SOURCE_NOTE)
 
@@ -132,7 +158,7 @@ def adverse_events(e1: pd.DataFrame, e2: pd.DataFrame, e3: pd.DataFrame, name: s
         vals = [b[1] / CRORE for b in bars]
         ax.bar(range(len(bars)), vals, color=[b[2] for b in bars], width=0.6)
         for i, (label, v, _c) in enumerate(bars):
-            ax.annotate(f"{v / CRORE:+,.2f}", xy=(i, v / CRORE), xytext=(0, 5 if v >= 0 else -13),
+            ax.annotate(_signed(v / CRORE), xy=(i, v / CRORE), xytext=(0, 5 if v >= 0 else -13),
                         textcoords="offset points", ha="center", fontsize=8)
         ax.axhline(0, color="black", lw=0.6)
         ax.set_xticks(range(len(bars)))
@@ -166,7 +192,8 @@ def event1_hedged_vs_unhedged(run: engine.BookRun, no_mcx: engine.BookRun, H, wi
 
     fig, ax = plt.subplots()
     if fortnight:
-        ax.axvspan(pd.Timestamp(fortnight[0]), pd.Timestamp(fortnight[1]), color=PALETTE["loss"], alpha=0.12)
+        ax.axvspan(pd.Timestamp(fortnight[0]), pd.Timestamp(fortnight[1]), color=PALETTE["loss"], alpha=0.12,
+                   label=f"crash fortnight {fortnight[0]:%d-%b} → {fortnight[1]:%d-%b}")
     ax.plot(idx, base.to_numpy() / CRORE, color=PALETTE["pnl"], lw=1.8, label="book as traded (MCX short on)")
     ax.plot(idx, cf.to_numpy() / CRORE, color=PALETTE["loss"], lw=1.4, ls="--",
             label="counterfactual: same book, no MCX hedge")
@@ -180,6 +207,9 @@ def event1_hedged_vs_unhedged(run: engine.BookRun, no_mcx: engine.BookRun, H, wi
              label="LME cash (USD/t, right)")
     ax2.set_ylabel("LME cash USD/t")
     ax2.grid(False)
+    for a in (ax, ax2):                            # headroom: the legend sits above both series, not across them
+        lo, hi = a.get_ylim()
+        a.set_ylim(lo, hi + 0.38 * (hi - lo))
 
     _twin_legend(ax, ax2, fontsize=8)
     ax.set_title(f"Phase 3 — event 1: the book with and without its hedge, {start} → {end}")

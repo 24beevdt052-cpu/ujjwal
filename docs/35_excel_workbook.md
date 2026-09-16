@@ -102,9 +102,12 @@ One control is deliberately indirect and is stated as such on the sheet: the Pha
 3. no cell recalculates to `#REF!`, `#NAME?`, `#DIV/0!`, `#VALUE!`, `#N/A`, `#NULL!` or `#NUM!`;
 4. the workbook is byte-for-byte deterministic (CONTRACTS §1.5) — rebuilding it produces an identical file, which is why the zip entry timestamps and the document properties are pinned.
 
+**Status: VERIFIED.** The recorded full recalculation passed, and its SHA-256 matches the workbook on disk (2907d31dded0…).
+
 **Scope of the recalculation: full workbook.** Every formula cell in every sheet is recalculated; nothing is sampled.
 
-* cells recalculated: **132,447**  ·  wall time **153 s**
+* workbook recalculated: SHA-256 `2907d31dded09dd4cf70af113bdb7b4e4c7598fa4bc7150f841bc203b479269b`, 1,096,259 bytes — hashed by tests/test_excel_reconciliation.py immediately before the recalculation it records
+* cells recalculated: **132,447**  ·  wall time **163 s**
 * `Checks` cells read: **3,998**, failures: **0**
 * scoreboard verdict recalculated from the formulas: **PASS**
 * error values after recalculation (`#REF!` / `#NAME?` / `#DIV/0!` / `#VALUE!` / `#N/A`): **0**
