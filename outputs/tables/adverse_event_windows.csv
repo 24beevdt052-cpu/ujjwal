@@ -1,0 +1,6 @@
+event,start,end,metric,start_value,end_value,change_frac,n_panel_days,rule,note,reporting_only
+E1_LME_CRASH,2022-03-07,2022-07-15,lme_cash_usd_t,3984.5,2320.5,-0.4176,90,"start = argmax cash in the headline window; end = argmin on [start, WINDOW_END]",,True
+E1_CRASH_FORTNIGHT,2022-04-22,2022-05-09,lme_cash_usd_t,3244.0,2708.0,-0.1652,11,the 10-trading-day RETURN window (11 observations) with the most negative cash return,the 10-observation reading (9 returns) selects a different fortnight; reported as a memo,True
+E2_INR_DEPRECIATION,2022-04-05,2022-07-14,usdinr,75.335,80.0352,0.0624,68,the pair i < j in the headline window maximising usdinr_j / usdinr_i,memo: first-to-last move over the window is 5.07%,True
+E1_CRASH_FORTNIGHT_MEMO_9_RETURNS,2022-03-07,2022-03-18,lme_cash_usd_t,3984.5,3380.5,-0.1516,10,"the 10-OBSERVATION (9-return) reading, reported so the convention is visible",not the contract convention; CONTRACTS §7a.3 fixes the 10-return window,True
+E3_LOGISTICS_CREDIT,2022-07-28,2022-10-11,known_date -> last affected settle,,,,53,earliest E3 known_date to the last settle date those events move,the cited void-call trigger is dated 2022-07-27 (Container News),True

@@ -1,0 +1,223 @@
+# ACADEMIC SIMULATION — not actual trades.
+#
+# The authoritative counterparty register for the Phase 2 mock trading book (CONTRACTS §6, MASTER_SPEC Table 4
+# row 2.5). Every company below is FICTIONAL: the names end "(SIM)" and every record carries `flag: SIM`. No
+# number here is an observation of any real company; the `profile` block exists so the Phase 5 logistic credit
+# model has features that separate, and the credit limits are the desk's own policy decisions, documented in
+# docs/20_trade_book.md §3.
+#
+# (The three-counterparty fixture used by the engine tests is `config/counterparties.example.yaml`; it is NOT
+# this file and the two are deliberately disjoint so a reader can never confuse the fixture with the book.)
+#
+# Credit-limit policy (desk, stated before the book was priced):
+#   * A limit is the cap on CREDIT exposure to that buyer = invoiced-and-unpaid receivables plus the
+#     not-advance-covered part of sales already contracted but not yet invoiced. It is checked at every sale
+#     booking by `desk.book.validate` and written to outputs/tables/trade_book.csv.
+#   * The limit is sized at roughly 15–25 days of that buyer's own purchases, i.e. 4–8 % of its (SIM) turnover.
+#     A buyer whose limit will not carry the parcel buys on an advance, or waits until the previous invoice
+#     clears — both happen in this book (T04/T07 and the 26-Jul booking of T07).
+#   * Suppliers carry `claims_exposure_limit_usd` instead: the cap on what the desk may be owed BY a seller
+#     (M+1 final-invoice refunds and quality claims), which is the only direction credit runs on the buy side
+#     once the cargo is paid for under an LC.
+#
+# Provenance: every field is SIM (a simulated counterparty) except the registered policy caps it is checked
+# against — `msme_max_payment_days` (DIRECT, 45) and `fx_hedge_no_documentation_limit_usd` (DIRECT).
+
+schema_version: 1
+
+counterparties:
+
+  # =============================================================================================== SUPPLIERS
+  - cp_id: SUP_JEA_01
+    name: "Khaleej Metal Resources FZE (SIM)"
+    role: SUPPLIER
+    type: TRADER
+    country: AE
+    location: "Jebel Ali Free Zone, Dubai (SIM)"
+    lanes: [JEA_NSA]
+    grades: [zorba, taint_tabor, tense]
+    claims_exposure_limit_usd: 600000.0
+    lc_confirmation_required: false        # five-day lane, four-year relationship: an unconfirmed LC is accepted
+    safe_origin_for_psic: false            # regulatory.yaml psic_required_uae_origin = true -> PSIC every shipment
+    msme_registered: false
+    flag: SIM
+    note: >-
+      Gulf collector/trader aggregating UAE, east-African and Iranian-transit material into Jebel Ali. Takes the
+      desk's four short-lane cargoes (T02, T03, T06, T09) and is the only supplier that will quote all three
+      grades. UAE origin is outside the DGFT safe-origin list, so every shipment carries a pre-shipment
+      inspection certificate at the desk's cost (psic_cost_usd_per_box).
+    profile:
+      relationship_start: 2019-01-07
+      years_in_business: 14
+      annual_turnover_inr: 4200000000.0
+      prior_invoices_n: 31
+      prior_dpd_mean_days: 0.0
+      prior_dpd_max_days: 0
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 4
+      gst_returns_regular: true
+      internal_rating_sim: "BB (SIM)"
+      security: NONE
+
+  - cp_id: SUP_USEC_01
+    name: "Tidewater Recycling Corp (SIM)"
+    role: SUPPLIER
+    type: PROCESSOR
+    country: US
+    location: "Norfolk, Virginia (SIM)"
+    lanes: [USEC_MUN]
+    grades: [zorba, tense]
+    claims_exposure_limit_usd: 900000.0
+    lc_confirmation_required: true         # a US shredder prices India country risk into the instrument
+    safe_origin_for_psic: true             # regulatory.yaml psic_required_safe_origin_designated_port = false
+    msme_registered: false
+    flag: SIM
+    note: >-
+      Large east-coast shredder/processor with its own fragmentiser, so its Zorba is consistent. Will only ship
+      against an LC confirmed by an acceptable bank, and the SPA puts the confirmation fee on the applicant —
+      that fee is a real desk cashflow on T01 and T05 and is why this supplier's material has to be bought a
+      little cheaper to pay for itself.
+    profile:
+      relationship_start: 2020-03-01
+      years_in_business: 22
+      annual_turnover_inr: 9800000000.0
+      prior_invoices_n: 13
+      prior_dpd_mean_days: 0.0
+      prior_dpd_max_days: 0
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 2
+      gst_returns_regular: true
+      internal_rating_sim: "B (SIM)"
+      security: NONE
+
+  - cp_id: SUP_USEC_02
+    name: "Delaware Bay Metals LLC (SIM)"
+    role: SUPPLIER
+    type: SCRAP_YARD
+    country: US
+    location: "Wilmington, Delaware (SIM)"
+    lanes: [USEC_MUN]
+    grades: [taint_tabor, tense]
+    claims_exposure_limit_usd: 400000.0
+    lc_confirmation_required: false
+    safe_origin_for_psic: true
+    msme_registered: false
+    flag: SIM
+    note: >-
+      Smaller collection yard buying peddler and demolition material. Cheaper than SUP_USEC_01 and happy with an
+      unconfirmed LC, but the material is hand-sorted rather than fragmentised, which is exactly why the two
+      simulated quality outcomes in this book (T07 wet and dirty, T08 one box stopped at the radiation portal)
+      are on its cargoes. The claims limit is deliberately the smallest in the book.
+    profile:
+      relationship_start: 2021-06-01
+      years_in_business: 8
+      annual_turnover_inr: 2600000000.0
+      prior_invoices_n: 5
+      prior_dpd_mean_days: 0.0
+      prior_dpd_max_days: 0
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 1
+      gst_returns_regular: true
+      internal_rating_sim: "C (SIM)"
+      security: NONE
+
+  # ================================================================================================== BUYERS
+  - cp_id: BUY_MUN_01
+    name: "Kandla Metal Industries Pvt Ltd (SIM)"
+    role: BUYER
+    type: SECONDARY_SMELTER
+    country: IN
+    location: "Gandhidham, Kutch, Gujarat (SIM)"
+    lanes: [USEC_MUN]
+    grades: [zorba, tense]
+    credit_limit_inr: 650000000.0
+    default_payment_terms: CREDIT
+    credit_days_default: 30
+    msme_registered: false
+    flag: SIM
+    note: >-
+      The strongest name in the book and the anchor buyer for Mundra cargo: a 60,000 t/yr secondary smelter
+      forty minutes from the port gate, on an MCX-average formula for its floating-priced cargoes. The limit is
+      ~4.7 % of (SIM) turnover, about 17 days of its own buying, and the book runs it to 93 % in late April —
+      which is why T08 waits until 09-Aug, after the T05 invoice clears, to contract its sale.
+    profile:
+      relationship_start: 2019-11-04
+      years_in_business: 19
+      annual_turnover_inr: 13800000000.0
+      prior_invoices_n: 44
+      prior_dpd_mean_days: 2.0
+      prior_dpd_max_days: 8
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 1
+      gst_returns_regular: true
+      internal_rating_sim: "A (SIM)"
+      group_concentration_frac: 0.19
+      security: NONE
+
+  - cp_id: BUY_JNPT_01
+    name: "Taloja Alloys and Smelters Pvt Ltd (SIM)"
+    role: BUYER
+    type: SECONDARY_SMELTER
+    country: IN
+    location: "Taloja MIDC, Navi Mumbai, Maharashtra (SIM)"
+    lanes: [JEA_NSA]
+    grades: [zorba, taint_tabor, tense]
+    credit_limit_inr: 560000000.0
+    default_payment_terms: CREDIT
+    credit_days_default: 30
+    msme_registered: false
+    flag: SIM
+    note: >-
+      The JNPT-belt smelter, forty kilometres from Nhava Sheva, and the only buyer in the book for the Gulf lane —
+      so it takes four of nine cargoes. That concentration is a finding, not an oversight: it is the single
+      largest credit exposure the desk runs and it is the reason the Gulf-lane parcels are the smallest in the
+      book. Peak utilisation 88 % on 26-Apr. Takes all three grades, which is why the taint/tabor parcel could
+      be placed at all.
+    profile:
+      relationship_start: 2019-04-15
+      years_in_business: 16
+      annual_turnover_inr: 10400000000.0
+      prior_invoices_n: 29
+      prior_dpd_mean_days: 5.0
+      prior_dpd_max_days: 19
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 2
+      gst_returns_regular: true
+      internal_rating_sim: "BBB (SIM)"
+      group_concentration_frac: 0.31
+      security: NONE
+
+  - cp_id: BUY_RJK_01
+    name: "Saurashtra Castings and Alloys Pvt Ltd (SIM)"
+    role: BUYER
+    type: FOUNDRY
+    country: IN
+    location: "Rajkot, Gujarat (SIM)"
+    lanes: [USEC_MUN]
+    grades: [zorba, taint_tabor, tense]
+    credit_limit_inr: 120000000.0
+    default_payment_terms: ADVANCE_PLUS_CREDIT
+    credit_days_default: 30
+    msme_registered: true
+    flag: SIM
+    note: >-
+      A Rajkot-cluster foundry: small, lumpy order book, thin balance sheet, and the weakest name the desk will
+      deal with at all. Every parcel it takes is majority-advance (T01 S2 outright, T04 75 %, T07 70 %), so its
+      credit exposure never exceeds ~₹96 mn against a ₹120 mn limit even on a ₹321 mn cargo. It is also the
+      simulated late payer in adverse event #3 — chosen because a foundry funding itself on its own customers'
+      receivables is exactly the name that stretches when domestic ingot prices fall, not because the outcome
+      was wanted somewhere.
+    profile:
+      relationship_start: 2021-02-08
+      years_in_business: 11
+      annual_turnover_inr: 1450000000.0
+      prior_invoices_n: 8
+      prior_dpd_mean_days: 12.0
+      prior_dpd_max_days: 37
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 1
+      gst_returns_regular: true
+      internal_rating_sim: "C (SIM)"
+      group_concentration_frac: 0.58
+      security: PDC
+      security_amount_inr: 15000000.0

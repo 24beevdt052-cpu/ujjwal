@@ -1,0 +1,237 @@
+"""Phase 3 stage entry point: every MTM, attribution, exposure and adverse-event table, plus the controls.
+
+    DESK_OFFLINE=1 .venv/bin/python -m desk.mtm.run
+
+The book comes from `config/trades.yaml` + `config/counterparties.yaml` (Phase 2, CONTRACTS §6). Two environment
+variables override the paths so the engine can be run on the checked-in fixtures before the real book exists:
+
+    DESK_TRADES_FILE=config/trades.example.yaml \
+    DESK_COUNTERPARTIES_FILE=config/counterparties.example.yaml \
+    DESK_OFFLINE=1 .venv/bin/python -m desk.mtm.run
+
+`main()` **raises** if any row of `pnl_controls.csv` fails. That is the point of the controls: the ₹1 attribution
+residual, the ledger identity, the zero-by-construction proxy basis, the zero lifetime sum of balance-sheet flows and
+the cross-phase reconciliation of the replacement mark to Phase 1 are sign-off gates, not diagnostics.
+
+Sensitivity runs (never base P&L, per CONTRACTS §7.5 and design D13) write `_mcx_mirror` and `_grade_pit` variants of
+the attribution, exposure and event-1 tables.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import pandas as pd
+
+from desk import HORIZON_END
+from desk.book import schema as bs
+from desk.mtm import charts, engine, events as ev
+from desk.mtm.constants import fallback_report
+from desk.mtm.history import MarketHistory, panel_days
+from desk.paths import CONFIG_DIR, TABLES_DIR, ensure_dirs
+from desk.reporting.style import PNL_BUCKETS
+
+TRADES_DEFAULT = CONFIG_DIR / "trades.yaml"
+COUNTERPARTIES_DEFAULT = CONFIG_DIR / "counterparties.yaml"
+TRADES_FIXTURE = CONFIG_DIR / "trades.example.yaml"
+COUNTERPARTIES_FIXTURE = CONFIG_DIR / "counterparties.example.yaml"
+
+
+class ControlFailure(RuntimeError):
+    """A `pnl_controls.csv` row failed — the run is not signed off."""
+
+
+def book_paths() -> tuple[Path, Path]:
+    """`config/trades.yaml` + `config/counterparties.yaml`, overridable by env for fixture runs."""
+    trades = Path(os.environ.get("DESK_TRADES_FILE", TRADES_DEFAULT))
+    cps = Path(os.environ.get("DESK_COUNTERPARTIES_FILE", COUNTERPARTIES_DEFAULT))
+    if not trades.exists() and TRADES_FIXTURE.exists():
+        print(f"[mtm] {trades} not written yet — falling back to the checked-in fixtures "
+              f"({TRADES_FIXTURE.name}); these are NOT the trade book")
+        trades, cps = TRADES_FIXTURE, COUNTERPARTIES_FIXTURE
+    return trades, cps
+
+
+def load(trades: Path | None = None, cps: Path | None = None) -> bs.Book:
+    if trades is None or cps is None:
+        trades, cps = book_paths()
+    return bs.load_book(trades, cps, panel_days=panel_days())
+
+
+def write(df: pd.DataFrame, name: str) -> Path:
+    """Deterministic CSV: fixed float formats, ISO dates, LF line endings (CONTRACTS §1.5)."""
+    out = TABLES_DIR / f"{name}.csv"
+    engine.round_frame(df).to_csv(out, index=False, lineterminator="\n", date_format="%Y-%m-%d")
+    return out
+
+
+# --------------------------------------------------------------------------------------------------- one run
+def build(book: bs.Book, H: MarketHistory, *, label: str = "base", suffix: str = "",
+          write_files: bool = True) -> dict:
+    """Run the engine, the counterfactuals and the event tables once, and write the tables for this variant."""
+    run = engine.run_book(book, H, label=label)
+    vm = engine.mcx_variation_margin(book, H, run)
+    windows_df, windows = ev.windows_frame(H, book, run)
+
+    no_mcx = ev.counterfactual(book, H, "no_mcx", drop_instruments=frozenset({"mcx"}))
+    no_fwd = ev.counterfactual(book, H, "no_fx_forward", drop_instruments=frozenset({"fx_forward"}))
+    no_events = ev.counterfactual(book, H, "no_events",
+                                  drop_event_kinds=frozenset({"quality", "logistics_delay", "buyer_payment_delay"}))
+    # Event 3 has three separable parts, so each gets its own counterfactual rather than one lumped "no events"
+    # number: the dwell the void calls caused, the buyer's payment delay, and the out-turn quality claims.
+    no_dwell = ev.counterfactual(book, H, "no_dwell", drop_event_kinds=frozenset({"logistics_delay"}))
+    no_delay = ev.counterfactual(book, H, "no_payment_delay", drop_event_kinds=frozenset({"buyer_payment_delay"}))
+    no_quality = ev.counterfactual(book, H, "no_quality", drop_event_kinds=frozenset({"quality"}))
+    at_bl = ev.counterfactual(book, H, "fixtures_at_bl", fixtures_at_bl=True)
+
+    e1, e1_daily = ev.event1_lme_crash(book, H, run, vm, windows, no_mcx)
+    e2, e2_daily = ev.event2_usdinr(book, H, run, windows, no_fwd)
+    e3 = ev.event3_logistics_credit(book, H, run, windows, no_events, at_bl,
+                                    parts={"dwell": no_dwell, "payment_delay": no_delay, "quality": no_quality})
+    stress = ev.freight_stress_hypothetical(book, H, run)
+    summary = ev.summary_frame([e1, e2, e3])
+
+    controls = engine.controls(run, H)
+
+    if write_files:
+        write(run.attribution, f"attribution_daily{suffix}")
+        write(run.attribution_leg, f"attribution_leg_daily{suffix}")
+        write(run.exposures, f"book_exposures_daily{suffix}")
+        write(e1, f"adverse_event_1_lme_crash{suffix}")
+        write(e1_daily, f"adverse_event_1_lme_crash_daily{suffix}")
+        if suffix == "":
+            write(run.mtm, "mtm_daily")
+            write(vm, "mcx_variation_margin")
+            write(windows_df, "adverse_event_windows")
+            write(e2, "adverse_event_2_usdinr")
+            write(e2_daily, "adverse_event_2_usdinr_daily")
+            write(e3, "adverse_event_3_logistics_credit")
+            write(stress, "adverse_event_3_freight_stress_hypothetical")
+            write(summary, "adverse_events_summary")
+            # Aliases under the Phase 3 brief's names — identical content, kept so both naming conventions resolve.
+            write(e2, "adverse_event_2_inr_depreciation")
+            write(e3, "adverse_event_3_payment_delay_demurrage")
+            recon = _write_cashflows(book, H, run)
+            controls = pd.concat([controls, _fallback_rows(run), recon], ignore_index=True)
+            write(controls, "pnl_controls")
+    return {"run": run, "vm": vm, "windows_df": windows_df, "windows": windows, "e1": e1, "e1_daily": e1_daily,
+            "e2": e2, "e2_daily": e2_daily, "e3": e3, "stress": stress, "summary": summary, "controls": controls,
+            "counterfactuals": {"no_mcx": no_mcx, "no_fx_forward": no_fwd, "no_events": no_events,
+                                "fixtures_at_bl": at_bl, "no_dwell": no_dwell, "no_payment_delay": no_delay,
+                                "no_quality": no_quality}}
+
+
+def _fallback_rows(run: engine.BookRun) -> pd.DataFrame:
+    """Design §14 keys served from code because `config/params/book.yaml` (Phase 2) is not present yet."""
+    rows = [{"date": run.days[-1], "check": "book_param_fallback", "value": float("nan"), "tolerance": float("nan"),
+             "scope": f"{r['key']} = {r['value']} ({r['flag']}; {r['source']})", "status": "INFO"}
+            for r in fallback_report()]
+    return pd.DataFrame(rows, columns=["date", "check", "value", "tolerance", "scope", "status"])
+
+
+def _write_cashflows(book: bs.Book, H: MarketHistory, run: engine.BookRun) -> pd.DataFrame:
+    """Write `trade_cashflows.csv`, or `trade_cashflows_p3.csv` when Phase 2 already owns the canonical file.
+
+    Returns the `cashflow_reconciliation_vs_p2` control row CONTRACTS §7a.3 asks for. Phase 3 owns the file in this
+    build (design §11.5), so the row is an `INFO` saying so rather than a silently absent check.
+    """
+    cf = engine.trade_cashflows(book, H, run.cache)
+    target = TABLES_DIR / "trade_cashflows.csv"
+    name, row = "trade_cashflows", None
+    if target.exists():
+        existing = pd.read_csv(target)
+        if "written_by" not in existing.columns or (existing["written_by"] != "P3").any():
+            name = "trade_cashflows_p3"
+            print(f"[mtm] {target.name} already written by another phase — writing {name}.csv beside it "
+                  "and reconciling against it")
+            row = _reconcile_cashflows(existing, cf, run.days[-1])
+    if row is None:
+        row = {"date": run.days[-1], "check": "cashflow_reconciliation_vs_p2", "value": float("nan"),
+               "tolerance": float("nan"),
+               "scope": "not applicable — P3 writes trade_cashflows.csv (written_by=P3); "
+                        "no Phase 2 file to reconcile against", "status": "INFO"}
+    return pd.DataFrame([row], columns=["date", "check", "value", "tolerance", "scope", "status"])
+
+
+def _reconcile_cashflows(p2: pd.DataFrame, p3: pd.DataFrame, when) -> dict:
+    """`cashflow_reconciliation_vs_p2`: compare realised INR per trade when Phase 2 publishes its own file."""
+    from desk.mtm.constants import LEDGER_TOL_INR
+    try:
+        a = p2[p2.get("scenario", "REALISED") == "REALISED"].groupby("trade_id")["amount_inr"].sum()
+        b = p3[p3["scenario"] == "REALISED"].groupby("trade_id")["amount_inr"].sum()
+        gap = float((a - b).abs().max())
+        print(f"[mtm] cashflow_reconciliation_vs_p2: max |P2 - P3| = ₹{gap:,.2f}")
+        return {"date": when, "check": "cashflow_reconciliation_vs_p2", "value": gap,
+                "tolerance": LEDGER_TOL_INR, "scope": "max |P2 - P3| realised INR per trade",
+                "status": "PASS" if gap <= LEDGER_TOL_INR else "FAIL"}
+    except Exception as exc:                                    # a differently-shaped P2 file must not fail the run
+        print(f"[mtm] cashflow_reconciliation_vs_p2 could not be computed: {exc}")
+        return {"date": when, "check": "cashflow_reconciliation_vs_p2", "value": float("nan"),
+                "tolerance": float("nan"), "scope": f"could not be computed: {exc}", "status": "INFO"}
+
+
+# ------------------------------------------------------------------------------------------------------- main
+def main() -> None:
+    ensure_dirs()
+    trades, cps = book_paths()
+    print(f"[mtm] book: {trades} + {cps}")
+    book = load(trades, cps)
+
+    H = MarketHistory()
+    base = build(book, H, label="base")
+
+    # sensitivities — never base P&L (CONTRACTS §7.5, design D13)
+    try:
+        mirror = MarketHistory(mcx_source="mirror")
+        build(book, mirror, label="mcx_mirror", suffix="_mcx_mirror")
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"[mtm] MCX mirror sensitivity skipped: {exc}")
+    pit = MarketHistory(grade_source="pit")
+    build(book, pit, label="grade_pit", suffix="_grade_pit")
+
+    _charts(book, base, H)
+
+    controls = base["controls"]
+    failed = controls[controls["status"] == "FAIL"]
+    print(controls.to_string(index=False))
+    if len(failed):
+        raise ControlFailure(f"{len(failed)} control(s) failed:\n{failed.to_string(index=False)}")
+
+    run = base["run"]
+    book_row = run.attribution[(run.attribution["trade_id"] == engine.BOOK_ID)
+                               & (run.attribution["date"] == run.days[-1])].iloc[0]
+    print(f"[mtm] book cumulative P&L at {HORIZON_END}: ₹{book_row['cum_pnl_inr']:,.0f}")
+
+
+def _charts(book: bs.Book, base: dict, H: MarketHistory) -> None:
+    run, windows = base["run"], base["windows"]
+    split = engine.book_pnl_split(run)
+    charts.equity_curve(run, split, base["windows_df"])
+    for ticket in book.trades:
+        tr = run.per_trade[ticket.trade_id]
+        totals = {b: float(run.attribution.loc[run.attribution["trade_id"] == ticket.trade_id, b].sum())
+                  for b in PNL_BUCKETS}
+        charts.attribution_waterfall(
+            totals, f"Phase 3 — {ticket.trade_id} life-of-trade P&L attribution (SIM)",
+            f"p3_attribution_waterfall_{ticket.trade_id}")
+    book_totals = {b: float(run.attribution.loc[run.attribution["trade_id"] == engine.BOOK_ID, b].sum())
+                   for b in PNL_BUCKETS}
+    charts.attribution_waterfall(book_totals, "Phase 3 — book life-of-trade P&L attribution (SIM)",
+                                 "p3_attribution_waterfall_book")
+    charts.adverse_events(base["e1"], base["e2"], base["e3"])
+    f = windows.get("E1_CRASH_FORTNIGHT")
+    charts.mcx_vm_schedule(base["vm"], (f.start, f.end) if f else None)
+
+    # docs/31_adverse_events.md: the two counterfactuals as pictures rather than as a pair of numbers
+    e1w = windows.get("E1_LME_CRASH")
+    if e1w is not None:
+        charts.event1_hedged_vs_unhedged(run, base["counterfactuals"]["no_mcx"], H, (e1w.start, e1w.end),
+                                         (f.start, f.end) if f else None)
+    e2w = windows.get("E2_INR_DEPRECIATION")
+    if e2w is not None:
+        charts.event2_fx_offset(run, H, (e2w.start, e2w.end))
+
+
+if __name__ == "__main__":
+    main()

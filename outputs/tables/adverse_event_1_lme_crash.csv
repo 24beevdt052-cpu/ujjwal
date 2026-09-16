@@ -1,0 +1,33 @@
+metric,value,note,event
+window_start,2022-03-07,,E1_LME_CRASH
+window_end,2022-07-15,,E1_LME_CRASH
+lme_cash_start_usd_t,3984.5,,E1_LME_CRASH
+lme_cash_end_usd_t,2320.5,,E1_LME_CRASH
+lme_change_frac,-0.41761827079934744,,E1_LME_CRASH
+book_pnl_window_inr,206460403.78027916,,E1_LME_CRASH
+bucket_new_deal_inr,130445586.48157308,,E1_LME_CRASH
+bucket_lme_flat_inr,-44769134.809093475,,E1_LME_CRASH
+bucket_cross_exchange_basis_inr,0.0,,E1_LME_CRASH
+bucket_grade_spread_inr,128797180.18890846,,E1_LME_CRASH
+bucket_freight_inr,1167793.165997002,,E1_LME_CRASH
+bucket_fx_inr,10881572.637122856,,E1_LME_CRASH
+bucket_demurrage_penalty_inr,0.0,,E1_LME_CRASH
+bucket_roll_term_structure_inr,-20062593.88422862,,E1_LME_CRASH
+lme_flat_physical_inr,-263495972.5659486,,E1_LME_CRASH
+lme_flat_inventory_mark_inr,-261508639.8668258,the part of the physical leg that is the replacement-value mark on unsold cargo (design D5),E1_LME_CRASH
+lme_flat_mcx_inr,218726837.75685516,,E1_LME_CRASH
+hedge_offset_frac,0.8300955632333679,,E1_LME_CRASH
+grade_spread_offset_inr,128797180.18890846,"scrap stickiness in a falling market (scrap_grades.yaml grade_falling_market_logic); the grade factors are an ASSUMPTION reconstruction, not an observed spread",E1_LME_CRASH
+counterfactual_no_mcx_pnl_inr,9344342.025624186,,E1_LME_CRASH
+hedge_benefit_inr,197116061.75465497,"book minus the same book without MCX, including the margin-funding difference",E1_LME_CRASH
+mcx_vm_window_inr,201024143.75782192,,E1_LME_CRASH
+mcx_vm_crash_fortnight_inr,64951870.07761393,,E1_LME_CRASH
+crash_fortnight_start,2022-04-22,,E1_LME_CRASH
+crash_fortnight_end,2022-05-09,,E1_LME_CRASH
+crash_fortnight_change_frac,-0.16522811344019728,,E1_LME_CRASH
+peak_cumulative_margin_outflow_inr,-105707065.17502223,"measured from WINDOW_START; a short pays margin when the market RISES, so for this book the peak strain is at 2022-03-24, before the trough, not in the crash",E1_LME_CRASH
+peak_cumulative_margin_outflow_date,2022-03-24,,E1_LME_CRASH
+max_im_required_inr,95803037.76315548,,E1_LME_CRASH
+max_im_stress_012_inr,114963645.31578656,,E1_LME_CRASH
+max_im_stress_015_inr,143704556.6447332,,E1_LME_CRASH
+mcx_daily_price_limit_caveat,0.09,"the MCX import-parity proxy ignores daily price limits: the near-month proxy moved -12.0% on 08-Mar-2022 against a 9% maximum slab, so a real position would have been limit-locked",E1_LME_CRASH

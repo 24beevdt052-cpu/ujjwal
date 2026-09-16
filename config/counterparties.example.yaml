@@ -1,0 +1,157 @@
+# EXAMPLE — engine test fixture (SIM). NOT the trade book.
+#
+# ACADEMIC SIMULATION — not actual trades. Every counterparty below is fictional and its name ends "(SIM)".
+# This file exists so `desk.book.schema` and the Phase 3 engine have a fixed, checked-in book to load in tests. The
+# authoritative book lives in `config/counterparties.yaml` (Phase 2, CONTRACTS §6) and is built separately.
+#
+# Profile numbers are ASSUMPTION: they are chosen to span the score range so the Phase 5 logistic credit model has
+# something to separate. They are not observations of any real company.
+
+schema_version: 1
+
+counterparties:
+  # ---------------------------------------------------------------------------------------------------- suppliers
+  - cp_id: SUP_USEC_01
+    name: "Chesapeake Metals Recycling LLC (SIM)"
+    role: SUPPLIER
+    type: PROCESSOR
+    country: US
+    location: "Savannah, Georgia (SIM)"
+    lanes: [USEC_MUN]
+    grades: [zorba, taint_tabor, tense]
+    claims_exposure_limit_usd: 750000.0
+    lc_confirmation_required: true       # a US yard prices the India country risk into the LC
+    safe_origin_for_psic: true           # regulatory.yaml psic_required_safe_origin_designated_port = false
+    flag: SIM
+    note: >-
+      Mid-size US east-coast processor. Sells Zorba and Tense ex-yard on FOB terms and expects an LC confirmed by an
+      acceptable bank; that confirmation fee is the desk's cost when the SPA puts charges on the applicant.
+    profile:
+      relationship_start: 2020-03-01
+      years_in_business: 22
+      annual_turnover_inr: 9800000000.0
+      prior_invoices_n: 11
+      prior_dpd_mean_days: 0.0
+      prior_dpd_max_days: 0
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 2
+      internal_rating_sim: "B (SIM)"
+      security: NONE
+
+  - cp_id: SUP_JEA_01
+    name: "Al Rafa Metals Trading FZE (SIM)"
+    role: SUPPLIER
+    type: TRADER
+    country: AE
+    location: "Jebel Ali Free Zone, Dubai (SIM)"
+    lanes: [JEA_NSA]
+    grades: [zorba, taint_tabor, tense]
+    claims_exposure_limit_usd: 500000.0
+    lc_confirmation_required: false      # short lane, long relationship: an unconfirmed LC is accepted
+    safe_origin_for_psic: false          # regulatory.yaml psic_required_uae_origin = true
+    flag: SIM
+    note: >-
+      Gulf collector/trader aggregating UAE and east-African material. UAE origin is outside the DGFT safe-origin
+      list, so every shipment carries a pre-shipment inspection certificate at the desk's cost.
+    profile:
+      relationship_start: 2019-01-07
+      years_in_business: 14
+      annual_turnover_inr: 4200000000.0
+      prior_invoices_n: 27
+      prior_dpd_mean_days: 0.0
+      prior_dpd_max_days: 0
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 4
+      internal_rating_sim: "BB (SIM)"
+      security: NONE
+
+  # ------------------------------------------------------------------------------------------------------- buyers
+  - cp_id: BUY_RJK_01
+    name: "Saurashtra Alloy Castings Pvt Ltd (SIM)"
+    role: BUYER
+    type: FOUNDRY
+    country: IN
+    location: "Rajkot, Gujarat (SIM)"
+    lanes: [USEC_MUN]
+    grades: [zorba, taint_tabor]
+    credit_limit_inr: 0.0                # advance-only: the desk carries no receivable on this name
+    default_payment_terms: ADVANCE
+    msme_registered: true
+    flag: SIM
+    note: >-
+      Small Rajkot foundry, thin balance sheet and lumpy order book. The desk sells it cargo only against payment
+      before truck release, so it appears in the P5 tracker with zero utilisation by construction.
+    profile:
+      relationship_start: 2021-08-02
+      years_in_business: 9
+      annual_turnover_inr: 640000000.0
+      prior_invoices_n: 6
+      prior_dpd_mean_days: 11.0
+      prior_dpd_max_days: 34
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 1
+      gst_returns_regular: true
+      internal_rating_sim: "C (SIM)"
+      group_concentration_frac: 0.55
+      security: PDC
+      security_amount_inr: 5000000.0
+
+  - cp_id: BUY_JNPT_01
+    name: "Konkan Secondary Metals Pvt Ltd (SIM)"
+    role: BUYER
+    type: SECONDARY_SMELTER
+    country: IN
+    location: "Taloja, Maharashtra (SIM)"
+    lanes: [JEA_NSA]
+    grades: [tense, taint_tabor]
+    credit_limit_inr: 250000000.0
+    default_payment_terms: CREDIT
+    credit_days_default: 30
+    msme_registered: false
+    flag: SIM
+    note: >-
+      Established smelter inside the JNPT belt, buys Tense on an MCX-average formula and pays on time. The strongest
+      name in the book, which is why it gets the largest limit and the floating-price contract.
+    profile:
+      relationship_start: 2019-04-15
+      years_in_business: 18
+      annual_turnover_inr: 5600000000.0
+      prior_invoices_n: 41
+      prior_dpd_mean_days: 2.0
+      prior_dpd_max_days: 9
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 1
+      gst_returns_regular: true
+      internal_rating_sim: "A (SIM)"
+      group_concentration_frac: 0.22
+      security: NONE
+
+  - cp_id: BUY_MUN_01
+    name: "Kutch Alloys and Castings Pvt Ltd (SIM)"
+    role: BUYER
+    type: SECONDARY_SMELTER
+    country: IN
+    location: "Gandhidham, Gujarat (SIM)"
+    lanes: [USEC_MUN]
+    grades: [tense, zorba]
+    credit_limit_inr: 120000000.0
+    default_payment_terms: CREDIT
+    credit_days_default: 30
+    msme_registered: true
+    flag: SIM
+    note: >-
+      Mid-size Gandhidham smelter near Mundra. Good operationally, but its own receivables stretch when ingot prices
+      fall, so it is the name used for the simulated payment-delay event in adverse event #3.
+    profile:
+      relationship_start: 2020-11-16
+      years_in_business: 12
+      annual_turnover_inr: 1850000000.0
+      prior_invoices_n: 19
+      prior_dpd_mean_days: 7.0
+      prior_dpd_max_days: 26
+      prior_defaults_n: 0
+      prior_disputed_claims_n: 2
+      gst_returns_regular: true
+      internal_rating_sim: "B (SIM)"
+      group_concentration_frac: 0.38
+      security: NONE

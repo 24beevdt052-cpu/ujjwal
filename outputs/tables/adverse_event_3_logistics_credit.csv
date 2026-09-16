@@ -1,0 +1,23 @@
+metric,value,note,event
+window_start,2022-07-28,,E3_LOGISTICS_CREDIT
+window_end,2022-10-11,,E3_LOGISTICS_CREDIT
+book_pnl_window_inr,8004507.227056681,,E3_LOGISTICS_CREDIT
+bucket_demurrage_penalty_inr,70479.15319380452,,E3_LOGISTICS_CREDIT
+overdue_funding_inr,-651323.2067085204,"interest on receivables past their contractual due date, routed to (f) by the §7a.1 split",E3_LOGISTICS_CREDIT
+demurrage_leg_lifetime_inr,-1248958.3049999997,"chargeable dwell beyond detention_free_days; the dwell magnitude is SIM, anchored to the real 27-Jul-2022 void calls at Nhava Sheva / Mundra",E3_LOGISTICS_CREDIT
+max_buyer_limit_utilisation_frac,0.8340987297668845,"worst name: BUY_JNPT_01; RECEIVABLE (invoiced, unpaid) summed ACROSS trades for one buyer against that buyer's credit_limit_inr — the same measure Phase 2's P04 rule enforces",E3_LOGISTICS_CREDIT
+max_buyer_contracted_utilisation_frac,2.5826866655625,"worst name: BUY_RJK_01; receivable PLUS pre-settlement (contracted, not yet invoiced, including an advance the buyer still owes). Pre-settlement is a performance risk, not credit extended, so it is reported beside the limit rather than against it",E3_LOGISTICS_CREDIT
+credit_limit_breach_days,0.0,panel days on which at least one buyer's receivable was over its limit (Phase 5 owns the tracker),E3_LOGISTICS_CREDIT
+max_days_past_due,25.0,,E3_LOGISTICS_CREDIT
+counterfactual_no_events_pnl_inr,8899673.02492065,,E3_LOGISTICS_CREDIT
+event_cost_inr,-895165.7978639686,"book minus the same book without the simulated quality, dwell and payment-delay events",E3_LOGISTICS_CREDIT
+event_cost_lifetime_inr,-2151973.996641904,"the same comparison over the whole life of the book, because the quality and dwell events bite outside the E3 window as well",E3_LOGISTICS_CREDIT
+event_cost_lifetime_dwell_inr,-1512151.787634492,"extra CFS dwell attributed to the real 27-Jul-2022 void calls at Nhava Sheva / Mundra (Container News, docs/research/freight_notes.md S4); the dwell days themselves are SIM",E3_LOGISTICS_CREDIT
+event_cost_lifetime_payment_delay_inr,-561839.3478003144,"the SIM buyer payment delay: pure funding cost, because penal interest on a late foundry payment is assumed uncollected (overdue_interest_collected_frac = 0)",E3_LOGISTICS_CREDIT
+event_cost_lifetime_quality_inr,-66604.99464726448,"out-turn moisture and contamination against the SPA franchise — a claim, not a market move",E3_LOGISTICS_CREDIT
+counterfactual_fixture_at_bl_pnl_inr,8021590.839503386,,E3_LOGISTICS_CREDIT
+fixture_timing_cost_lifetime_inr,-2497156.5395710766,"the freight fixture settles at arrival, well before the E3 window opens, so the lifetime number is the one to read",E3_LOGISTICS_CREDIT
+fixture_vs_market_memo_mean_inr,-1317503.39628575,"average over the leg-days it is defined of boxes x (lane index - fixture) x usdinr: a daily STOCK memo of competitiveness against a later importer, never summed into P&L",E3_LOGISTICS_CREDIT
+fixture_timing_cost_inr,-17083.61244670488,"the cost of having fixed freight early into a falling market; a competitiveness cost against later importers, not a loss on the cargo, because CONTRACTS §5's CFR grade factor does not fall when freight falls",E3_LOGISTICS_CREDIT
+freight_change_window_jea_nsa_frac,-0.3561811505507957,,E3_LOGISTICS_CREDIT
+freight_change_window_usec_mun_frac,-0.35627530364372484,freight FELL through the window: there was no 2022 container spike on these lanes,E3_LOGISTICS_CREDIT

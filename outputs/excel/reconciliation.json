@@ -1,0 +1,104 @@
+{
+  "families": {
+    "Book P&L by factor \u2014 lifetime, \u03a3 trades and \u03a3 book-days": {
+      "max_abs_diff": 0.08999998867511749,
+      "status": "PASS",
+      "tolerance": "tol_trade_inr = \u20b910"
+    },
+    "Parity \u2014 net arb, \u00a75a cases and landed cost (every week \u00d7 grade \u00d7 lane)": {
+      "max_abs_diff": 0.004993954913516063,
+      "status": "PASS",
+      "tolerance": "tol_parity_inr_t = \u20b91/t"
+    },
+    "Per-trade cumulative P&L at WINDOW_END and HORIZON_END": {
+      "max_abs_diff": 1.7760154521092772,
+      "status": "PASS",
+      "tolerance": "tol_trade_inr = \u20b910"
+    },
+    "Sensitivity grid grid_freight_duty \u2014 P&L impact on 1,000 MT": {
+      "max_abs_diff": 0.49901653826236725,
+      "status": "PASS",
+      "tolerance": "tol_grid_inr = \u20b910"
+    },
+    "Sensitivity grid grid_lme_fx \u2014 P&L impact on 1,000 MT": {
+      "max_abs_diff": 0.491318374639377,
+      "status": "PASS",
+      "tolerance": "tol_grid_inr = \u20b910"
+    },
+    "Structural controls (basis, ledger, margin, marks, equity, attribution, discipline)": {
+      "max_abs_diff": 5.328493565320969,
+      "status": "PASS",
+      "tolerance": "per row"
+    },
+    "Term structure \u2014 implied and realised M+1 average of LME cash": {
+      "max_abs_diff": 4.973545173925231e-05,
+      "status": "PASS",
+      "tolerance": "tol_usd_t = USD 0.01/t"
+    }
+  },
+  "n_check_cells": 3890,
+  "n_check_failures": 0,
+  "n_errors": 0,
+  "n_recalculated": 127528,
+  "scope": "full workbook",
+  "scope_note": "Every formula cell in every sheet is recalculated; nothing is sampled.",
+  "scoreboard": "PASS",
+  "seconds": 564.5,
+  "sheets": {
+    "Attribution": {
+      "constant": 2485,
+      "formula": 1044,
+      "ratio": 0.29583451402663646
+    },
+    "Cashflows": {
+      "constant": 22471,
+      "formula": 13915,
+      "ratio": 0.38242730720606827
+    },
+    "Checks": {
+      "constant": 3487,
+      "formula": 3621,
+      "ratio": 0.5094259988745076
+    },
+    "Equity_Curve": {
+      "constant": 1166,
+      "formula": 1034,
+      "ratio": 0.47
+    },
+    "MTM_Daily": {
+      "constant": 28083,
+      "formula": 9825,
+      "ratio": 0.2591801202912314
+    },
+    "Market_Daily": {
+      "constant": 5844,
+      "formula": 2761,
+      "ratio": 0.3208599651365485
+    },
+    "Market_Weekly": {
+      "constant": 154,
+      "formula": 817,
+      "ratio": 0.8414006179196705
+    },
+    "Parity": {
+      "constant": 1355,
+      "formula": 14706,
+      "ratio": 0.9156341448228629
+    },
+    "Sensitivity": {
+      "constant": 2173,
+      "formula": 7920,
+      "ratio": 0.7847022688992371
+    },
+    "Term_Structure": {
+      "constant": 532,
+      "formula": 838,
+      "ratio": 0.6116788321167883
+    },
+    "Trade_Book": {
+      "constant": 2031,
+      "formula": 45,
+      "ratio": 0.02167630057803468
+    }
+  }
+}

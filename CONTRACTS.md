@@ -248,3 +248,118 @@ Changing this rule after seeing results is not allowed; if it proves unworkable,
 6. **Honest framing of adverse event #3.** Freight fell through the window (docs/research/freight_notes.md). Event #3 is a
    buyer payment delay (SIM) plus the real July-2022 carrier call cancellations at Nhava Sheva/Mundra (demurrage), and the
    real freight effect of fixtures locked above a falling market. Any freight *spike* is a labelled hypothetical stress.
+
+## 7a. Trade ticket & engine interface (added by the position-model synthesis; details in `docs/design/30_position_model.md`)
+Nothing above changes. §7a fixes the interface P2 writes and P3/P4/P5 read, and records four §7 clarifications the
+design doc needed. The executable specification of the schema is `desk/book/schema.py`; the worked shape is
+`config/trades.example.yaml` / `config/counterparties.example.yaml` (fixtures, **not** the book).
+
+### 7a.1 Clarifications to §7
+1. **`new_deal` is computed last and reported first.** The attribution chain swaps the seven `FACTOR_ORDER` blocks,
+   then the *contracts* block; `new_deal` stays the first column of `PNL_BUCKETS`. New contracts are therefore valued
+   at the day's closing market with no factor cross-terms.
+2. **The daily funding accrual is split, not swapped.** Interest on an overdue receivable → `demurrage_penalty` (f);
+   all other carry → `roll_term_structure` (g). A `ROLL`-purpose booking's value (its execution cost; a roll at settle
+   is otherwise value-neutral) also goes to (g), not to `new_deal`.
+3. **Unsold cargo is marked at import replacement value** — CONTRACTS §5 goods + BCD + SWS + port/PSIC at today's
+   market, **excluding finance**, goods converted at `parity_goods_fx_basis` — never at the MCX-anchored smelter
+   netback. Sale margin is recognised in `new_deal` when the sale is contracted. Control: on every parity
+   `value_date`, that mark equals P1's `goods_inr_t + bcd_inr_t + sws_inr_t + port_inr_t` to ₹0.01.
+4. **Future USD flows are valued at the CIP forward to their own settle date** (spot once settled), and FX forwards
+   the same way, so a 100% forward hedge is exactly flat in (e) and (g). P3 never reads `finance_days_*`,
+   `finance_inr_t`, `igst_finance_inr_t` or `lc_opening_fee_frac`; finance is only the §7a.5 accrual.
+
+### 7a.2 Ticket schema — `config/trades.yaml` (P2 owns; loader `desk.book.schema.load_trades`)
+One ticket = one purchase SPA with **1–3 lots**, each lot one bill of lading (`lot_id, boxes, bl_date, vessel,
+voyage`); `quantity_mt = Σ boxes × container_payload_mt_<box>_<grade>` (1,000–5,000 MT). Blocks:
+`purchase{supplier_id, spa_ref, incoterm (FOB|CFR), named_place, spa{...}, pricing{FIXED price_usd_t | LME_M1_AVG
+(lme_reference=CASH, factor_frac, premium_usd_t, provisional_frac)}, payment{LC_SIGHT|LC_USANCE, usance_days 60–90,
+lc_open_date, issuing_bank, confirmed, confirmation_charges_for}}`; `shipment{laycan_start, laycan_end, load_port,
+discharge_port, lots[]}`; `freight{...}` (FOB only, absent for CFR); `sales[]{sale_id, buyer_id, contract_date,
+lot_ids, delivery_basis, quality_passthrough, pricing{FIXED price_inr_t | MCX_AVG (mcx_series=M1, window_start,
+window_end, factor_frac, premium_inr_t)}, payment{CREDIT|ADVANCE|ADVANCE_PLUS_CREDIT}}`; `hedges{mcx{hedge_ratio_target,
+exposure_basis, basis_risk_note, tranches[]{hedge_id, contract_month, direction, lots, entry_date, exit_date,
+exit_reason (UNWIND|ROLL|TRANCHE), roll_to}}, fx_forwards{hedge_frac_target, lines[]{fwd_id, booking_date, direction,
+notional_usd, value_date, matched_leg, cancel_date}}}`; `events{quality[], logistics[], buyer_payment_delay[]}` each
+carrying a `known_date` and `flag: SIM`; `rationale{text, parity_week_end, cited_columns}`.
+Counterparties carry `cp_id, name (ends "(SIM)"), role, type, country, location, lanes, grades, credit_limit_inr`
+(buyers) / `claims_exposure_limit_usd` (suppliers), terms defaults, and a static `profile` block for P5 scoring.
+
+Rules the loader enforces (all are errors unless marked W; codes V01–V20 with one test each):
+- **Closed grammar.** Only the listed fields; anything else is an error naming the path. Free-form notes go under an
+  explicit `extra` mapping at that node.
+- **No derived numbers in a ticket.** Fill and settle prices, forward strikes, the freight index at fixture, box
+  counts, quotational-period dates, invoice values and cashflow dates are rejected by name — the engine recomputes
+  them point-in-time and writes them to `outputs/tables/`. Executed decisions (lots, notionals, the fixture rate
+  actually paid, dates) *are* typed.
+- **Dates.** Every *decision* date is an LME trading day and is never silently rolled; derived cashflow dates roll
+  following. `trade_date` inside the window; `rationale.parity_week_end` = the latest parity week ≤ trade date and
+  `eligible_on(trade_date, grade, lane)` must be True (§5a; checked in `desk.book.validate`). An `LME_M1_AVG` laycan
+  sits inside one calendar month, so the quotational period is known on the trade date. Every cashflow ≤ `HORIZON_END`.
+- **Consistency.** Lane ↔ discharge port; FOB requires a freight block and CFR forbids one; every lot sold exactly
+  once and never before it is bought (W if sold after the planned release); buyer credit ≤ `msme_max_payment_days`;
+  MCX positions in whole lots within `mcx_al_position_limit_client_mt`, on a listed **contract month** (not an expiry
+  date — the panel's 31-Aug-2022 slot and the DIRECT 30-Aug expiry are the same contract), a `ROLL` naming a target
+  that enters the same day with the same direction and size in a later month; a hedged ticket carries the Table 4 row
+  2.7(c) basis-risk note and an unhedged one a stated reason; W if forward notionals exceed
+  `fx_hedge_no_documentation_limit_usd`.
+- **Honesty.** Counterparty, vessel, forwarder and bank names end "(SIM)"; simulated event magnitudes are flagged
+  SIM; an event citing the July-2022 void calls cannot be known before 2022-07-27; the hypothetical freight swap
+  (`PROXY_SWAP_HYPOTHETICAL`) is barred from the base book and, where used, is labelled in every output row.
+
+### 7a.3 P3 output tables (supersedes nothing in §6; it names the columns §6 left to the phase)
+- `mtm_daily.csv` — date × trade × leg: `date, in_window, trade_id, leg_id, leg_type, instrument, lot_id,
+  counterparty_id, currency, status (floating|partially_fixed|fixed_unsettled|settled), fixed_frac, pnl_class
+  (PNL|BS), qty_mt, lots, notional_usd, px_usd_t, px_inr_t, px_inr_kg, fx_rate_used, settle_date, mtm_ccy, mtm_inr,
+  mtm_fixed_inr, mtm_floating_inr, realised_cum_inr, leg_cum_pnl_inr, leg_daily_pnl_inr, fixture_vs_market_inr,
+  weakest_input_flag`. Funding is a leg with `mtm_inr = 0`.
+- `attribution_daily.csv` — date × trade (+ a `BOOK` row): `date, in_window, trade_id, new_deal, lme_flat,
+  cross_exchange_basis, grade_spread, freight, fx, demurrage_penalty, roll_term_structure, residual, daily_pnl_inr,
+  cum_pnl_inr`. Bucket columns are exactly `desk.reporting.style.PNL_BUCKETS`, in INR, and `|residual| ≤ ₹1`.
+- `attribution_leg_daily.csv` — the same buckets at date × trade × leg (Σ legs = the trade row exactly).
+- `book_exposures_daily.csv` — §7a.4.
+- `mcx_variation_margin.csv` — date × hedge line: `date, trade_id, hedge_id, contract_month, panel_expiry_slot,
+  direct_expiry, roll_deadline, direction, lots, lot_mt, action (entry|hold|roll_out|roll_in|exit), fill_inr_kg,
+  settle_inr_kg, prev_settle_inr_kg, vm_inr, cum_vm_inr, txn_cost_inr, contract_value_inr, im_required_inr,
+  im_change_inr, im_stress_012_inr, im_stress_015_inr, net_margin_cash_inr, cum_margin_cash_inr,
+  funding_on_margin_inr, mcx_series (PANEL_PROXY|MIRROR)`.
+- `adverse_event_windows.csv`, `adverse_event_1_lme_crash{,_daily}.csv`, `adverse_event_2_usdinr{,_daily}.csv`,
+  `adverse_event_3_logistics_credit.csv`, and `adverse_event_3_freight_stress_hypothetical.csv` (every row labelled
+  "HYPOTHETICAL STRESS — not a 2022 event").
+- `pnl_controls.csv` — date × check: `date, check, value, tolerance, status` for `residual_max_abs`,
+  `ledger_identity_max_abs`, `proxy_basis_max_abs`, `bs_flows_lifetime_sum`, `replacement_vs_p1_max_abs`,
+  `cashflow_reconciliation_vs_p2`. `desk.mtm.run.main()` raises if any control fails.
+- Sensitivity runs write `*_mcx_mirror.csv` (§7.5) and `*_grade_pit.csv` variants; they are never base P&L.
+
+Event windows are derived by rule and are reporting-only (never inputs to a decision): E1 crash = argmax cash →
+argmin after it; **E1 crash fortnight = the 10-trading-day *return* window (11 observations) with the most negative
+cash return** — the 10-observation reading picks a different window, so the convention is fixed here; E2 = the pair
+maximising `usdinr_j / usdinr_i`; E3 = earliest E3 `known_date` → last affected settle date.
+
+### 7a.4 `book_exposures_daily.csv` columns (date × scope; `scope` ∈ {trade, book}, book rows carry `trade_id = BOOK`)
+```
+date, scope, trade_id, in_window, buyer_id, supplier_id,
+mtm_inr, cum_pnl_inr, cash_balance_inr, mcx_im_inr,
+lme_delta_inr_per_usd_t, lme_delta_mt, lme_delta_usd, lme_delta_physical_mt, lme_delta_mcx_mt, hedge_ratio_lme_frac,
+mcx_lots_open, mcx_basis_delta_inr_per_inr_kg,
+fx_delta_usd, fx_delta_physical_usd, fx_delta_forwards_usd, fx_delta_mcx_usd, hedge_ratio_fx_frac,
+customs_fx_delta_usd,
+freight_delta_inr_per_usd_t_jea_nsa, freight_delta_inr_per_usd_t_usec_mun,
+freight_open_mt_jea_nsa, freight_open_mt_usec_mun, freight_open_boxes,
+grade_delta_inr_per_0p01_<grade>, grade_exposure_mt_<grade>,
+spread_delta_inr_per_usd_t, inr_rate_delta_inr_per_bp, usd_rate_delta_inr_per_bp, wc_rate_delta_inr_per_bp,
+lme_fx_cross_inr,
+phys_purchased_mt, phys_sold_mt, unsold_mt, purchase_priced_frac, sale_priced_frac,
+buyer_receivable_inr, buyer_presettlement_inr, supplier_exposure_inr, days_past_due
+```
+All deltas are central bump-and-revalue of the *same* valuation function P3 uses, with clock, contracts and events
+held, so risk numbers can never disagree with P&L. Signs: `+ lme_delta_mt` = long metal; `+ fx_delta_usd` = long USD
+(gains when INR weakens); `+ freight_open_boxes` = short freight. One MCX lot ≈ 5.44 MT of LME-equivalent metal.
+P4 revalues through `desk.book.valuation.revalue_book(book, H, t, shocks, extra_events)`; stress event types
+(`buyer_default`, `qco_hold`) are accepted only through that API and never from `trades.yaml`.
+
+### 7a.5 Funding (the only finance cost in P3)
+Daily accrual at `wc_rate_inr_pa` (ACT/365, symmetric — one always-drawn cash-credit line) on each trade's actual
+dated cash balance: all P&L flows including variation margin, plus the balance-sheet flows (IGST paid and credited,
+MCX initial margin). Balance-sheet flows move cash and funding but are never P&L, and their undiscounted lifetime
+sum per trade is zero (a test asserts it). Trade-level funding sums exactly to desk-level funding.

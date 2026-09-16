@@ -1,0 +1,1517 @@
+# ACADEMIC SIMULATION — not actual trades.
+#
+# The authoritative Phase 2 trade book: nine purchase SPAs, March–August 2022 (MASTER_SPEC Table 4, CONTRACTS §6).
+# Counterparties live in `config/counterparties.yaml`; the engine fixture (three tickets, deliberately disjoint
+# from this book) is `config/trades.example.yaml`.
+#
+# WHAT IS REAL AND WHAT IS NOT
+#   * Real (DIRECT): every date is an LME trading day from the Phase 0 panel; LME cash and 3M, the customs
+#     notified FX path, duty rates, MCX contract months and expiries, the 27-Jul-2022 void calls at Nhava
+#     Sheva/Mundra cited in T07.
+#   * PROXY: USD/INR and its forwards, the MCX price series (duty-paid import parity), the freight index shape.
+#   * ASSUMPTION: grade factors (a lag-2 reconstruction), freight levels, the fixture spread over the index,
+#     payloads, transit and clearance days, and every desk policy number in docs/20_trade_book.md §6.
+#   * SIM: counterparties, vessels, voyages, forwarders, banks, SPA references, survey outcomes, the dwell
+#     days attributed to the void calls, and the buyer payment delay.
+#
+# NO HINDSIGHT. Every price, factor, fixture and hedge size in a ticket is set from information published on or
+# before the date it is typed against, and `desk.book.validate` re-derives each one point-in-time and refuses the
+# book if it cannot. Rationales may cite dated market facts only up to their own trade date; the validator scans
+# them for forward-dated references. Numbers the engine derives — box counts, quotational-period dates, MCX fill
+# and settlement prices, forward strikes, the freight index at fixture, invoice values, every cashflow date —
+# are rejected by the loader if they appear here, and are written instead to outputs/tables/.
+#
+# TRADE DISCIPLINE (Table 4 row 2.9, CONTRACTS §5a). All nine trade dates fall in week × grade × lane cases that
+# are open under ALL THREE screens — base, point-in-time grade mix, and conversion stressed to ₹18,000/t of ingot.
+# `outputs/tables/trade_eligibility_check.csv` carries the parity numbers each decision was taken against.
+#
+# COVERAGE (Table 4)
+#   incoterm .......... FOB T01 T04 T07        | CFR T02 T03 T05 T06 T08 T09
+#   purchase pricing .. FIXED T01 T03 T04 T06 T07 T09 | LME M+1 cash average T02 T05 T08
+#   import payment .... LC sight T01 T03 T04 T06 T07 T08 | LC usance 90d T02, 60d T05 T09
+#   sale pricing ...... FIXED ₹/t T01 T03 T04 T06 T07 T09 | MCX near-month average T02 T05 T08
+#   sale payment ...... advance T01-S2 | advance+credit T01-S1 T04 T07 T09 | 30d credit T02 T03 T05 T08 | 45d T06
+#   hedge ............. MCX short 8 tickets, MCX long T02 | 22 tranches, 11 rolls | USD/INR forwards on all nine
+#   freight layer ..... unbooked FOB under a stated stop-loss T01 T04 T07 | inside the CFR price elsewhere
+#   events ............ quality outside franchise T07, radiation-portal rejection T08, void-call dwell T07,
+#                       buyer payment delay T07
+
+schema_version: 1
+
+trades:
+
+  # ================================================================================================== T01
+  # Fixed-price FOB Zorba out of Norfolk bought the morning after the 07-Mar all-time high broke. Three sailings,
+  # freight left open under a stop-loss, sold in two parcels seven and nine weeks later — so the cargo marks at
+  # import replacement value for most of its life and the grade-factor bucket is live the whole time.
+  - trade_id: T01
+    status: EXECUTED
+    trade_date: 2022-03-08
+    lane: USEC_MUN
+    grade: zorba
+    quantity_mt: 2520.0                        # 120 x 40ft at container_payload_mt_40ft_zorba = 21.0 MT
+
+    purchase:
+      supplier_id: SUP_USEC_01
+      spa_ref: "SPA/USEC/2203-01 (SIM)"
+      incoterm: FOB
+      named_place: "FOB Norfolk, VA, USA"
+      spa:
+        isri_grade_spec: "Zorba 95/5, ISRI Scrap Specifications Circular 2022"
+        quantity_tolerance_frac: 0.05          # LC sizing only; the B/L weight is the nominal payload
+      pricing:
+        type: FIXED
+        price_usd_t: 2340.0
+        terms_basis_note: >-
+          CFR-India parity on 08-Mar-2022 = LME 3M 3,516.0 x grade_factor_zorba 0.699250 = 2,458.56 USD/t; less
+          the USEC_MUN freight of 106.41 USD/t at the 21.0 t 40ft payload gives an FOB netback of 2,352.15 USD/t.
+          Bid 2,340.00 FOB, 12.15 USD/t under netback, on the day the market broke 12 % — the seller wanted a
+          price before the LME reopened properly and the desk wanted the discount for taking it. Every input is
+          dated 08-Mar-2022 or earlier.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-03-14
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: true                        # SUP_USEC_01 will not ship against an unconfirmed instrument
+        confirmation_charges_for: APPLICANT
+
+    shipment:
+      laycan_start: 2022-03-28
+      laycan_end: 2022-04-08
+      load_port: "Norfolk, VA, USA"
+      discharge_port: MUNDRA
+      lots:
+        - lot_id: L1
+          boxes: 40
+          bl_date: 2022-03-29
+          vessel: "MV Norfolk Pioneer (SIM)"
+          voyage: "118E (SIM)"
+        - lot_id: L2
+          boxes: 40
+          bl_date: 2022-04-04
+          vessel: "MV Chesapeake Runner (SIM)"
+          voyage: "120E (SIM)"
+        - lot_id: L3
+          boxes: 40
+          bl_date: 2022-04-07
+          vessel: "MV Carolina Star (SIM)"
+          voyage: "122E (SIM)"
+
+    freight:
+      booked_by: DESK_NVOCC
+      forwarder: "Meridian Box Lines NVOCC (SIM)"
+      payment_terms: COLLECT_AT_ARRIVAL
+      risk_layer: UNHEDGED_STOP_LOSS
+      fixture_date: 2022-03-18
+      rate_usd_box: 2170.0
+      stop_loss:
+        stop_loss_usd_box: 2570.0
+        latest_fixture_date: 2022-03-18
+        note: >-
+          No India-lane container derivative was accessible to this desk in 2022, so the freight layer is a
+          policy rather than an instrument: stay unbooked while the lane index is falling, but fix at once if it
+          reaches 2,570 USD/FEU (the 08-Mar index of 2,234.61 USD/FEU plus the desk's 15 % stop), and in any case
+          by the book-by date, which is the NVOCC's ten-day space-confirmation lead time before the first B/L.
+          The index fell through the window instead and the desk fixed on the stop's last day at 2,170 USD/FEU
+          against an index of 2,127.09. Whether the stop was ever touched is re-derived point-in-time from the
+          panel freight column by desk.book.validate.
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_MUN_01
+        contract_date: 2022-04-25
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Gandhidham (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 201500.0
+          terms_basis_note: >-
+            Priced on 25-Apr-2022 between the two bounds the desk can defend: import replacement value
+            189,814 ₹/MT and the MCX-anchored smelter netback 213,870 ₹/MT. The desk's standing rule is to split
+            that gap in half — 201,842 ₹/MT — less 250 ₹/MT for the 50 % advance. Contracted at 201,500 ₹/MT.
+        payment:
+          terms: ADVANCE_PLUS_CREDIT
+          advance_frac: 0.50
+          advance_date: 2022-05-20
+          credit_days: 30
+      - sale_id: S2
+        buyer_id: BUY_RJK_01
+        contract_date: 2022-05-09
+        lot_ids: [L3]
+        delivery_basis: "FOR buyer's works, Rajkot (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 181500.0
+          terms_basis_note: >-
+            Priced on 09-May-2022 between a replacement value of 176,081 ₹/MT and a netback of 187,981 ₹/MT;
+            half the gap is 182,031 ₹/MT, less 500 ₹/MT for payment in full before release. Contracted at
+            181,500 ₹/MT. The last parcel went 20,000 ₹/MT below the first because the LME lost another 12 %
+            in the fortnight — which is the whole argument for having hedged it.
+        payment:
+          terms: ADVANCE
+          advance_frac: 1.0
+          advance_date: 2022-05-24
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          MCX Aluminium is a primary-ingot contract priced at duty-paid import parity; the desk is long Zorba
+          95/5 scrap whose CFR price is a reconstructed percentage of LME 3M. The hedge covers the LME leg of
+          the exposure and nothing else: if the Zorba discount narrows or widens, that lands in the grade-spread
+          bucket, not in the hedge, and on this ticket it is the larger number of the two. Three further
+          mismatches are carried knowingly — LME official cash is fixed at the London midday ring while MCX
+          settles in the Indian evening; the duty-parity relationship can break, as it visibly did in the first
+          week of March 2022; and the physical cargo's duty base runs on the CBIC notified rate while MCX's
+          uplift runs on the market rate. In base runs the panel MCX series is itself a parity proxy, so the
+          measured cross-exchange basis is zero by construction and only the third-party mirror run shows it.
+          The line is split 200/100 lots from the outset because the cargo is expected to be sold in two
+          parcels, and a tranche is lifted as each sale fixes its price. The hedge goes on the day AFTER the
+          trade: the near-month contract moved 12.0 % on the trade date, past the 9 % maximum daily price limit
+          (mcx_al_dpl_max_frac), so it would have been limit-locked and no short could have been filled. The
+          desk carries one session of the cargo unhedged and says so rather than claiming a fill it could not
+          have had.
+        tranches:
+          - hedge_id: T01-MCX-1
+            contract_month: "2022-04"
+            direction: SELL
+            lots: 200
+            entry_date: 2022-03-09                # the 08-Mar session was beyond the daily price limit
+            exit_date: 2022-04-20                # 7 trading days before the 29-Apr expiry
+            exit_reason: ROLL
+            roll_to: T01-MCX-3
+          - hedge_id: T01-MCX-2
+            contract_month: "2022-04"
+            direction: SELL
+            lots: 100
+            entry_date: 2022-03-09
+            exit_date: 2022-04-20
+            exit_reason: ROLL
+            roll_to: T01-MCX-4
+          - hedge_id: T01-MCX-3
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 200
+            entry_date: 2022-04-20
+            exit_date: 2022-04-25                # lifted the day S1 fixes its rupee price
+            exit_reason: UNWIND
+          - hedge_id: T01-MCX-4
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 100
+            entry_date: 2022-04-20
+            exit_date: 2022-05-09                # lifted the day S2 fixes its rupee price
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T01-FX-1
+            booking_date: 2022-03-08
+            direction: BUY_USD
+            notional_usd: 1965600.0
+            value_date: 2022-04-05                # L1 B/L + 7 days: sight payment against documents
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T01-FX-2
+            booking_date: 2022-03-08
+            direction: BUY_USD
+            notional_usd: 1965600.0
+            value_date: 2022-04-11
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T01-FX-3
+            booking_date: 2022-03-08
+            direction: BUY_USD
+            notional_usd: 1965600.0
+            value_date: 2022-04-14
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T01-FX-4
+            booking_date: 2022-03-18                # booked the day the fixture fixed the USD amount
+            direction: BUY_USD
+            notional_usd: 260400.0
+            value_date: 2022-05-16                  # freight collect, against the middle arrival
+            matched_leg: FREIGHT
+
+    rationale:
+      parity_week_end: 2022-03-04
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      freight_base_usd_t, lme_3m_usd_t]
+      text: >-
+        Zorba on the US lane cleared all three screens in the week to 04-Mar-2022 with 49,904 ₹/MT on the base
+        run, 14,650 on the point-in-time mix and 44,711 with conversion stressed to 18,000 — the widest the
+        book will ever see, and the point-in-time number is the one that makes me small rather than large. Then
+        this morning the LME gave back 484 dollars in a day off an all-time high, which is the first honest
+        price in a fortnight. I buy fixed FOB rather than on a formula: at 2,340 I have locked a 70 % discount
+        to a metal price that has just been marked down, and a monthly-average formula two months out would
+        leave me guessing in a market that has clearly stopped going up. I take the freight open because the US-India index has now fallen
+        five weeks running and because at 106 dollars a tonne it is small against the metal — but the stop is
+        written down at plus 15 % and the boxes get booked by 18-Mar whatever happens, so the decision is not
+        mine to postpone. I want 300 lots of MCX against 90 % of the LME-equivalent length, split 200/100
+        because I expect to place this cargo in two parcels — but the near month has moved 12 % today, past the
+        9 % slab, so the contract is limit-locked and I get the short on tomorrow's session instead. One night
+        naked is the price of buying on the day the market breaks. What I am knowingly running: the Zorba
+        discount itself, three sailings' worth of laycan risk, and the fact that I have no buyer at any price.
+
+  # ================================================================================================== T02
+  # The Gulf-lane trade the desk actually wants: five days of transit, a buyer who signs the same day, and a
+  # formula on both sides. Both legs float against different exchanges and different months, so the hedge is
+  # sized on the residual and flips from short to long when the sale prices ahead of the purchase.
+  - trade_id: T02
+    status: EXECUTED
+    trade_date: 2022-03-11
+    lane: JEA_NSA
+    grade: tense
+    quantity_mt: 1200.0                        # 48 x 20ft at container_payload_mt_20ft_tense = 25.0 MT
+
+    purchase:
+      supplier_id: SUP_JEA_01
+      spa_ref: "SPA/JEA/2203-02 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Nhava Sheva, India"
+      spa:
+        isri_grade_spec: "Tense, ISRI Scrap Specifications Circular 2022"
+      pricing:
+        type: LME_M1_AVG
+        lme_reference: CASH                    # LME Official Cash Settlement (exchange.yaml lme_pricing_reference)
+        factor_frac: 0.638
+        premium_usd_t: 0.0
+        provisional_frac: 0.95
+        terms_basis_note: >-
+          grade_factor_tense on 11-Mar-2022 is 0.641857 of LME 3M on a CFR basis. Contracted at 0.638 flat
+          against the official cash average of the month after shipment: 0.4 of a point given up for the seller
+          accepting a 90-day usance instrument instead of cash against documents. The April laycan sits inside
+          one calendar month, so the quotational period is fixed and known at signature.
+      payment:
+        instrument: LC_USANCE
+        usance_days: 90
+        lc_open_date: 2022-03-21
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false                       # SUP_JEA_01 accepts an unconfirmed LC on this lane
+
+    shipment:
+      laycan_start: 2022-04-01
+      laycan_end: 2022-04-22
+      load_port: "Jebel Ali, UAE"
+      discharge_port: NHAVA_SHEVA
+      lots:
+        - lot_id: L1
+          boxes: 24
+          bl_date: 2022-04-05
+          vessel: "MV Gulf Kestrel (SIM)"
+          voyage: "214W (SIM)"
+        - lot_id: L2
+          boxes: 24
+          bl_date: 2022-04-13
+          vessel: "MV Sharjah Bay (SIM)"
+          voyage: "216W (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_JNPT_01
+        contract_date: 2022-03-11              # back-to-back: sold the day the cargo is bought
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Taloja (SIM)"
+        quality_passthrough: true
+        pricing:
+          type: MCX_AVG
+          mcx_series: M1
+          window_start: 2022-04-19
+          window_end: 2022-04-29
+          factor_frac: 0.916                   # recovery_frac_tense = (1-0.005)(1-0.02)(0.94) = 0.9166
+          premium_inr_t: -51900.0
+          terms_basis_note: >-
+            Delivery-month formula: 0.916 x the MCX near-month average over the nine trading days to 29-Apr-2022,
+            in ₹/MT, less 51,900 ₹/MT. On 11-Mar-2022 levels (M1 287.821 ₹/kg) that prices the cargo at
+            211,744 ₹/MT, against an import replacement value of 178,826 and a smelter netback of 244,567 —
+            i.e. the desk's standing half-the-gap rule, 211,697, to within the rounding of the premium to the
+            nearest 100 ₹/MT. The discount is wide because the arbitrage was wide that week, not because the
+            formula is unusual.
+        payment:
+          terms: CREDIT
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 1.0
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          Both legs float, but against different exchanges, different references and different months: the
+          purchase settles on the LME official cash average for the month after shipment, the sale on the MCX
+          near-month average over nine days in April. Until the sale prices, the desk is net long roughly a
+          third of a tonne of LME-equivalent metal per tonne of scrap — the sale's recovery factor grossed up by
+          duty parity (0.916 x 1.0825) less the purchase factor 0.638 — so the hedge starts short. Once the
+          sale's average is behind us and the purchase's is not, the position is short the full purchase factor
+          and the hedge flips long. What no hedge can cover here is the gap between MCX duty-paid primary parity
+          and an LME-priced scrap cargo, nor the fact that the two averaging windows do not overlap at all; the
+          desk treats an averaging leg as fully open before its window and closed after its midpoint trading
+          day, which is an approximation and is the reason the flip is one decision rather than nine. In base
+          runs the panel MCX series is a parity proxy, so the reported basis is zero by construction.
+        tranches:
+          - hedge_id: T02-MCX-1
+            contract_month: "2022-03"
+            direction: SELL
+            lots: 74
+            entry_date: 2022-03-11
+            exit_date: 2022-03-22                # 7 trading days before the 31-Mar expiry
+            exit_reason: ROLL
+            roll_to: T02-MCX-2
+          - hedge_id: T02-MCX-2
+            contract_month: "2022-04"
+            direction: SELL
+            lots: 74
+            entry_date: 2022-03-22
+            exit_date: 2022-04-20                # 7 trading days before the 29-Apr expiry
+            exit_reason: ROLL
+            roll_to: T02-MCX-3
+          - hedge_id: T02-MCX-3
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 74
+            entry_date: 2022-04-20
+            exit_date: 2022-04-25                # midpoint trading day of the sale's averaging window
+            exit_reason: UNWIND
+          - hedge_id: T02-MCX-4
+            contract_month: "2022-05"
+            direction: BUY
+            lots: 145
+            entry_date: 2022-04-25
+            exit_date: 2022-05-17                # midpoint trading day of the purchase quotational period
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T02-FX-1
+            booking_date: 2022-04-05              # booked when the L1 provisional invoice value is fixed on the B/L
+            direction: BUY_USD
+            notional_usd: 1241900.0
+            value_date: 2022-07-04                # L1 B/L + 90 days usance
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T02-FX-2
+            booking_date: 2022-04-13
+            direction: BUY_USD
+            notional_usd: 1166000.0
+            value_date: 2022-07-12                # L2 B/L + 90 days usance
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T02-FX-3
+            booking_date: 2022-06-01              # the quotational month closed the day before; the balance is a refund
+            direction: SELL_USD
+            notional_usd: 240000.0
+            value_date: 2022-07-04
+            matched_leg: PURCHASE_FINAL
+
+    rationale:
+      parity_week_end: 2022-03-11
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      mcx_anchor_inr_kg, lme_cash_3m_spread_usd_t]
+      text: >-
+        Tense on the Gulf lane is the best case on the board this week — 63,523 ₹/MT base, 28,042 on the
+        point-in-time mix, 58,024 with conversion at 18,000 — and it is the trade I want for reasons that have
+        nothing to do with the size of that number: five days of transit, a buyer in Taloja who will sign the
+        same afternoon, and a formula on both sides so I am not taking a view on where the LME goes from here.
+        After Tuesday's 484-dollar break I do not want to be long flat price on a guess. I price the purchase on
+        the cash average of the month after shipment because an April laycan makes that period certain at
+        signature, and I take the 90-day usance because the cargo will be sold, delivered and collected before
+        I have to pay for it — the usance interest is cheaper than my working-capital line and it turns a
+        funding problem into a priced one. What I am actually trading is the gap between a 0.638 purchase factor
+        and a sale that grosses up to about 0.99 of LME through duty parity: a third of a tonne of metal per
+        tonne of scrap, which is why I sell 74 lots now and expect to be buying 145 back once the buyer's April
+        average is behind me and my own is not. I know the flip costs me a spread and I know the eleven-day gap
+        between the two windows is unhedgeable. The risk I would call out to the desk head is the origin: a
+        pre-shipment inspection that goes wrong at Jebel Ali stops the whole cargo, and UAE material is outside
+        the safe-origin list.
+
+  # ================================================================================================== T03
+  # Fixed-price CFR Taint/Tabor, the last week the grade clears the point-in-time screen with anything to spare.
+  # Twenty-tonne boxes, so the payload scaling pushes freight and port charges up per tonne even on a CFR buy.
+  - trade_id: T03
+    status: EXECUTED
+    trade_date: 2022-03-23
+    lane: JEA_NSA
+    grade: taint_tabor
+    quantity_mt: 1200.0                        # 60 x 20ft at container_payload_mt_20ft_taint_tabor = 20.0 MT
+
+    purchase:
+      supplier_id: SUP_JEA_01
+      spa_ref: "SPA/JEA/2203-03 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Nhava Sheva, India"
+      spa:
+        isri_grade_spec: "Taint/Tabor, ISRI Scrap Specifications Circular 2022"
+        quantity_tolerance_frac: 0.05
+      pricing:
+        type: FIXED
+        price_usd_t: 2470.0
+        terms_basis_note: >-
+          CFR-India parity on 23-Mar-2022 = LME 3M 3,560.0 x grade_factor_taint_tabor 0.698000 = 2,484.88 USD/t.
+          Contracted at 2,470.00 CFR, 14.88 USD/t under parity, the concession the seller made for a 60-box
+          parcel of a grade it had been holding since February.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-03-30
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false
+
+    shipment:
+      laycan_start: 2022-04-11
+      laycan_end: 2022-04-29
+      load_port: "Jebel Ali, UAE"
+      discharge_port: NHAVA_SHEVA
+      lots:
+        - lot_id: L1
+          boxes: 30
+          bl_date: 2022-04-13
+          vessel: "MV Hormuz Trader (SIM)"
+          voyage: "220W (SIM)"
+        - lot_id: L2
+          boxes: 30
+          bl_date: 2022-04-22
+          vessel: "MV Musandam Spirit (SIM)"
+          voyage: "222W (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_JNPT_01
+        contract_date: 2022-04-26
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Taloja (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 201250.0
+          terms_basis_note: >-
+            Priced on 26-Apr-2022 between an import replacement value of 190,488 ₹/MT and a smelter netback of
+            211,917 ₹/MT; half the gap is 201,202 ₹/MT and the parcel went at 201,250 on standard 30-day terms.
+        payment:
+          terms: CREDIT
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          A fixed-price cargo with no buyer is a naked long in LME-equivalent metal, marked at what it would
+          cost to replace it, so the MCX short is the entire risk management on this ticket until a sale is
+          contracted. It leaves three exposures open and the desk is taking all three deliberately: the
+          Taint/Tabor discount to LME, which is where most of this grade's volatility actually lives; one roll
+          from the April into the May contract; and the divergence between MCX duty-paid primary parity and the
+          scrap the desk owns. In base runs the panel MCX series is a parity proxy, so the reported
+          cross-exchange basis is zero by construction and only the mirror run carries evidence of it.
+        tranches:
+          - hedge_id: T03-MCX-1
+            contract_month: "2022-04"
+            direction: SELL
+            lots: 143
+            entry_date: 2022-03-23
+            exit_date: 2022-04-20
+            exit_reason: ROLL
+            roll_to: T03-MCX-2
+          - hedge_id: T03-MCX-2
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 143
+            entry_date: 2022-04-20
+            exit_date: 2022-04-26                # lifted the day the domestic sale is contracted
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T03-FX-1
+            booking_date: 2022-03-23
+            direction: BUY_USD
+            notional_usd: 1482000.0
+            value_date: 2022-04-20                # L1 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T03-FX-2
+            booking_date: 2022-03-23
+            direction: BUY_USD
+            notional_usd: 1482000.0
+            value_date: 2022-04-29                # L2 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+
+    rationale:
+      parity_week_end: 2022-03-18
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor, payload_scale]
+      text: >-
+        Taint/Tabor on the Gulf lane passes all three screens in the week to 18-Mar-2022, but the honest number
+        is the point-in-time one at 10,406 ₹/MT against 43,205 on the base run — a four-fold gap that says most
+        of this margin is the lag-2 grade mix, not something I can bank. So I take a 60-box parcel, not a
+        shipload, and I take it fixed because at 2,470 CFR the seller has given me 15 dollars under my own
+        parity for clearing material it has carried since February. The LME has bounced 180 dollars off the
+        15-Mar low and I do not believe it; a fixed price today is a position I can hedge, a formula is a
+        position I cannot. The detail that matters on this grade is the box: Taint/Tabor loads 20 tonnes in a
+        twenty-footer against a 25-tonne base, so every per-box cost — freight, port, the pre-shipment
+        inspection on Gulf origin — is a quarter more expensive per tonne than the lane table suggests, and
+        that is already in the 201-odd thousand rupees I need domestically to make this work. I sell 143 lots
+        against 90 % of the length, roll once into May, and accept that I am carrying the scrap discount naked.
+
+  # ================================================================================================== T04
+  # The deliberately half-hedged ticket. Fixed-price FOB Taint/Tabor from the smaller Delaware yard, hedged at
+  # 0.50 rather than 0.90 for a reason written down on the trade date — and it is the ticket that pays for that
+  # decision when the LME falls another 15 % before the cargo is sold.
+  - trade_id: T04
+    status: EXECUTED
+    trade_date: 2022-04-06
+    lane: USEC_MUN
+    grade: taint_tabor
+    quantity_mt: 1260.0                        # 60 x 40ft at container_payload_mt_40ft_taint_tabor = 21.0 MT
+
+    purchase:
+      supplier_id: SUP_USEC_02
+      spa_ref: "SPA/USEC/2204-04 (SIM)"
+      incoterm: FOB
+      named_place: "FOB Wilmington, DE, USA"
+      spa:
+        isri_grade_spec: "Taint/Tabor, ISRI Scrap Specifications Circular 2022"
+      pricing:
+        type: FIXED
+        price_usd_t: 2410.0
+        terms_basis_note: >-
+          CFR-India parity on 06-Apr-2022 = LME 3M 3,467.0 x grade_factor_taint_tabor 0.726000 = 2,517.04 USD/t;
+          less the USEC_MUN freight of 93.66 USD/t at the 21.0 t 40ft payload gives an FOB netback of
+          2,423.38 USD/t. Bid 2,410.00 FOB, 13.38 under netback — the discount for buying hand-sorted yard
+          material without an inspection.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-04-12
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false                       # SUP_USEC_02 does not require confirmation
+
+    shipment:
+      laycan_start: 2022-04-25
+      laycan_end: 2022-05-06
+      load_port: "Wilmington, DE, USA"
+      discharge_port: MUNDRA
+      lots:
+        - lot_id: L1
+          boxes: 30
+          bl_date: 2022-04-27
+          vessel: "MV Delaware Crest (SIM)"
+          voyage: "305E (SIM)"
+        - lot_id: L2
+          boxes: 30
+          bl_date: 2022-05-04
+          vessel: "MV Brandywine (SIM)"
+          voyage: "307E (SIM)"
+
+    freight:
+      booked_by: DESK_NVOCC
+      forwarder: "Konkan Freight Services (SIM)"
+      payment_terms: PREPAID_AT_BL
+      risk_layer: UNHEDGED_STOP_LOSS
+      fixture_date: 2022-04-14
+      rate_usd_box: 2005.0
+      stop_loss:
+        stop_loss_usd_box: 2260.0
+        latest_fixture_date: 2022-04-14
+        note: >-
+          Same policy as T01: unbooked while the lane index falls, stop at 2,260 USD/FEU (the 06-Apr index of
+          1,966.86 plus 15 %), and a hard book-by date ten days before the first B/L so the space is confirmed
+          before the boxes sail. Fixed on the last day at 2,005 USD/FEU against an index of 1,967.49 — the
+          roughly 2 % the NVOCC takes over the assessed lane rate, which is an ASSUMPTION with no 2022 evidence
+          behind it in the cached sources.
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_RJK_01
+        contract_date: 2022-05-24
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Rajkot (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 195500.0
+          terms_basis_note: >-
+            Priced on 24-May-2022 between an import replacement value of 192,244 ₹/MT and a netback of
+            199,302 ₹/MT — a gap of only 7,058 ₹/MT, against 24,000 a month earlier. Half the gap is
+            195,773 ₹/MT, less 375 ₹/MT for 75 % paid before release. Contracted at 195,500 ₹/MT, which is
+            barely above replacement: by late May this grade no longer paid for the risk of holding it.
+        payment:
+          terms: ADVANCE_PLUS_CREDIT
+          advance_frac: 0.75
+          advance_date: 2022-06-14
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.50
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          Same cross-exchange mismatch as every other ticket in this book — MCX prices duty-paid primary ingot,
+          the desk owns LME-linked Taint/Tabor scrap, so the hedge covers the metal leg and leaves the grade
+          spread in its own bucket. What is different here is the size: 0.50 of the LME-equivalent delta rather
+          than the desk's usual 0.90. The reason is written down on the trade date, not after it. First, the
+          March variation-margin call on the short book was the largest cash outflow the desk had taken and the
+          line has not been rebuilt; a smaller short is a smaller margin commitment through a market that has
+          already shown it can move 12 % in a session. Second, on this grade the point-in-time screen says the
+          scrap discount, not the flat price, is where the risk lives, and the MCX contract does not hedge the
+          discount at any ratio. This is a deliberate decision to carry roughly 435 tonnes of LME-equivalent
+          length unhedged, and if the market keeps falling it will cost money.
+        tranches:
+          - hedge_id: T04-MCX-1
+            contract_month: "2022-04"
+            direction: SELL
+            lots: 87
+            entry_date: 2022-04-06
+            exit_date: 2022-04-20
+            exit_reason: ROLL
+            roll_to: T04-MCX-2
+          - hedge_id: T04-MCX-2
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 87
+            entry_date: 2022-04-20
+            exit_date: 2022-05-20
+            exit_reason: ROLL
+            roll_to: T04-MCX-3
+          - hedge_id: T04-MCX-3
+            contract_month: "2022-06"
+            direction: SELL
+            lots: 87
+            entry_date: 2022-05-20
+            exit_date: 2022-05-24                # lifted the day the domestic sale is contracted
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T04-FX-1
+            booking_date: 2022-04-06
+            direction: BUY_USD
+            notional_usd: 1518300.0
+            value_date: 2022-05-04                # L1 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T04-FX-2
+            booking_date: 2022-04-06
+            direction: BUY_USD
+            notional_usd: 1518300.0
+            value_date: 2022-05-11                # L2 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T04-FX-3
+            booking_date: 2022-04-14
+            direction: BUY_USD
+            notional_usd: 120300.0
+            value_date: 2022-05-04                # freight prepaid at shipment
+            matched_leg: FREIGHT
+
+    rationale:
+      parity_week_end: 2022-04-01
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      freight_base_usd_t]
+      text: >-
+        Taint/Tabor on the US lane in the week to 01-Apr-2022: 36,623 ₹/MT base, 19,210 point-in-time, 31,241
+        with conversion stressed — still open on all three, but every one of those numbers is a third lower than
+        the 04-Mar week and the direction of travel is obvious. The LME has been in a 3,400 to 3,600 range for
+        a fortnight without conviction and USD/INR is grinding up. I take a small parcel, 60 boxes, from the
+        Delaware yard because it is 13 dollars under my own netback and because I want a second US supplier on
+        the book before the good one prices me out. Freight is the quiet win on this lane: the index has come
+        off 12 % since the 04-Mar week and I book it on the stop's last date rather than the first. The
+        decision I want on the record is the hedge. I am selling 87 lots, not the 157 the desk rule would give
+        me — half the length, not ninety per cent — for two reasons. The March margin call on the short book
+        was the largest cash outflow we have taken and I am not rebuilding that commitment into a market that
+        can move 12 % in a session; and on this grade the point-in-time screen is telling me the discount, not
+        the flat price, is the risk, and MCX does not hedge a discount at any ratio. If the market keeps
+        falling this costs me, and I would rather pay for a decision I made than for one I did not.
+
+  # ================================================================================================== T05
+  # CFR Tense on the US lane, priced on the LME cash average of the month after shipment and sold back-to-back
+  # on an MCX average, financed with a 60-day usance LC on a confirmed instrument. The hedge is sized on the
+  # residual between two floating factors and is increased, not lifted, when the purchase prices first.
+  - trade_id: T05
+    status: EXECUTED
+    trade_date: 2022-04-21
+    lane: USEC_MUN
+    grade: tense
+    quantity_mt: 2100.0                        # 100 x 40ft at container_payload_mt_40ft_tense = 21.0 MT
+
+    purchase:
+      supplier_id: SUP_USEC_01
+      spa_ref: "SPA/USEC/2204-05 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Mundra, India"
+      spa:
+        isri_grade_spec: "Tense, ISRI Scrap Specifications Circular 2022"
+      pricing:
+        type: LME_M1_AVG
+        lme_reference: CASH
+        factor_frac: 0.702
+        premium_usd_t: 0.0
+        provisional_frac: 0.95
+        terms_basis_note: >-
+          grade_factor_tense on 21-Apr-2022 is 0.705400 of LME 3M on a CFR basis. Contracted at 0.702 flat
+          against the official cash average of the month after shipment: 0.34 of a point for the 60-day usance
+          and for the seller keeping the confirmation on its own instrument. The May laycan sits inside one
+          calendar month, so the quotational period is known at signature.
+      payment:
+        instrument: LC_USANCE
+        usance_days: 60
+        lc_open_date: 2022-04-28
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: true
+        confirmation_charges_for: APPLICANT
+
+    shipment:
+      laycan_start: 2022-05-09
+      laycan_end: 2022-05-27
+      load_port: "Norfolk, VA, USA"
+      discharge_port: MUNDRA
+      lots:
+        - lot_id: L1
+          boxes: 50
+          bl_date: 2022-05-10
+          vessel: "MV Tidewater Venture (SIM)"
+          voyage: "131E (SIM)"
+        - lot_id: L2
+          boxes: 50
+          bl_date: 2022-05-18
+          vessel: "MV James River (SIM)"
+          voyage: "133E (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_MUN_01
+        contract_date: 2022-04-21              # back-to-back
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Gandhidham (SIM)"
+        quality_passthrough: true
+        pricing:
+          type: MCX_AVG
+          mcx_series: M1
+          window_start: 2022-06-29
+          window_end: 2022-07-08
+          factor_frac: 0.916
+          premium_inr_t: -41200.0
+          terms_basis_note: >-
+            0.916 x the MCX near-month average over the eight trading days to 08-Jul-2022, less 41,200 ₹/MT. On
+            21-Apr-2022 levels (M2 270.248 ₹/kg on this lane) that prices the cargo at 206,347 ₹/MT, against an
+            import replacement value of 184,281 and a netback of 228,459 — the desk's half-the-gap rule,
+            206,370, rounded through the premium.
+        payment:
+          terms: CREDIT
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 1.0
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          Two floating legs against two exchanges: the purchase on the LME official cash average of the month
+          after shipment, the sale on the MCX near-month average over eight days at the turn of June and July.
+          Because the sale's recovery factor grossed up by duty parity (0.916 x 1.0825 = 0.99) is larger than
+          the purchase factor 0.702, the margin itself is LME-linked and the residual is a net long of about a
+          quarter of a tonne per tonne of scrap — 105 lots at inception. When the purchase quotational period
+          closes first the long becomes the whole cargo, so the hedge is increased by 279 lots rather than
+          lifted, and both lines come off together when the sale's window passes its midpoint. The
+          unhedgeable parts are the same as elsewhere: MCX prices duty-paid primary metal, the desk owns Tense
+          scrap, and the two averaging windows do not overlap. In base runs the panel MCX series is a parity
+          proxy, so the measured cross-exchange basis is zero by construction.
+        tranches:
+          - hedge_id: T05-MCX-1
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 105
+            entry_date: 2022-04-21
+            exit_date: 2022-05-20
+            exit_reason: ROLL
+            roll_to: T05-MCX-2
+          - hedge_id: T05-MCX-2
+            contract_month: "2022-06"
+            direction: SELL
+            lots: 105
+            entry_date: 2022-05-20
+            exit_date: 2022-06-21
+            exit_reason: ROLL
+            roll_to: T05-MCX-4
+          - hedge_id: T05-MCX-3
+            contract_month: "2022-07"
+            direction: SELL
+            lots: 279
+            entry_date: 2022-06-16              # midpoint trading day of the purchase quotational period
+            exit_date: 2022-07-04               # midpoint trading day of the sale's averaging window
+            exit_reason: UNWIND
+          - hedge_id: T05-MCX-4
+            contract_month: "2022-07"
+            direction: SELL
+            lots: 105
+            entry_date: 2022-06-21
+            exit_date: 2022-07-04
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T05-FX-1
+            booking_date: 2022-05-10
+            direction: BUY_USD
+            notional_usd: 1874500.0
+            value_date: 2022-07-11              # L1 B/L + 60 days usance, rolled to the next trading day
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T05-FX-2
+            booking_date: 2022-05-18
+            direction: BUY_USD
+            notional_usd: 1992200.0
+            value_date: 2022-07-18
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T05-FX-3
+            booking_date: 2022-04-21            # cover taken at inception for an expected final-invoice balance
+            direction: BUY_USD
+            notional_usd: 200000.0
+            value_date: 2022-07-18
+            cancel_date: 2022-07-01             # the quotational month closed below the provisional: no balance to pay
+            matched_leg: PURCHASE_FINAL
+
+    rationale:
+      parity_week_end: 2022-04-15
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      mcx_anchor_inr_kg]
+      text: >-
+        Tense on the US lane in the week to 15-Apr-2022 is the first case this book has seen where the three
+        screens agree: 42,670 ₹/MT base, 40,778 point-in-time, 37,170 with conversion stressed. When the
+        point-in-time mix stops disagreeing with the lag-2 mix, the margin is telling me something about the
+        market rather than about my own reconstruction, and that is worth being larger for — 100 boxes, the
+        biggest parcel on this lane in the book. I buy it on the cash average of the month after shipment and
+        sell it back-to-back on the buyer's delivery-month MCX average, because on a forty-day transit I do not
+        want six weeks of flat-price risk I am not paid to take. The 60-day usance on a confirmed instrument
+        costs me a confirmation fee I would rather not pay, but it means the cargo is sold and the first
+        collection is in before I settle the bill, and the seller wanted the instrument more than it wanted the
+        third of a point I kept back on the factor. The exposure I am left with is the one I actually want: the
+        sale grosses up to 0.99 of LME through duty parity against a 0.702 purchase, so a quarter of a tonne
+        per tonne of scrap is live until both averages are behind me, and I sell 105 lots against it today.
+        What I am watching: my own quotational month closes three weeks before the buyer's window opens, so
+        there is a stretch where I own priced metal against an unpriced sale and the hedge has to grow, not
+        shrink. The rupee at 76.21 is the other thing — I cover the whole usance payable forward on each B/L.
+
+  # ================================================================================================== T06
+  # The deliberately part-covered FX ticket. Fixed-price CFR Zorba on the Gulf lane in the week the Zorba window
+  # is closing; only 60 % of the USD payable is covered forward, for a reason stated on the trade date.
+  - trade_id: T06
+    status: EXECUTED
+    trade_date: 2022-05-10
+    lane: JEA_NSA
+    grade: zorba
+    quantity_mt: 1300.0                        # 50 x 20ft at container_payload_mt_20ft_zorba = 26.0 MT
+
+    purchase:
+      supplier_id: SUP_JEA_01
+      spa_ref: "SPA/JEA/2205-06 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Nhava Sheva, India"
+      spa:
+        isri_grade_spec: "Zorba 95/5, ISRI Scrap Specifications Circular 2022"
+      pricing:
+        type: FIXED
+        price_usd_t: 2138.0
+        terms_basis_note: >-
+          CFR-India parity on 10-May-2022 = LME 3M 2,715.0 x grade_factor_zorba 0.791500 = 2,148.92 USD/t.
+          Contracted at 2,138.00 CFR, 10.92 USD/t under parity. Note that the Zorba factor has risen from 0.699
+          on 08-Mar to 0.792 today: scrap sellers have held their asking prices while the LME fell, which is
+          exactly the stickiness that shows up in the grade-spread bucket and not in any hedge.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-05-17
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false
+
+    shipment:
+      laycan_start: 2022-05-23
+      laycan_end: 2022-06-10
+      load_port: "Jebel Ali, UAE"
+      discharge_port: NHAVA_SHEVA
+      lots:
+        - lot_id: L1
+          boxes: 25
+          bl_date: 2022-05-25
+          vessel: "MV Khaleej Dawn (SIM)"
+          voyage: "231W (SIM)"
+        - lot_id: L2
+          boxes: 25
+          bl_date: 2022-06-07
+          vessel: "MV Jebel Meridian (SIM)"
+          voyage: "233W (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_JNPT_01
+        contract_date: 2022-06-01
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Taloja (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 185000.0
+          terms_basis_note: >-
+            Priced on 01-Jun-2022 between an import replacement value of 181,993 ₹/MT and a netback of
+            187,155 ₹/MT — a 5,162 ₹/MT gap, the thinnest in the book. Half the gap is 184,574 ₹/MT and the
+            desk charged 500 ₹/MT more for stretching the buyer's terms from 30 to 45 days. Contracted at
+            185,000 ₹/MT.
+        payment:
+          terms: CREDIT
+          credit_days: 45                      # at the msme_max_payment_days policy cap; buyer is not MSME-registered
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          Fixed-price cargo, no buyer at inception: the whole position is a long in LME-equivalent metal marked
+          at import replacement value, and the MCX short is the only thing standing against it. The
+          cross-exchange mismatch is the standard one — MCX settles duty-paid primary ingot in the Indian
+          evening, the cargo prices off LME 3M through a reconstructed Zorba factor fixed at the London ring —
+          and it is larger than usual on this ticket because the Zorba discount has moved thirteen points since
+          March while the flat price has fallen a thousand dollars. That divergence is the grade-spread bucket
+          and no number of lots hedges it. One roll, May into June. In base runs the panel MCX series is a
+          parity proxy, so the reported basis is zero by construction.
+        tranches:
+          - hedge_id: T06-MCX-1
+            contract_month: "2022-05"
+            direction: SELL
+            lots: 176
+            entry_date: 2022-05-10
+            exit_date: 2022-05-20
+            exit_reason: ROLL
+            roll_to: T06-MCX-2
+          - hedge_id: T06-MCX-2
+            contract_month: "2022-06"
+            direction: SELL
+            lots: 176
+            entry_date: 2022-05-20
+            exit_date: 2022-06-01
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 0.6
+        lines:
+          - fwd_id: T06-FX-1
+            booking_date: 2022-05-10
+            direction: BUY_USD
+            notional_usd: 833800.0
+            value_date: 2022-06-01              # L1 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T06-FX-2
+            booking_date: 2022-05-10
+            direction: BUY_USD
+            notional_usd: 833800.0
+            value_date: 2022-06-14              # L2 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+
+    rationale:
+      parity_week_end: 2022-05-06
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      mcx_anchor_inr_kg]
+      text: >-
+        The Zorba window is closing. In the week to 06-May-2022 the Gulf lane gives 12,842 ₹/MT base and only
+        7,649 once conversion is stressed to 18,000 — a quarter of what the same screen paid in March — and on
+        my reading this is the last week I can put a Zorba parcel on the books at all. So I take one, 50 boxes,
+        fixed CFR at 2,138, and I take it small. The reason I am still interested is the factor: Zorba has gone
+        from 0.699 of LME on 08-Mar to 0.792 today because yards have simply refused to follow the exchange
+        down, and a cargo bought at a sticky discount into a falling flat price is a position where my hedge
+        does the work and the discount is on my side. I sell 176 lots against 90 % of the length and roll once.
+        The decision worth arguing about is the dollar. I am covering 60 % of the payable, not the whole thing.
+        The rupee is at 77.26 and has weakened three sessions running; my policy is to cover the contracted USD
+        payable in full, but this cargo has no rupee revenue attached to it yet, and a fully covered payable
+        against an uncontracted sale is not a hedge, it is a view. I will cover the balance when I fix the
+        domestic price and know what rupees I am actually getting. If the rupee runs away from me before then,
+        that is a cost I have chosen, and it belongs in the FX bucket with my name on it.
+
+  # ================================================================================================== T07
+  # The ticket where the operations happen. Fixed-price FOB Tense from the Delaware yard, arriving into the
+  # July-2022 void calls at Mundra, surveyed wet and dirty, sold to the weakest name in the book against a 70 %
+  # advance — and paid four weeks late anyway.
+  - trade_id: T07
+    status: EXECUTED
+    trade_date: 2022-05-25
+    lane: USEC_MUN
+    grade: tense
+    quantity_mt: 1890.0                        # 90 x 40ft at container_payload_mt_40ft_tense = 21.0 MT
+
+    purchase:
+      supplier_id: SUP_USEC_02
+      spa_ref: "SPA/USEC/2205-07 (SIM)"
+      incoterm: FOB
+      named_place: "FOB Wilmington, DE, USA"
+      spa:
+        isri_grade_spec: "Tense, ISRI Scrap Specifications Circular 2022"
+        moisture_franchise_frac: 0.01          # desk template = standard_moisture_franchise_frac
+        contamination_limit_frac: 0.02         # = contamination_frac_tense, the composition the grade factor prices
+        discount_multiple: 1.5
+        rejection_excess_frac: 0.03
+      pricing:
+        type: FIXED
+        price_usd_t: 2086.0
+        terms_basis_note: >-
+          CFR-India parity on 25-May-2022 = LME 3M 2,858.0 x grade_factor_tense 0.765516 = 2,187.85 USD/t; less
+          the USEC_MUN freight of 89.95 USD/t at the 21.0 t 40ft payload gives an FOB netback of 2,097.90.
+          Bid 2,086.00 FOB, 11.90 under netback, and the SPA carries the full moisture franchise and
+          contamination schedule in writing because this yard hand-sorts.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-06-01
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false
+
+    shipment:
+      laycan_start: 2022-06-06
+      laycan_end: 2022-06-17
+      load_port: "Wilmington, DE, USA"
+      discharge_port: MUNDRA
+      lots:
+        - lot_id: L1
+          boxes: 45
+          bl_date: 2022-06-08
+          vessel: "MV Delaware Crest (SIM)"
+          voyage: "312E (SIM)"
+        - lot_id: L2
+          boxes: 45
+          bl_date: 2022-06-15
+          vessel: "MV Christina Bay (SIM)"
+          voyage: "314E (SIM)"
+
+    freight:
+      booked_by: DESK_NVOCC
+      forwarder: "Konkan Freight Services (SIM)"
+      payment_terms: PREPAID_AT_BL
+      risk_layer: UNHEDGED_STOP_LOSS
+      fixture_date: 2022-05-27
+      rate_usd_box: 1900.0
+      stop_loss:
+        stop_loss_usd_box: 2170.0
+        latest_fixture_date: 2022-05-27
+        note: >-
+          Stop at 2,170 USD/FEU (the 25-May index of 1,888.95 plus 15 %), with the book-by date ten days ahead
+          of the first B/L. Fixed at 1,900 against an index of 1,867.74 — the same roughly 2 % NVOCC spread
+          (ASSUMPTION) used on T01 and T04. This is the last freight the desk fixes in the window; if the lane
+          keeps falling, the fixture will sit above the later market, which is a loss of competitiveness
+          against a later importer and not a loss on this cargo, because a CFR-basis grade factor does not fall
+          when freight falls.
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_RJK_01
+        contract_date: 2022-07-26
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Rajkot (SIM)"
+        quality_passthrough: true              # the buyer takes accepted weight at the SPA's own discount
+        pricing:
+          type: FIXED
+          price_inr_t: 166500.0
+          terms_basis_note: >-
+            Priced on 26-Jul-2022 between an import replacement value of 158,874 ₹/MT and a netback of
+            174,758 ₹/MT; half the gap is 166,816 ₹/MT, less 350 ₹/MT for 70 % paid before release. Contracted
+            at 166,500 ₹/MT. The booking waited until 26-Jul rather than going out with the arrival because the
+            buyer's previous invoice (T04) only cleared on 23-Jul and the parcel would not otherwise have fitted
+            inside its ₹120 mn limit.
+        payment:
+          terms: ADVANCE_PLUS_CREDIT
+          advance_frac: 0.70
+          advance_date: 2022-08-12
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          A fixed-price cargo held unsold for nine weeks across a forty-day transit: the longest naked long in
+          the book and the one that rolls through three contract months before the boxes are even discharged.
+          The MCX short covers the LME-equivalent metal; the Tense discount to LME, the two roll spreads and
+          the primary-versus-scrap divergence stay open by construction. Because the sale is priced on accepted
+          weight with the SPA's quality discount passed through, any out-turn shortfall reduces the sold tonnes
+          and not the hedge — so a survey that goes against the desk leaves a small over-hedge for a few days,
+          which the desk accepts rather than trading around a number it does not yet have. In base runs the
+          panel MCX series is a parity proxy, so the reported cross-exchange basis is zero by construction.
+        tranches:
+          - hedge_id: T07-MCX-1
+            contract_month: "2022-06"
+            direction: SELL
+            lots: 247
+            entry_date: 2022-05-25
+            exit_date: 2022-06-21
+            exit_reason: ROLL
+            roll_to: T07-MCX-2
+          - hedge_id: T07-MCX-2
+            contract_month: "2022-07"
+            direction: SELL
+            lots: 247
+            entry_date: 2022-06-21
+            exit_date: 2022-07-20
+            exit_reason: ROLL
+            roll_to: T07-MCX-3
+          - hedge_id: T07-MCX-3
+            contract_month: "2022-08"           # DIRECT expiry 30-Aug-2022; the panel's monthly slot is 31-Aug
+            direction: SELL
+            lots: 247
+            entry_date: 2022-07-20
+            exit_date: 2022-07-26                # lifted the day the domestic sale is contracted
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T07-FX-1
+            booking_date: 2022-05-25
+            direction: BUY_USD
+            notional_usd: 1971300.0
+            value_date: 2022-06-15              # L1 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T07-FX-2
+            booking_date: 2022-05-25
+            direction: BUY_USD
+            notional_usd: 1971300.0
+            value_date: 2022-06-22              # L2 B/L + 7 days
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T07-FX-3
+            booking_date: 2022-05-27
+            direction: BUY_USD
+            notional_usd: 171000.0
+            value_date: 2022-06-15
+            matched_leg: FREIGHT
+
+    events:
+      quality:
+        - lot_id: L1
+          moisture_actual_frac: 0.024          # 1.4 points over the franchise -> weight deduction
+          contamination_actual_frac: 0.031     # 1.1 points over the limit -> 1.65 % price discount
+          rejected_boxes: 0
+          claim_recovery_frac: 1.0
+          flag: SIM
+          note: >-
+            Simulated joint survey at the Mundra CFS. The magnitudes are chosen to sit inside the SPA's
+            rejection threshold (rejection_excess_frac 0.03) so the lot settles with a weight deduction and a
+            price discount rather than being rejected outright, which is the instructive case: the desk claims
+            on the seller and passes the same discount through to the buyer.
+      logistics:
+        - event_id: T07-LOG-1
+          lot_id: L1
+          known_date: 2022-07-28
+          arrival_delay_days: 0
+          extra_dwell_days: 6
+          real_trigger_ref: >-
+            Container News, 27-Jul-2022: carriers void calls at Nhava Sheva and Mundra
+            (docs/research/freight_notes.md S4)
+          flag: SIM
+          note: >-
+            The disruption is real and dated; the six days of extra CFS dwell attributed to it on this lot are
+            simulated. Six days on top of the ten-day clearance cycle takes total dwell to 16 against 14 free
+            days, so two days are chargeable on 45 boxes.
+        - event_id: T07-LOG-2
+          lot_id: L2
+          known_date: 2022-07-28
+          arrival_delay_days: 0
+          extra_dwell_days: 12
+          real_trigger_ref: >-
+            Container News, 27-Jul-2022: carriers void calls at Nhava Sheva and Mundra
+            (docs/research/freight_notes.md S4)
+          flag: SIM
+          note: >-
+            Same real trigger, the later sailing and therefore the worse queue: twelve simulated days of extra
+            dwell take the lot to 22 days against 14 free, so eight days are chargeable on 45 boxes.
+      buyer_payment_delay:
+        - event_id: T07-PAY-1
+          sale_id: S1
+          known_date: 2022-09-26
+          delay_days: 26
+          reason: >-
+            (SIM) the buyer's own castings receivables stretched after domestic ingot prices fell through
+            August; it asked for and was given four weeks, against post-dated cheques already held as security
+          flag: SIM
+
+    rationale:
+      parity_week_end: 2022-05-20
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      freight_base_usd_t]
+      text: >-
+        Tense on the US lane in the week to 20-May-2022: 22,935 ₹/MT base, 39,374 point-in-time, 17,436 with
+        conversion stressed. For once the point-in-time mix is the friendly number and the base is the cautious
+        one, which is the opposite of March and tells me the reconstruction has stopped flattering me. It still
+        clears all three, so I buy — 90 boxes, fixed FOB at 2,086, which is 12 dollars under my netback from a
+        yard that hand-sorts. That last point is the whole risk on this ticket and I am pricing it: the SPA
+        carries the moisture franchise, the contamination schedule and the radioactivity clause in writing, and
+        I would rather take a claim on a seller than a rejection at a portal monitor. Freight I fix on 27-May at
+        the stop's book-by date; the index has halved since the start of the window and I am not going to be
+        clever about the last twenty dollars. I sell 247 lots against 90 % of the length and I know I am rolling through three
+        contract months before these boxes are discharged — that roll cost is what holding unsold cargo on a
+        forty-day lane actually costs, and I would rather see it as a line item than pretend it is free. I have
+        no buyer. The realistic home for this parcel is Rajkot, which means a foundry with a ₹120 mn limit
+        taking ₹300 mn of cargo, so it will be majority-advance or it will not happen. Two things worry me: a
+        US-origin Tense parcel I have not inspected, and a Gujarat foundry buying into a falling ingot market,
+        which is exactly the name that pays late.
+
+  # ================================================================================================== T08
+  # CFR Tense priced on the LME cash average of the month after shipment, then held unsold for eleven days after
+  # the purchase prices — because the buyer's credit line was full until the previous invoice cleared. One box
+  # is stopped at the radiation portal.
+  - trade_id: T08
+    status: EXECUTED
+    trade_date: 2022-06-08
+    lane: USEC_MUN
+    grade: tense
+    quantity_mt: 1680.0                        # 80 x 40ft at container_payload_mt_40ft_tense = 21.0 MT
+
+    purchase:
+      supplier_id: SUP_USEC_02
+      spa_ref: "SPA/USEC/2206-08 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Mundra, India"
+      spa:
+        isri_grade_spec: "Tense, ISRI Scrap Specifications Circular 2022"
+        moisture_franchise_frac: 0.01
+        contamination_limit_frac: 0.02
+        discount_multiple: 1.5
+        rejection_excess_frac: 0.03
+      pricing:
+        type: LME_M1_AVG
+        lme_reference: CASH
+        factor_frac: 0.782
+        premium_usd_t: 0.0
+        provisional_frac: 0.95
+        terms_basis_note: >-
+          grade_factor_tense on 08-Jun-2022 is 0.785839 of LME 3M on a CFR basis. Contracted at 0.782 flat
+          against the official cash average of the month after shipment. The June laycan sits inside one
+          calendar month so the quotational period is known at signature; the provisional invoice is 95 % of
+          B/L weight at the B/L-day cash price, with the balance settled after the average.
+      payment:
+        instrument: LC_SIGHT
+        lc_open_date: 2022-06-14
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false
+
+    shipment:
+      laycan_start: 2022-06-20
+      laycan_end: 2022-06-30
+      load_port: "Wilmington, DE, USA"
+      discharge_port: MUNDRA
+      lots:
+        - lot_id: L1
+          boxes: 40
+          bl_date: 2022-06-22
+          vessel: "MV Brandywine (SIM)"
+          voyage: "318E (SIM)"
+        - lot_id: L2
+          boxes: 40
+          bl_date: 2022-06-29
+          vessel: "MV Susquehanna (SIM)"
+          voyage: "320E (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_MUN_01
+        contract_date: 2022-08-09
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Gandhidham (SIM)"
+        quality_passthrough: true
+        pricing:
+          type: MCX_AVG
+          mcx_series: M1
+          window_start: 2022-08-10
+          window_end: 2022-08-22
+          factor_frac: 0.916
+          premium_inr_t: -30800.0
+          terms_basis_note: >-
+            0.916 x the MCX near-month average over the nine trading days to 22-Aug-2022, less 30,800 ₹/MT. On
+            09-Aug-2022 levels (M2 215.957 ₹/kg) that prices the cargo at 167,016 ₹/MT, against an import
+            replacement value of 155,377 and a netback of 178,696 — the desk's half-the-gap rule, 167,037. The
+            premium is 21,100 ₹/MT less negative than the same formula fetched in March because the arbitrage
+            it splits is a third of the size.
+        payment:
+          terms: CREDIT
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          This ticket is unhedged on purpose for its first five weeks and the reason is arithmetic, not
+          appetite: a CFR cargo bought on a forward LME average and not yet sold carries almost no flat-price
+          risk, because the mark and the payable move together — the contract factor 0.782 and the mark factor
+          0.786 differ by four thousandths, about one lot on 1,680 tonnes. The exposure appears the moment the
+          quotational period passes its midpoint and the payable stops floating: from that day the desk owns
+          priced metal with no buyer, and 230 lots go on against 90 % of the replacement-value delta. They come
+          off at the midpoint of the buyer's August averaging window. The mismatches carried throughout are the
+          usual ones — MCX prices duty-paid primary ingot against LME-priced Tense scrap, and in base runs the
+          panel MCX series is itself a parity proxy so the measured cross-exchange basis is zero by
+          construction.
+        tranches:
+          - hedge_id: T08-MCX-1
+            contract_month: "2022-08"
+            direction: SELL
+            lots: 230
+            entry_date: 2022-07-15              # midpoint trading day of the purchase quotational period
+            exit_date: 2022-08-16               # midpoint trading day of the sale's averaging window
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T08-FX-1
+            booking_date: 2022-06-22
+            direction: BUY_USD
+            notional_usd: 1532300.0
+            value_date: 2022-06-29              # L1 B/L + 7 days: sight payment of the provisional invoice
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T08-FX-2
+            booking_date: 2022-06-29
+            direction: BUY_USD
+            notional_usd: 1530100.0
+            value_date: 2022-07-06
+            matched_leg: PURCHASE_PROVISIONAL
+          - fwd_id: T08-FX-3
+            booking_date: 2022-08-01            # the quotational month closed two days earlier
+            direction: BUY_USD
+            notional_usd: 90000.0
+            value_date: 2022-08-05
+            matched_leg: PURCHASE_FINAL
+
+    events:
+      quality:
+        - lot_id: L2
+          moisture_actual_frac: 0.012          # 0.2 of a point over the franchise
+          contamination_actual_frac: 0.024     # 0.4 of a point over the limit -> 0.6 % price discount
+          rejected_boxes: 1
+          rejection_reason: RADIOACTIVITY
+          claim_recovery_frac: 1.0
+          flag: SIM
+          note: >-
+            Simulated out-turn. One container is flagged by the port radiation portal monitor and rejected
+            outright under the SPA's radioactivity clause: it leaves the Bill of Entry, the port charges and
+            the sale, and is re-exported for the seller's account. The remaining 39 boxes settle with a small
+            moisture deduction and a 0.6 % contamination discount. Magnitudes are simulated; the clause and the
+            portal are real (regulatory.yaml radioactivity_clause).
+
+    rationale:
+      parity_week_end: 2022-06-03
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      mcx_anchor_inr_kg]
+      text: >-
+        This is the last week Tense clears anything on the US lane before the window shuts — 14,383 ₹/MT base
+        and 8,883 with conversion at 18,000, against 39,488 on the point-in-time mix, and when the three screens
+        disagree by that much I trust the smallest one. So the parcel is 80 boxes and it is bought on a formula,
+        not fixed: at 0.782 against the cash average of the month after shipment I am paying what the market
+        pays when the metal actually arrives, which on a forty-day lane into a falling market is the difference
+        between a trade and a bet. I have no buyer today. Gandhidham is the natural home but its line is full
+        until my previous invoice clears, so I am going to be holding unsold, formula-priced cargo for a while
+        and I am content with that: while both the payable and the mark float, this position has essentially no
+        flat-price risk — the factors differ by four thousandths — and I am not going to pay a spread to hedge
+        one lot. The day my quotational month is behind me that changes completely and I will need about 230
+        lots on. The other thing I am pricing in is the yard: this is the same Delaware seller whose last parcel
+        I have not yet surveyed, so the SPA again carries the full franchise, discount and radioactivity
+        schedule, and the buyer contract will pass the discount through rather than leaving me between the two.
+
+  # ================================================================================================== T09
+  # The last trade of the window. Short-lane Tense on a 60-day usance so the whole ticket — LC, duty, IGST
+  # credit, buyer receipt and both forwards — settles inside the 31-Oct horizon.
+  - trade_id: T09
+    status: EXECUTED
+    trade_date: 2022-08-03
+    lane: JEA_NSA
+    grade: tense
+    quantity_mt: 1200.0                        # 48 x 20ft at container_payload_mt_20ft_tense = 25.0 MT
+
+    purchase:
+      supplier_id: SUP_JEA_01
+      spa_ref: "SPA/JEA/2208-09 (SIM)"
+      incoterm: CFR
+      named_place: "CFR Nhava Sheva, India"
+      spa:
+        isri_grade_spec: "Tense, ISRI Scrap Specifications Circular 2022"
+      pricing:
+        type: FIXED
+        price_usd_t: 1827.0
+        terms_basis_note: >-
+          CFR-India parity on 03-Aug-2022 = LME 3M 2,401.0 x grade_factor_tense 0.765161 = 1,837.15 USD/t.
+          Contracted at 1,827.00 CFR, 10.15 USD/t under parity.
+      payment:
+        instrument: LC_USANCE
+        usance_days: 60
+        lc_open_date: 2022-08-10
+        issuing_bank: "Bharat Mercantile Bank Ltd (SIM)"
+        confirmed: false
+
+    shipment:
+      laycan_start: 2022-08-15
+      laycan_end: 2022-08-26
+      load_port: "Jebel Ali, UAE"
+      discharge_port: NHAVA_SHEVA
+      lots:
+        - lot_id: L1
+          boxes: 24
+          bl_date: 2022-08-17
+          vessel: "MV Khaleej Dawn (SIM)"
+          voyage: "245W (SIM)"
+        - lot_id: L2
+          boxes: 24
+          bl_date: 2022-08-24
+          vessel: "MV Ras Al Khor (SIM)"
+          voyage: "247W (SIM)"
+
+    sales:
+      - sale_id: S1
+        buyer_id: BUY_JNPT_01
+        contract_date: 2022-08-26
+        lot_ids: [L1, L2]
+        delivery_basis: "FOR buyer's works, Taloja (SIM)"
+        pricing:
+          type: FIXED
+          price_inr_t: 168750.0
+          terms_basis_note: >-
+            Priced on 26-Aug-2022 between an import replacement value of 158,984 ₹/MT and a netback of
+            178,570 ₹/MT; half the gap is 168,777 ₹/MT, less 125 ₹/MT for the 25 % advance. Contracted at
+            168,750 ₹/MT.
+        payment:
+          terms: ADVANCE_PLUS_CREDIT
+          advance_frac: 0.25
+          advance_date: 2022-08-31
+          credit_days: 30
+
+    hedges:
+      mcx:
+        hedge_ratio_target: 0.90
+        exposure_basis: NET_LME_EQ_DELTA
+        basis_risk_note: >-
+          Fixed price, no buyer for three weeks, so the position is a naked LME-equivalent long marked at
+          replacement value and hedged with 157 lots of MCX. The roll on 18-Aug is the one place in this book
+          where the panel's monthly slot and the exchange's real calendar disagree: the DIRECT expiry list puts
+          August expiry on 30-Aug while the panel's rule-based slot is 31-Aug, and the position is keyed to the
+          contract month so that both views resolve to the same contract. The cross-exchange mismatch is the
+          usual one and in base runs the measured basis is zero by construction, the panel MCX series being a
+          parity proxy.
+        tranches:
+          - hedge_id: T09-MCX-1
+            contract_month: "2022-08"
+            direction: SELL
+            lots: 157
+            entry_date: 2022-08-03
+            exit_date: 2022-08-18                # 7 trading days before the DIRECT 30-Aug expiry
+            exit_reason: ROLL
+            roll_to: T09-MCX-2
+          - hedge_id: T09-MCX-2
+            contract_month: "2022-09"
+            direction: SELL
+            lots: 157
+            entry_date: 2022-08-18
+            exit_date: 2022-08-26                # lifted the day the domestic sale is contracted
+            exit_reason: UNWIND
+      fx_forwards:
+        hedge_frac_target: 1.0
+        lines:
+          - fwd_id: T09-FX-1
+            booking_date: 2022-08-03
+            direction: BUY_USD
+            notional_usd: 1096200.0
+            value_date: 2022-10-17               # L1 B/L + 60 days usance, rolled to the next trading day
+            matched_leg: PURCHASE_INVOICE
+          - fwd_id: T09-FX-2
+            booking_date: 2022-08-03
+            direction: BUY_USD
+            notional_usd: 1096200.0
+            value_date: 2022-10-24
+            matched_leg: PURCHASE_INVOICE
+
+    rationale:
+      parity_week_end: 2022-07-29
+      cited_columns: [net_arb_inr_t, net_arb_pit_mix_inr_t, net_arb_conv18k_inr_t, grade_factor,
+                      mcx_anchor_inr_kg, lme_cash_3m_spread_usd_t]
+      text: >-
+        Tense on the Gulf lane reopened in the week to 22-Jul-2022 and is wider again in the week to
+        29-Jul-2022: 15,206 ₹/MT base, 26,505 point-in-time, 9,706 with conversion stressed. It is open on all
+        three and it is the only thing on the board that is. The reason it reopened is not that scrap got
+        cheaper — the rupee went through 80 and then came back, and the LME has put 130 dollars on since the
+        15-Jul low while the domestic anchor has not given it all back. The curve has also flipped: cash has
+        been trading over the three-month for a fortnight, which is the first backwardation since March and
+        argues against holding metal for its own sake. So this is a fast trade and a small one, 48 boxes on the
+        five-day lane, fixed at 1,827 CFR. The structure is chosen for the calendar as much as the margin: a
+        60-day usance on a mid-August B/L means the bill, the duty, the IGST credit, the buyer's money and both
+        forwards all land inside the desk's settlement horizon, and I do not want an open position I cannot
+        close in the quarter I am trading. I sell 157 lots against 90 % of it and expect to roll once, out of the August
+        contract, before Taloja signs.
