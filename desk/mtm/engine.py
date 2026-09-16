@@ -31,6 +31,8 @@ from desk.reporting.style import PNL_BUCKETS
 
 BOOK_ID = "BOOK"
 MCX_STRESS_MARGINS = (0.12, 0.15)          # the `mcx_al_margin_used_frac` note's stressed levels
+# Internal weight for the book-level pricing fractions; dropped before the file is written (§7a.4 fixes the columns).
+WEIGHT_COLUMN = "_ticket_qty_mt"
 
 
 def in_window(d: dt.date) -> bool:
@@ -94,7 +96,7 @@ def run_book(book: bs.Book, H: MarketHistory, *, cache: val.ScheduleCache | None
             if with_exposures:
                 row = expo.trade_exposures(ticket, book, d, H, cache, fp, att.value_today)
                 row.update({"date": d, "scope": "trade", "trade_id": ticket.trade_id, "in_window": in_window(d),
-                            "cum_pnl_inr": att.cum_pnl_inr})
+                            "cum_pnl_inr": att.cum_pnl_inr, WEIGHT_COLUMN: ticket.quantity_mt})
                 expo_rows.append(row)
         per_trade[ticket.trade_id] = run
 
@@ -165,9 +167,21 @@ def _book_exposures(expo_df: pd.DataFrame) -> pd.DataFrame:
                                        HEDGE_RATIO_MIN_PHYSICAL_MT)
     g["hedge_ratio_fx_frac"] = _ratio(g["fx_delta_forwards_usd"], g["fx_delta_physical_usd"],
                                       HEDGE_RATIO_MIN_PHYSICAL_USD)
-    g["purchase_priced_frac"] = (expo_df.groupby("date")["purchase_priced_frac"].mean().to_numpy())
-    g["sale_priced_frac"] = (expo_df.groupby("date")["sale_priced_frac"].mean().to_numpy())
+    # Tonnage-weighted, not a mean of tickets: the column reads "share of the book that is priced", and an
+    # unweighted mean makes a 1,200 MT ticket count as much as a 2,520 MT one (published 0.500 against a
+    # tonnage-weighted 0.677 on 2022-03-11). Weights are the ticket's contracted quantity over the trades on
+    # the book that day; a closed ticket still counts, because its purchase price is still struck.
+    for col in ("purchase_priced_frac", "sale_priced_frac"):
+        g[col] = _weighted(expo_df, col, WEIGHT_COLUMN)
     return g
+
+
+def _weighted(expo_df: pd.DataFrame, col: str, weight_col: str) -> np.ndarray:
+    """Per-date tonnage-weighted mean of a trade-level fraction."""
+    w = expo_df[weight_col].to_numpy(float)
+    num = expo_df.assign(_n=expo_df[col].to_numpy(float) * w).groupby("date")["_n"].sum()
+    den = expo_df.groupby("date")[weight_col].sum()
+    return np.where(den.to_numpy() > 0, num.to_numpy() / np.where(den.to_numpy() > 0, den.to_numpy(), 1.0), 0.0)
 
 
 # ------------------------------------------------------------------------------------------------- mtm_daily
@@ -390,6 +404,16 @@ def _roll_deadline(cal, month: str):
 
 
 # ------------------------------------------------------------------------------------------- trade cashflows
+SCENARIO_NOTES = {
+    "REALISED": "what actually settled: every flow at its own settle date, USD at the spot that fixed there",
+    "PLANNED_AT_TRADE_DATE":
+        "the flows ALREADY CONTRACTED on the trade date, valued on trade-date CIP forwards. NOT an expected "
+        "P&L: a sale contracted later is absent, so the PNL rows of a ticket sold after inception sum to a "
+        "large negative number (the purchase with no sale against it). Only T02 and T05 contract both legs on "
+        "the trade date, and only there does the total equal the day-one new_deal.",
+}
+
+
 def trade_cashflows(book: bs.Book, H: MarketHistory, cache: val.ScheduleCache,
                     horizon: dt.date = HORIZON_END) -> pd.DataFrame:
     """Every dated cashflow under two scenarios: as planned on the trade date, and as realised."""
@@ -419,7 +443,8 @@ def trade_cashflows(book: bs.Book, H: MarketHistory, cache: val.ScheduleCache,
                     est = amount_inr
                 due_c = (sched.sale_dates[f.sale_id].due_contractual if f.sale_id else f.settle_date)
                 rows.append({
-                    "scenario": scenario, "trade_id": ticket.trade_id, "leg_id": f.leg_id, "leg_type": f.leg_type,
+                    "scenario": scenario, "scenario_note": SCENARIO_NOTES[scenario],
+                    "trade_id": ticket.trade_id, "leg_id": f.leg_id, "leg_type": f.leg_type,
                     "cf_type": f.leg_type, "pnl_class": f.pnl_class, "currency": f.currency,
                     "contract_date": f.contract_date, "fixing_date": f.fixing_date,
                     "due_date_contractual": due_c, "settle_date": f.settle_date,

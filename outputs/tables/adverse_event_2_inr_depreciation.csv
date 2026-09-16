@@ -4,16 +4,16 @@ window_end,2022-07-14,,E2_INR_DEPRECIATION
 usdinr_start,75.335,,E2_INR_DEPRECIATION
 usdinr_end,80.0352,,E2_INR_DEPRECIATION
 usdinr_change_frac,0.06239065507400299,,E2_INR_DEPRECIATION
-book_pnl_window_inr,140138847.98553032,,E2_INR_DEPRECIATION
-bucket_fx_inr,15704910.832304286,,E2_INR_DEPRECIATION
-fx_physical_inr,11486050.383683756,,E2_INR_DEPRECIATION
-fx_physical_usd_flows_inr,-25202625.84658979,the USD payables and receipts themselves — what the forwards were sized against,E2_INR_DEPRECIATION
+book_pnl_window_inr,130110340.35067353,,E2_INR_DEPRECIATION
+bucket_fx_inr,6944657.601623207,,E2_INR_DEPRECIATION
+fx_physical_inr,11485168.012299802,,E2_INR_DEPRECIATION
+fx_physical_usd_flows_inr,-25203508.217973743,the USD payables and receipts themselves — what the forwards were sized against,E2_INR_DEPRECIATION
 fx_inventory_mark_inr,36688676.230273545,"unsold cargo marked at import replacement value is LONG USD (design D5), so it partly offsets the USD payables; a 100% forward hedge of the payable therefore leaves the book net long USD while the cargo is unsold",E2_INR_DEPRECIATION
-fx_forwards_inr,35065846.71552138,,E2_INR_DEPRECIATION
+fx_forwards_inr,26306475.85622426,,E2_INR_DEPRECIATION
 fx_mcx_inr,-30846986.266900852,a short MCX is short USD: duty-paid parity rises in rupees when the rupee weakens,E2_INR_DEPRECIATION
-forward_offset_frac_vs_usd_flows,1.3913568740404167,"against the USD cash legs, which is what the forwards were booked to cover",E2_INR_DEPRECIATION
-forward_offset_frac_vs_net_physical,-3.052907269615791,against the physical INCLUDING the replacement-value mark; read it with the note above,E2_INR_DEPRECIATION
-forward_cost_memo_inr,-11002089.284407599,the bank margin booked at inception plus the forward legs' carry — what the offset cost,E2_INR_DEPRECIATION
-counterfactual_no_forwards_pnl_inr,116239968.38034573,,E2_INR_DEPRECIATION
-forward_book_benefit_inr,23898879.605184585,,E2_INR_DEPRECIATION
+forward_offset_frac_vs_usd_flows,1.043762464681958,"against the USD cash legs, which is what the forwards were booked to cover",E2_INR_DEPRECIATION
+forward_offset_frac_vs_net_physical,-2.2904737508456026,against the physical INCLUDING the replacement-value mark; read it with the note above,E2_INR_DEPRECIATION
+forward_cost_memo_inr,-9786253.658295672,the bank margin booked at inception plus the forward legs' carry — what the offset cost,E2_INR_DEPRECIATION
+counterfactual_no_forwards_pnl_inr,113581511.45468406,,E2_INR_DEPRECIATION
+forward_book_benefit_inr,16528828.895989463,,E2_INR_DEPRECIATION
 customs_fx_note,,"the duty base moves on the CBIC notified rate, which is a fortnightly step, not the spot",E2_INR_DEPRECIATION

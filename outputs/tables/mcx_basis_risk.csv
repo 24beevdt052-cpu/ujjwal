@@ -1,0 +1,30 @@
+metric,scope,value,unit,flag,note,label
+basis_bucket_mirror_inr,T01,-18420216.70417943,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T01,-19206373.688759193,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T02,-2286083.011771355,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T02,1042821.023516491,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T03,-9068.959168335423,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T03,2872540.249027591,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T04,-1347707.7366457018,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T04,-1327667.8496744111,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T05,17860150.422891874,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T05,19173461.80935929,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T06,4307180.679876575,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T06,3465845.9187426623,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T07,-14981371.501086067,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T07,1692320.4805481452,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T08,4910487.471676102,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T08,8946546.366765935,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+basis_bucket_mirror_inr,T09,-1740400.9859377458,inr,PROXY,bucket (b) on the mirror; 0 in every base run by construction,SENSITIVITY — not base P&L
+total_pnl_change_vs_base_inr,T09,1742998.8620370515,inr,PROXY,the whole effect of swapping the MCX series on this ticket,SENSITIVITY — not base P&L
+per_trade_pnl_change_worst_inr,BOOK,-19206373.688759193,inr,PROXY,the LOSS case: T01 on the mirror,SENSITIVITY — not base P&L
+per_trade_pnl_change_best_inr,BOOK,19173461.80935929,inr,PROXY,the gain case: T05 on the mirror,SENSITIVITY — not base P&L
+per_trade_pnl_change_range_inr,BOOK,38379835.49811848,inr,PROXY,"read the RANGE, not the netted book total: the book total is one draw of a two-sided risk",SENSITIVITY — not base P&L
+per_trade_abs_mean_inr,BOOK,6607841.8053811975,inr,PROXY,mean absolute per-ticket effect — the size of the basis risk the base run cannot see,SENSITIVITY — not base P&L
+book_pnl_change_vs_base_inr,BOOK,18402493.171563566,inr,PROXY,"the netted book number. It is POSITIVE here; that is one realisation of a two-sided risk, not evidence that a real basis would have helped",SENSITIVITY — not base P&L
+unit_beta_beta,BOOK,0.452250978604,frac,PROXY,OLS slope of daily mirror M1 changes on duty-paid-parity changes over the window; the engine's hedge sizing assumes 1.0,SENSITIVITY — not base P&L
+unit_beta_beta_se,BOOK,0.063198003674,frac,PROXY,OLS standard error of the slope,SENSITIVITY — not base P&L
+unit_beta_beta_t_vs_one,BOOK,-8.667188669769,t,PROXY,t statistic for H0: beta = 1. |t| > ~2 rejects the unit-beta assumption the hedge is sized on,SENSITIVITY — not base P&L
+unit_beta_beta_r2,BOOK,0.293954392907,frac,PROXY,R^2 of that regression: how much of a day's MCX move duty-paid parity explains,SENSITIVITY — not base P&L
+unit_beta_beta_n_days,BOOK,125.0,count,PROXY,daily changes used (window panel days),SENSITIVITY — not base P&L
+unit_beta_unhedged_frac_at_beta,BOOK,0.547749021396,frac,PROXY,the share of a parity move an MCX short sized at beta = 1 does NOT offset if the true slope is the measured beta,SENSITIVITY — not base P&L

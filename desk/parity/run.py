@@ -262,10 +262,11 @@ def _doc_intro(r: Results) -> list[str]:
         _md_table(["File", "Grain", "Content"], [
             ["`outputs/tables/parity_weekly.csv`", "week_end × grade × lane (43 × 3 × 2)",
              "key inputs, every §5 line item, `window_open`, §5a flags `open_base`, `open_pit_mix`, `open_conv18k`, "
-             "`trade_eligible`, their net arbs, USD memo"],
+             "`trade_eligible`, the no-hindsight disclosure gate `open_pit_conv18k` / `trade_eligible_pit`, their "
+             "net arbs, USD memo"],
             ["`parity_sensitivity_cases.csv` / `_summary.csv`", "case × week × grade × lane / case × grade × lane",
              "the §5 required band (+ informational cases); open-week counts and flips vs base, in-window"],
-            ["`parity_reference_cases.csv`", "2 rows", "declared Table 1.5 reference cases and their selection rules"],
+            ["`parity_reference_cases.csv`", "3 rows", "declared Table 1.5 reference cases and their selection rules"],
             ["`parity_sensitivity_lme_fx.csv` (+`_wide`)", "ref × LME shock × USD/INR",
              "Table 1.5(a) P&L impact on 1,000 MT"],
             ["`parity_sensitivity_freight_duty.csv` (+`_wide`)", "ref × terms × freight shock × BCD",
@@ -321,7 +322,9 @@ def _doc_formulas(r: Results, pflags: dict[str, str]) -> list[str]:
         f"factor = `grade_factor_mix_pit` + the registered differential); `open_conv18k` (conversion = the first value "
         f"of `conversion_cost_sensitivity_inr_t_ingot` above base = {_inr(conv_step)}/t ingot; the code raises if the "
         "register ever makes that anything other than the 18,000 the contract named). Case 3 can only close windows, so "
-        "`trade_eligible = open_pit_mix ∧ open_conv18k` in practice.",
+        "`trade_eligible = open_pit_mix ∧ open_conv18k` in practice. **Read §6.1 before quoting the rule as "
+        "point-in-time discipline: on this panel the point-in-time screen never binds and the binding screen reads a "
+        "hindsight-reconstructed grade mix.**",
         "5. **PSIC** applies where the register says the origin/port pair needs one (`psic_required_uae_origin` for "
         "JEA_NSA = true; `psic_required_safe_origin_designated_port` for USEC_MUN = false).",
         "6. **Overrides.** Any sensitivity swaps an input column or a canonical register key (a scalar, a weekly series "
@@ -486,6 +489,51 @@ def _doc_results(r: Results) -> list[str]:
         f"recovery) is eligible {tense_el['JEA_NSA']} on JEA_NSA and {tense_el['USEC_MUN']} on USEC_MUN. Charts: "
         "`p1_net_arb_weekly.png`, `p1_window_heatmap.png`.",
         "",
+    ] + _doc_eligibility_honesty(win)
+
+
+def _doc_eligibility_honesty(win: pd.DataFrame) -> list[str]:
+    """§6.1 — what the §5a rule is and is not, measured rather than asserted (Phase 1-3 review).
+
+    The §5a rule was declared ex ante and is frozen. What was not stated when it was declared is that on this panel
+    the one screen a 2022 desk could genuinely have computed never binds, so the discipline the book displays is
+    produced by a screen built on a reconstruction. That is a disclosure, not a rule change.
+    """
+    n = len(win)
+    base_only = int(win["open_base"].sum())
+    pit = int(win["open_pit_mix"].sum())
+    conv = int(win["open_conv18k"].sum())
+    elig = int(win["trade_eligible"].sum())
+    elig_pit = int(win["trade_eligible_pit"].sum())
+    binds = int((win["open_base"] & win["open_conv18k"] & ~win["open_pit_mix"]).sum())
+    extra = win[win["trade_eligible_pit"] & ~win["trade_eligible"]]
+    lost = win[win["trade_eligible"] & ~win["trade_eligible_pit"]]
+    by = [[g, l, int(((extra["grade"] == g) & (extra["lane"] == l)).sum()),
+           _ranges(extra.loc[(extra["grade"] == g) & (extra["lane"] == l), "week_end"])]
+          for g in model.GRADES for l in model.LANES]
+    return [
+        "### 6.1 What the §5a rule actually screens on (read this before quoting it)", "",
+        f"CONTRACTS §5a asks for three independent screens. On this panel they are not independent, and the one that "
+        f"a 2022 desk could genuinely have computed — `open_pit_mix`, the point-in-time grade mix — **never binds**: "
+        f"of {n} in-window grade × lane × week cases it is open in {pit}, and there is no case it closes that "
+        f"`open_conv18k` does not already close ({binds} such cases). `trade_eligible` is therefore **identical to "
+        f"`open_conv18k`** on every row of `parity_weekly.csv` ({elig} of {n} open; base alone {base_only}, "
+        f"conv-18k alone {conv}).", "",
+        "`open_base` and `open_conv18k` both read the **lag-2 DGCIS grade mix**, which is a hindsight reconstruction "
+        "(§12): the unit values for month *m* were published around month *m+2*. So the binding screen is a screen a "
+        "desk could not have run in the week it was trading. The rule is frozen and is not being re-interpreted — "
+        "but a reader must not take the eligibility calendar as point-in-time discipline.", "",
+        f"`trade_eligible_pit` is published beside it as the honest counterpart: the same discipline with the "
+        f"point-in-time mix on **both** legs (`open_pit_mix ∧ open_pit_conv18k`). It opens **{elig_pit} of {n}** "
+        f"cases against {elig} — **{len(extra)} cases the published rule stood aside from**, and {len(lost)} the "
+        "published rule allowed that it would have blocked:", "",
+        _md_table(["Grade", "Lane", "Extra cases", "Weeks the no-hindsight gate would have opened"], by), "",
+        "The consequence is concrete and unflattering. The published book's headline discipline is that it stood "
+        "aside through the last leg of the crash; on the no-hindsight gate those weeks were **open**, so a desk "
+        "trading the screen it could actually compute would have kept buying into the low. Phase 2 must not change "
+        "the book for this (§5a forbids it) and Phase 3 must not re-cut the P&L for it — what changes is the claim: "
+        "entry timing in this book is **not** point-in-time, and `docs/20_trade_book.md` and the interview pack say "
+        "so. The rupee cost of the difference is a Phase 2/3 question, not a Phase 1 one.", "",
     ]
 
 
@@ -611,16 +659,20 @@ def _doc_grids(r: Results) -> list[str]:
                                overrides=model.market_shock_overrides(freight_shock_frac=0.6, freight_on_buyer=True))
     fob = fd[fd["freight_terms"] == "FOB_desk_books_freight"]
     bcd5 = fob[(fob["freight_shock_pct"] == 0) & (fob["bcd_rate_pct"] == 5.0)]["pnl_impact_1000mt_inr"].abs()
-    max_freight = fob[(fob["bcd_rate_pct"] == float(config.value("bcd_scrap_hs7602")) * 100)][
-        "pnl_impact_1000mt_inr"].abs().max()
+    at_base_bcd = fob[fob["bcd_rate_pct"] == float(config.value("bcd_scrap_hs7602")) * 100]
+    gulf_freight = at_base_bcd[at_base_bcd["lane"] == ref.lane]["pnl_impact_1000mt_inr"].abs().max()
+    long_freight = at_base_bcd[at_base_bcd["lane"] == other_lane]["pnl_impact_1000mt_inr"].abs().max()
+    long_60 = abs(shock_o["net_arb_inr_t"] - base_o["net_arb_inr_t"]) * 1000 / 1e6
     lines += [f"Freight matters little on the short Gulf lane (JEA_NSA freight ≈ USD "
-              f"{_num(model.parity_row(ref.week_end, ref.grade, ref.lane, inputs=r.inputs)['freight_usd_t'])}/t). "
-              f"For scale, the same week on {other_lane} (freight USD {_num(base_o['freight_usd_t'])}/t): +60% "
-              f"freight on FOB terms costs ₹{abs(shock_o['net_arb_inr_t'] - base_o['net_arb_inr_t']) * 1000 / 1e6:,.2f}"
-              f" mn per 1,000 MT. A BCD rise from 2.5% to 5% costs ₹{bcd5.min() / 1e6:,.2f}–{bcd5.max() / 1e6:,.2f} mn "
-              f"per 1,000 MT at the two reference weeks, against at most ₹{max_freight / 1e6:,.2f} mn for any freight "
-              "shock in the Gulf-lane grid at the base duty. Charts: `p1_sensitivity_lme_fx.png`, "
-              "`p1_sensitivity_freight_duty.png`.", ""]
+              f"{_num(model.parity_row(ref.week_end, ref.grade, ref.lane, inputs=r.inputs)['freight_usd_t'])}/t): at "
+              f"the base duty no freight shock in the Gulf-lane grid moves the margin by more than "
+              f"₹{gulf_freight / 1e6:,.2f} mn per 1,000 MT. For scale, the same week on {other_lane} (freight USD "
+              f"{_num(base_o['freight_usd_t'])}/t): +60% freight on FOB terms costs ₹{long_60:,.2f} mn per 1,000 MT "
+              f"— the `first_eligible_long_lane` row of `parity_sensitivity_freight_duty.csv`, published so this "
+              f"number can be checked without re-running the model (worst long-lane shock at the base duty "
+              f"₹{long_freight / 1e6:,.2f} mn). A BCD rise from 2.5% to 5% costs ₹{bcd5.min() / 1e6:,.2f}–"
+              f"{bcd5.max() / 1e6:,.2f} mn per 1,000 MT across the reference cases. Charts: "
+              "`p1_sensitivity_lme_fx.png`, `p1_sensitivity_freight_duty.png`.", ""]
     return lines
 
 
@@ -804,6 +856,8 @@ def _doc_closing(r: Results) -> list[str]:
     fall = cash[low_day] / cash[peak_day] - 1
     band = r.cases_long[r.cases_long["in_window"] & r.cases_long["required"]].groupby(
         ["week_end", "grade", "lane"])["net_arb_inr_t"].agg(lambda x: x.max() - x.min())
+    win = r.parity[r.parity["in_window"]]
+    n_win, n_elig, n_pit = len(win), int(win["trade_eligible"].sum()), int(win["trade_eligible_pit"].sum())
     return [
         "## 12. Hindsight and provenance disclosure", "",
         "- **Freight levels are hindsight reconstructions** (CONTRACTS §4.3): the WCI shape is PROXY, the lane levels "
@@ -811,8 +865,10 @@ def _doc_closing(r: Results) -> list[str]:
         f"(`freight_weekly.csv` notes, {len(fw)} weeks). Under CFR terms freight only moves the FOB memo; under FOB "
         "terms see §8(b).",
         "- **The lag-2 grade mix is a hindsight reconstruction**: DGCIS unit values for month m+2 were not published "
-        "during month m. That is why §5a requires the point-in-time mix — itself an ASSUMPTION about the DGCIS release "
-        "lag (verify PENDING).",
+        "during month m. §5a adds the point-in-time mix as a screen against exactly that — itself an ASSUMPTION about "
+        "the DGCIS release lag (verify PENDING) — **but on this panel that screen never binds, so `trade_eligible` "
+        "reduces to a screen built on the lag-2 reconstruction (§6.1).** The eligibility calendar is therefore not a "
+        "point-in-time calendar, and `trade_eligible_pit` is published beside it to show the difference.",
         "- Grade differentials, the anchor premium and conversion cost come from 2024–25 evidence applied to 2022 "
         "(ASSUMPTION). USD/INR is the ECB cross (PROXY for the RBI reference rate). MCX is the import-parity proxy.",
         "- The realised M+1 averages and every 'hindsight_' column are labelled and are never inputs to a flag.",
@@ -824,6 +880,10 @@ def _doc_closing(r: Results) -> list[str]:
         "than a ₹5,000/t hurdle, which assumption moves that answer, and by how much a price, FX, freight or duty shock "
         "changes it. It gives Component 2 a rule it cannot bend after the fact: trade only where the base, the "
         "point-in-time grade mix and a higher conversion cost all agree.", "",
+        "**Doesn't, first:** that rule is *unbendable*, not *point-in-time*. Two of its three screens read the lag-2 "
+        "grade mix, the third never binds, and §6.1 measures what that costs: the no-hindsight gate would have been "
+        f"open in {n_pit} of {n_win} in-window cases against the published rule's {n_elig}, including every week of "
+        "the June–July trough. Anyone quoting the book's standing-aside as discipline must quote that with it.", "",
         "**Doesn't:** it is not a record of real 2022 margins. No 2022 scrap grade quote, secondary-ingot price or "
         "freight fixture was retrievable, so the level of the margin (tens of thousands of rupees in March, below zero "
         f"in July) is a model output, not a market fact; the spread between the required cases (median "

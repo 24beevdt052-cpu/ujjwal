@@ -39,7 +39,7 @@ from desk.book.schema import (
     ValidationError,
     load_book,
 )
-from desk.paths import CONFIG_DIR, DOCS_DIR, TABLES_DIR
+from desk.paths import CONFIG_DIR, DOCS_DIR, PROCESSED_DIR, TABLES_DIR
 
 TRADES_YAML = CONFIG_DIR / "trades.yaml"
 COUNTERPARTIES_YAML = CONFIG_DIR / "counterparties.yaml"
@@ -110,11 +110,16 @@ def trade_book_rows(book: Book, elig: pd.DataFrame) -> pd.DataFrame:
             qty = sum(t.lot_weight_mt(t.lot(lid)) for lid in s.lot_ids)
             sale_values[s.sale_id] = qty * _sale_price_at(t, s, s.contract_date)
 
-        demurrage_usd = 0.0
+        # Two numbers, because they answer different questions and the engine currently computes the first.
+        # `flat` charges every chargeable day at the FIRST-slab rate, which is what desk/mtm/lifecycle.py does;
+        # `tiered` walks the registered detention slabs, which is what a carrier actually invoices once a delay
+        # runs past five days. The engine must move to `desk.book.validate.demurrage_usd` (docs/20 §12).
+        demurrage_usd = demurrage_usd_tiered = 0.0
         for l in sched.lots:
             rejected = sum(q.rejected_boxes for q in t.events.quality if q.lot_id == l.lot_id)
             demurrage_usd += ((l.boxes - rejected) * l.chargeable_dwell_days
                               * float(config.value("demurrage_usd_per_box_day", t.trade_date)))
+            demurrage_usd_tiered += V.demurrage_usd(l.boxes - rejected, l.chargeable_dwell_days, l.arrival)
 
         purchase_usd = (t.quantity_mt * t.purchase.pricing.price_usd_t
                         if t.purchase.pricing.type is PurchasePricingType.FIXED else None)
@@ -148,8 +153,14 @@ def trade_book_rows(book: Book, elig: pd.DataFrame) -> pd.DataFrame:
             "named_place": t.purchase.named_place,
             "freight_booked_by": ("SELLER (inside the CFR price)" if t.freight is None
                                   else t.freight.booked_by),
-            "freight_risk_borne_by": ("SELLER until discharge; the desk's CFR price does not move with freight"
-                                      if t.freight is None else "DESK"),
+            # Two different risks, and the first draft of this book ran them together. Under BOTH FOB and CFR
+            # (Incoterms 2020 A2/B2) the risk of loss or damage passes to the BUYER when the goods are on board
+            # at the load port — CFR moves the *cost* of carriage to the seller, never the risk. What differs is
+            # who carries the freight PRICE risk, which is what this column is about.
+            "cargo_risk_passes": "on board at the load port (Incoterms 2020: FOB A2/B2 and CFR A2/B2 alike)",
+            # The column keeps its published name (desk/excel reads it) and its short shape, but it now means
+            # only the freight PRICE risk; `cargo_risk_passes` carries what the incoterm does to title risk.
+            "freight_risk_borne_by": ("SELLER (inside the CFR price)" if t.freight is None else "DESK"),
             "moisture_franchise_frac": round(float(t.purchase.spa.moisture_franchise_frac
                                                    or config.value("standard_moisture_franchise_frac",
                                                                    t.trade_date)), ROUND["frac"]),
@@ -164,7 +175,11 @@ def trade_book_rows(book: Book, elig: pd.DataFrame) -> pd.DataFrame:
                                                                  t.trade_date)), ROUND["frac"]),
             "radioactivity_clause_key": t.purchase.spa.radioactivity_clause_key,
             "penalty_schedule_key": t.purchase.spa.penalty_schedule_key,
-            "quantity_tolerance_frac": round(t.purchase.spa.quantity_tolerance_frac, ROUND["frac"]),
+            "quantity_tolerance_frac": (None if t.purchase.spa.quantity_tolerance_frac is None
+                                        else round(t.purchase.spa.quantity_tolerance_frac, ROUND["frac"])),
+            "lc_amount_tolerance_frac": round(
+                V.LC_AMOUNT_TOLERANCE_FRAC if t.purchase.spa.quantity_tolerance_frac is None
+                else t.purchase.spa.quantity_tolerance_frac, ROUND["frac"]),
             "purchase_pricing_type": t.purchase.pricing.type.value,
             "purchase_price_usd_t": (None if t.purchase.pricing.price_usd_t is None
                                      else round(t.purchase.pricing.price_usd_t, ROUND["usd_t"])),
@@ -291,6 +306,7 @@ def trade_book_rows(book: Book, elig: pd.DataFrame) -> pd.DataFrame:
                 f"{b.event_id}: {b.sale_id} +{b.delay_days}d, known {b.known_date} (SIM)"
                 for b in t.events.buyer_payment_delay),
             "demurrage_usd_at_plan": round(demurrage_usd, ROUND["usd"]),
+            "demurrage_usd_at_plan_tiered": round(demurrage_usd_tiered, ROUND["usd"]),
             # --- lifecycle
             "last_cashflow_date": sched.last_cashflow.isoformat(),
             "close_date": sched.close_date.isoformat(),
@@ -474,6 +490,169 @@ def _md_table(df: pd.DataFrame, columns: dict[str, str], fmt: dict[str, Any] | N
     return "\n".join(lines)
 
 
+# ------------------------------------------------------------------------------- review-era doc computations
+# Each of these answers a finding raised by an independent reviewer and is computed here, from the panel and the
+# book, so the page can never drift from the tables. None of them changes a ticket.
+def _screen_overlap() -> dict[str, int]:
+    """How the three CONTRACTS §5a screens actually interact over the window (they are not independent)."""
+    from desk.parity import model
+
+    pw = model.load_parity()
+    w = pw[pw["in_window"].astype(bool)]
+    by_week = w.groupby("week_end")[["open_base", "open_pit_mix", "open_conv18k", "trade_eligible"]].sum()
+    # The longest run of consecutive weeks the gate shut while the no-hindsight screen stayed open: the book's
+    # most visible piece of "discipline", and the screen that produced it is the reconstructed one.
+    best = cur = []
+    for week, r in by_week.iterrows():
+        if r["trade_eligible"] == 0 and r["open_pit_mix"] > 0:
+            cur = cur + [(week, int(r["open_pit_mix"]))]
+            best = cur if len(cur) > len(best) else best
+        else:
+            cur = []
+    return {
+        "cases": len(w),
+        "base": int(w["open_base"].sum()),
+        "pit": int(w["open_pit_mix"].sum()),
+        "conv18k": int(w["open_conv18k"].sum()),
+        "eligible": int(w["trade_eligible"].sum()),
+        "pit_excludes_alone": int((w["open_conv18k"] & ~w["open_pit_mix"]).sum()),
+        "pit_open_conv_shut": int((w["open_pit_mix"] & ~w["open_conv18k"]).sum()),
+        "rows_all": len(pw),
+        "identical": int((pw["trade_eligible"] == pw["open_conv18k"]).sum()),
+        "shut_weeks": len(best),
+        "shut_from": "" if not best else str(best[0][0].date()),
+        "shut_to": "" if not best else str(best[-1][0].date()),
+        "shut_pit_min": 0 if not best else min(x[1] for x in best),
+        "cases_per_week": int(len(w) / max(len(by_week), 1)),
+    }
+
+
+def _roll_pnl(mcx: pd.DataFrame) -> tuple[int, float]:
+    """(number of rolls, their total ₹ P&L). On the panel's deterministic curve every one of them is a gain."""
+    m = mcx.set_index("hedge_id")
+    rolls, total = 0, 0.0
+    for _, r in m.iterrows():
+        if r["exit_reason"] != "ROLL" or not isinstance(r["roll_to"], str):
+            continue
+        tgt = m.loc[r["roll_to"]]
+        sign = 1.0 if r["direction"] == "SELL" else -1.0
+        total += sign * (tgt["entry_price_inr_kg"] - r["exit_price_inr_kg"]) * r["position_mt"] * units.KG_PER_MT
+        rolls += 1
+    return rolls, total
+
+
+def _freight_counterfactual(book: Book) -> pd.DataFrame:
+    """Fix on the trade date vs wait to the book-by date — the decision the stop-loss was standing in for."""
+    rows = []
+    for t in book.trades:
+        f = t.freight
+        if f is None or f.fixture_date is None or f.rate_usd_box is None:
+            continue
+        i_trade = V._freight_index_usd_box(t.trade_date, t.lane)
+        i_fix = V._freight_index_usd_box(f.fixture_date, t.lane)
+        spread = f.rate_usd_box / i_fix - 1.0
+        fix_now = i_trade * (1 + spread)
+        rows.append({"trade_id": t.trade_id, "boxes": t.boxes, "trade_date": t.trade_date.isoformat(),
+                     "index_at_trade": i_trade, "fix_now_usd_box": fix_now,
+                     "fixture_date": f.fixture_date.isoformat(), "index_at_fixture": i_fix,
+                     "rate_usd_box": f.rate_usd_box, "saved_usd": (fix_now - f.rate_usd_box) * t.boxes,
+                     "stop_usd_box": f.stop_loss.stop_loss_usd_box if f.stop_loss else None,
+                     "headroom_frac": (f.stop_loss.stop_loss_usd_box / i_fix - 1.0) if f.stop_loss else None})
+    return pd.DataFrame(rows)
+
+
+def _spread_sensitivity(book: Book) -> pd.DataFrame:
+    """What the three fixtures cost at other NVOCC spreads. The 1.7-2.0 % used is an ASSUMPTION with no evidence."""
+    rows = []
+    for t in book.trades:
+        f = t.freight
+        if f is None or f.fixture_date is None or f.rate_usd_box is None:
+            continue
+        i_fix = V._freight_index_usd_box(f.fixture_date, t.lane)
+        row = {"trade_id": t.trade_id, "boxes": t.boxes, "actual_spread": f.rate_usd_box / i_fix - 1.0,
+               "actual_usd": t.boxes * f.rate_usd_box}
+        for sp in V.FIXTURE_SPREAD_SENSITIVITY:
+            row[f"usd_at_{sp:.0%}"] = t.boxes * i_fix * (1 + sp)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def _laycan_slip(book: Book) -> pd.DataFrame:
+    """The quotational-period risk the three M+1 tickets carry and the book never realises: no lot slips a month."""
+    panel = V.panel()
+    rows = []
+    for t in book.trades:
+        if t.purchase.pricing.type is not PurchasePricingType.LME_M1_AVG:
+            continue
+        sched = V.ticket_schedule(t)
+        qp = dt.date.fromisoformat(sched.qp_month + "-01")
+        nxt = (qp + dt.timedelta(days=32)).replace(day=1)
+        a = panel.loc[qp.isoformat():(nxt - dt.timedelta(days=1)).isoformat(), "lme_cash_usd_t"].mean()
+        end_nxt = (nxt + dt.timedelta(days=32)).replace(day=1) - dt.timedelta(days=1)
+        b = panel.loc[nxt.isoformat():end_nxt.isoformat(), "lme_cash_usd_t"].mean()
+        last = t.shipment.lots[-1]
+        qty = t.lot_weight_mt(last)
+        usd = t.purchase.pricing.factor_frac * (a - b) * qty
+        fx = float(V.panel_row(V._last_panel_day(sched.pricing_end))["usdinr"])
+        rows.append({"trade_id": t.trade_id, "qp_month": sched.qp_month, "qp_avg": a,
+                     "next_month": nxt.strftime("%Y-%m"), "next_avg": b, "lot_id": last.lot_id,
+                     "lot_bl": last.bl_date.isoformat(), "laycan_end": t.shipment.laycan_end.isoformat(),
+                     "slack_days": (t.shipment.laycan_end - last.bl_date).days,
+                     "qty_mt": qty, "swing_usd": usd, "swing_inr": usd * fx})
+    return pd.DataFrame(rows)
+
+
+def _desk_share_table(book: Book) -> pd.DataFrame:
+    """Day-one sale margin at other splits of the modelled arbitrage, and at a flat trading margin.
+
+    The book's sale price is `replacement + 50 % x (netback - replacement)` adjusted for payment terms. That 50 %
+    is a convention, not a quote, and it is the single largest judgement in the book — so the page publishes what
+    the same nine tickets would have made at other conventions instead of only defending this one.
+    """
+    sales = [(t, s) for t in book.trades for s in t.sales]
+    refs = {(t.trade_id, s.sale_id): V.market_reference(s.contract_date, t.grade.value, t.lane.value)
+            for t, s in sales}
+    qty = {(t.trade_id, s.sale_id): sum(t.lot_weight_mt(t.lot(l)) for l in s.lot_ids) for t, s in sales}
+    rows = []
+    for share in (V.DESK_ARB_SHARE_FRAC, 0.25, 0.10, 0.0):
+        total = 0.0
+        for t, s in sales:
+            r = refs[(t.trade_id, s.sale_id)]
+            mid = r["replacement_inr_t"] + share * (r["netback_inr_t"] - r["replacement_inr_t"])
+            price = mid + V.sale_terms_delta_inr_t(s, mid, s.contract_date)
+            total += qty[(t.trade_id, s.sale_id)] * (price - r["replacement_inr_t"])
+        rows.append({"basis": f"{share:.0%} of the modelled arbitrage"
+                              + ("  ← the book" if share == V.DESK_ARB_SHARE_FRAC else ""),
+                     "day_one_margin_inr": total})
+    for flat in (5000.0, 8000.0):
+        rows.append({"basis": f"a flat ₹{flat:,.0f}/MT trading margin over replacement",
+                     "day_one_margin_inr": sum(qty[k] * flat for k in qty)})
+    return pd.DataFrame(rows)
+
+
+def _freight_weekly_stats() -> dict[str, Any]:
+    """How fast the reconstructed lane index can actually move — the test of whether a +15 % stop could bind."""
+    f = pd.read_csv(PROCESSED_DIR / "freight_weekly.csv", parse_dates=["week_end"])
+    y = f[(f["week_end"] >= "2022-01-01") & (f["week_end"] <= "2022-09-30")].copy()
+    out: dict[str, Any] = {}
+    for lane, col in (("usec", "freight_usec_mun_usd_t"), ("jea", "freight_jea_nsa_usd_t")):
+        pct = y[col].pct_change()
+        out[f"{lane}_max_rise"] = float(pct.max())
+        out[f"{lane}_max_rise_week"] = str(y.loc[pct.idxmax(), "week_end"].date())
+        window = pct[(y["week_end"] >= "2022-03-04") & (y["week_end"] <= "2022-07-29")]
+        out[f"{lane}_window_max_rise"] = float(window.max())
+    return out
+
+
+def _freight_note(week_end: str) -> str:
+    """The Phase 0 provenance sentence for one freight week, quoted rather than paraphrased."""
+    f = pd.read_csv(PROCESSED_DIR / "freight_weekly.csv")
+    row = f[f["week_end"] <= week_end]
+    if row.empty:
+        return ""
+    return str(row.iloc[-1]["note"])
+
+
 def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame, issues) -> str:
     """The recruiter-facing methods page, rendered from the same frames the CSVs are written from.
 
@@ -481,6 +660,7 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     tables cannot disagree. Prose that is a judgement is written as a judgement and labelled.
     """
     tb, hd, el = tables["trade_book.csv"], tables["trade_hedges.csv"], tables["trade_eligibility_check.csv"]
+    credit = tables.get("trade_credit_exposure.csv", credit)
     mcx, fx, frt = (hd[hd["instrument"] == k] for k in ("MCX_ALUMINIUM_FUTURE", "USDINR_FORWARD",
                                                         "FREIGHT_FIXTURE"))
     by_id = {t.trade_id: t for t in book.trades}
@@ -517,9 +697,13 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("> anything that happened, and no price quoted below was offered by anybody. What is real is the market")
     A("> data the decisions were taken against, and the discipline that only eligible weeks were traded.\n")
     A("Generated by `desk.book.run.main()` from `config/trades.yaml` and `config/counterparties.yaml`. Every")
-    A("number on this page is read out of `outputs/tables/trade_book.csv`, `trade_hedges.csv` and")
-    A("`trade_eligibility_check.csv`, so the page and the tables cannot disagree. Re-running reproduces all four")
-    A("byte-for-byte.\n")
+    A("number on this page is read out of `outputs/tables/trade_book.csv`, `trade_hedges.csv`,")
+    A("`trade_eligibility_check.csv` and `trade_credit_exposure.csv`, so the page and the tables cannot disagree,")
+    A("with three stated exceptions that are computed here from the same panel and printed with their working:")
+    A("the eligibility-screen overlap in §3, the counterfactuals in §6.4-§6.5, and the sensitivity in §4.")
+    A("(The §2 credit ladder used to be one of those exceptions — computed in-process and published nowhere,")
+    A("which is exactly where two phases came to disagree about \"peak utilisation\"; it is a published table now.)")
+    A("Re-running reproduces every file byte-for-byte.\n")
     A("Upstream: MASTER_SPEC_V3 Table 4; CONTRACTS §5 (desk economics), §5a (trade eligibility), §7/§7a")
     A("(position model); `docs/design/30_position_model.md`; `docs/10_parity_model.md` and")
     A("`outputs/tables/parity_weekly.csv`.\n")
@@ -550,7 +734,13 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
       f"across {len(credit)} sale contracts with advance, advance-plus-credit and 30- and 45-day credit terms. "
       f"{len(mcx)} MCX tranches ({int((mcx['exit_reason'] == 'ROLL').sum())} of them rolls), {len(fx)} USD/INR "
       f"forwards and {len(frt)} freight fixtures.\n")
-    A("**Why nine and not ten.** The §5a gate leaves 82 eligible week × grade × lane cases in the window, but")
+    A("**Box weights.** Six tickets load below MASTER_SPEC Table 4 row 2.1's indicative 24-26 MT/box: the US-lane")
+    A("40ft boxes take 21.0 MT because the US federal gross vehicle weight limit binds on the road before the box")
+    A("is full (`container_payload_mt_40ft`, ASSUMPTION, verify PENDING), and Taint/Tabor loads 20.0 MT in a 20ft")
+    A("box on density. Only T02/T09 (25.0) and T06 (26.0) sit inside the spec's range. Every tonnage on this page")
+    A("is boxes × the registered payload, so the departure moves quantities, never prices.\n")
+    A(f"**Why nine and not ten.** The §5a gate leaves {_screen_overlap()['eligible']} eligible week × grade × "
+      f"lane cases in the window, but")
     A("they are not evenly spread: Zorba and Taint/Tabor close in the first week of May, Tense closes on")
     A("10-Jun and only reopens on 22-Jul, and the 40-day US lane cannot be used after early June without a")
     A("Bill of Entry that would take the IGST credit past 31-Oct. Nine tickets is what those three constraints")
@@ -568,7 +758,8 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("one JNPT-belt smelter in the book, so it takes every Gulf-lane cargo. Its peak credit utilisation is")
     A(f"{credit[credit['buyer_id'] == 'BUY_JNPT_01']['utilisation_frac'].max():.0%}. Phase 5's credit model")
     A("should read that concentration as a real exposure, not as a modelling convenience.\n")
-    A("Credit exposure at each booking (the number P04 checks):\n")
+    A("Credit exposure at each booking (the number P04 checks; published as")
+    A("`outputs/tables/trade_credit_exposure.csv`):\n")
     A(_md_table(credit, {"contract_date": "Booked", "trade_id": "Trade", "sale_id": "Sale",
                          "buyer_id": "Buyer", "qty_mt": "MT", "price_inr_t": "₹/MT",
                          "invoice_value_inr": "Invoice ₹", "credit_value_inr": "On credit ₹",
@@ -577,6 +768,21 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
                 {"qty_mt": ",.0f", "price_inr_t": ",.0f", "invoice_value_inr": inr,
                  "credit_value_inr": inr, "exposure_after_inr": inr, "credit_limit_inr": inr,
                  "utilisation_frac": pct}))
+
+    A("")
+    adv_warnings = [i for i in issues if i.code == "P14"]
+    A("**The exposure this table cannot see, and the book's largest.** A limit caps *credit*: invoiced-and-unpaid")
+    A("receivables plus the uncovered part of contracted sales. An advance is not credit the desk extends, so it")
+    A("never appears above — and on this book the advances are far larger than the receivables they replace.")
+    A("Rule P14 prices that honestly and it fires three times, all on the weakest name in the book:\n")
+    for i in adv_warnings:
+        A(f"- `{i.where}` — {' '.join(i.message.split())}")
+    A("")
+    A("Those three warnings are deliberate and are not cleared. The desk took them because there is no other home")
+    A("on the Mundra lane for a US-origin Taint/Tabor or Tense parcel, and it says so on the T07 ticket on the")
+    A("trade date. A reader should take from §2 that a book which never breaches a receivable limit can still be")
+    A("running its largest single exposure to its weakest counterparty — and that Phase 5's credit model should")
+    A("score pre-settlement performance exposure, not only receivables.\n")
 
     # ------------------------------------------------------------------ 3. eligibility
     A("\n\n## 3. Trade discipline — the eligibility evidence (Table 4 row 2.9, CONTRACTS §5a)\n")
@@ -598,6 +804,26 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("reconstruction rather than something a 2022 desk could have banked — and the tickets written in those")
     A("weeks are correspondingly small. By late May the two screens cross over and the point-in-time number")
     A("becomes the friendly one (T07: ₹39,374 against ₹22,935). The desk sizes off whichever is smaller.\n")
+    ov = _screen_overlap()
+    A("**The three screens are not three independent screens, and this page used to imply they were.** Over the")
+    A(f"window's {ov['cases']} week × grade × lane cases the base screen is open {ov['base']} times, the")
+    A(f"point-in-time-mix screen {ov['pit']} times and the conversion-stressed screen {ov['conv18k']} times — and")
+    A(f"`trade_eligible` equals `open_conv18k` on all {ov['identical']} rows of `parity_weekly.csv`, not just in")
+    A(f"the window. The point-in-time screen excludes **{ov['pit_excludes_alone']}** cases that the stressed screen")
+    A(f"does not already exclude, while the stressed screen shuts {ov['pit_open_conv_shut']} cases the")
+    A("point-in-time screen would have left open. Both the base and the stressed screen run on the same lag-2")
+    A("reconstructed grade mix, so **the binding gate is a hindsight-mix screen** and the no-hindsight screen")
+    A("never binds. Two consequences a reader is entitled to:\n")
+    A(f"1. The book's most visible piece of discipline — standing aside for the {ov['shut_weeks']} consecutive")
+    A(f"   weeks from {ov['shut_from']} to {ov['shut_to']}, the last leg of the crash — was produced by a screen a")
+    A(f"   2022 desk could not have computed. On every one of those weeks the point-in-time screen was open on at")
+    A(f"   least {ov['shut_pit_min']} of the {ov['cases_per_week']} grade × lane cases. A desk actually trading the")
+    A("   point-in-time screen would have kept buying into the low.")
+    A("2. Entry *timing* in this book is therefore not point-in-time, even though every ticket's price, factor,")
+    A("   fixture and hedge size is re-derived from data dated on or before its own day. The §5a rule was")
+    A("   declared before Phase 1 ran and may not be changed after seeing results, so the rule stays and the")
+    A("   claim about it changes. Phase 1 owns the honest alternative gate and what it would have cost")
+    A("   (`docs/10_parity_model.md` §5a).\n")
 
     # ------------------------------------------------------------------ 4. desk policy
     A("\n## 4. The desk policy this book was written to\n")
@@ -622,8 +848,11 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
       "closed after it, so a hedge against a formula leg is lifted once, at the midpoint, rather than in n "
       "pieces. | midpoint day | P07 |")
     A(f"| H6 | Cover **100 % of the contracted USD payable** with deliverable forwards matched to the payment "
-      f"date; on a formula purchase only the provisional invoice is coverable at the B/L. One ticket covers "
-      f"{tb['fx_hedge_frac_target'].min():.0%} by exception. | 1.00 (T06 0.60) | schema V18 |")
+      f"date, **dealt on the bill of lading** — the first day on which both the amount and the payment date "
+      f"exist. The desk is therefore uncovered in USD between the trade date and the first B/L and says so; on "
+      f"a formula purchase only the provisional invoice is coverable at the B/L, and the final balance waits "
+      f"for the quotational month to close. One ticket covers {tb['fx_hedge_frac_target'].min():.0%} by "
+      f"exception. | 1.00 (T06 0.60) | schema V18 |")
     A(f"| F1 | **Freight is not hedged.** No accessible India-lane container derivative existed in 2022, so an "
       f"FOB cargo floats under a written stop-loss at the trade-date lane index **+ "
       f"{V.FREIGHT_STOP_LOSS_FRAC:.0%}**, with a hard book-by date "
@@ -632,28 +861,72 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
       f"{V.FIXTURE_SPREAD_BAND[1]:.0%} over the assessed lane index** of the fixture date. The spread itself is "
       f"an ASSUMPTION — no 2022 India-inbound fixture evidence exists in the cached sources. | 0–5 % | P05 |")
     A(f"| S1 | A domestic sale is priced at **replacement value + {V.DESK_ARB_SHARE_FRAC:.0%} × (smelter "
-      f"netback − replacement value)** on the contract date, adjusted by a stated negotiation delta "
-      f"(−₹500/MT × advance fraction, +₹500/MT per fortnight of credit past 30 days) and rounded. | 50 % of "
-      f"the gap | P09 |")
+      f"netback − replacement value)** on the contract date, then adjusted for payment terms at the desk's own "
+      f"`wc_rate_inr_pa` — an advance is worth `price × wc × 30 days × advance fraction`, credit past "
+      f"{V.SALE_CREDIT_BASELINE_DAYS} days costs `price × wc × extra days` — and rounded to the nearest "
+      f"₹{V.SALE_PRICE_ROUNDING_INR_T:,.0f}/MT. Both sides are the same arithmetic; the first draft paid a flat "
+      f"₹500/MT for an advance and charged ₹500/MT a fortnight for credit, and both errors ran the desk's way. "
+      f"| 50 % of the gap | P09 |")
     A(f"| S2 | The desk bids **0–{V.PURCHASE_DISCOUNT_BAND_USD_T[1]:.0f} USD/t under the trade-date parity "
       f"price** on the incoterm basis; a formula purchase is contracted 0–1.0 point under the trade-date grade "
       f"factor. | 0–30 USD/t | P10 |")
     A("| C1 | A buyer's **credit limit** caps receivables plus the not-advance-covered part of contracted "
       "sales. A parcel that will not fit is sold on an advance, or waits for the previous invoice to clear. "
-      "Credit days never exceed `msme_max_payment_days` (45, DIRECT). | per counterparty | P04, V09 |")
+      "Credit days never exceed `max_domestic_credit_days` (45, ASSUMPTION — a **desk policy cap, not the "
+      "MSMED Act**: s.15 binds a buyer purchasing from a registered micro/small *supplier*, and here the desk "
+      "is the seller and is not MSME-registered, so the statute reaches no sale in this book). "
+      "| per counterparty | P04, V09 |")
+    A("| C2 | An **advance the desk relies on** is performance exposure, not credit, and is capped at "
+      "`buyer_advance_limit_multiple_of_credit_limit` x that buyer's own limit. This book breaches it three "
+      "times, deliberately and on the record (§2). | 1.00x | P14 |")
+    A("| L1 | The **documentary credit is opened at least `lc_open_days_before_laycan_min` days before the "
+      "laycan opens**, so the seller can have it checked and amended before it starts stuffing boxes. "
+      "| 10 days | V11 |")
     A("")
     A("**Why a 50/50 split on the sale.** Phase 1's net arbitrage is dominated by `domestic_anchor_premium_inr_t`,")
     A("an ASSUMPTION whose own evidence spans −₹52k to +₹13k/t. Letting the desk take the whole modelled")
     A("arbitrage would put ₹30,000/MT of March margin on the book on the strength of one assumption. Splitting")
     A("it in half is the conservative reading and the one a competitive import market would produce; it is a")
     A("stated convention, not an observation, and it is the single largest judgement on this page.\n")
+    A("**And here is what that judgement is worth, because defending it is not enough.** Nobody ever quoted this")
+    A("desk a price. Both sides of every trade are set by the desk's own two rules — S2 against its own parity")
+    A("on the buy, S1 against its own replacement-and-netback bounds on the sell — so the day-one margin below")
+    A("is an arithmetic property of those rules and not the outcome of a negotiation. The same nine tickets,")
+    A("repriced at other conventions with nothing else changed:\n")
+    A(_md_table(_desk_share_table(book),
+                {"basis": "Sale priced at", "day_one_margin_inr": "Day-one sale margin ₹"},
+                {"day_one_margin_inr": lambda v: f"{v/1e6:,.1f} mn"}))
+    A("")
+    A("Day-one sale margin is Σ tonnes × (contracted sale price − import replacement value on the contract date):")
+    A("what the book books the moment a sale is signed, before any market move. Read it as the width of one")
+    A("judgement, not as a P&L. At a 25 % share the book keeps under half of it; at a flat ₹5,000–8,000/MT —")
+    A("which is what a competitive import market actually pays a middleman — two fifths to two thirds; at 0 % the")
+    A("desk is a logistics provider working for its payment terms. The purchase side is narrower and points the")
+    A("same way: rule S2 allows 0–30 USD/t under parity and all six fixed-price tickets sit at 10–15 USD/t, the")
+    A("top third of the desk's own band, across six independent 'negotiations' with three suppliers over five")
+    A("months. Phase 3 should be read with this table beside it.\n")
 
     # ------------------------------------------------------------------ 5. ticket cards
     A("\n## 5. Ticket cards\n")
     A("Every Table 4 field for each trade, with the trader's rationale as written on the trade date. Dates in")
     A("a rationale are checked by `desk.book.validate` (code P08): a rationale may cite a market fact only with")
     A("a date on or before its own trade date, and a forward reference is allowed only where the ticket itself")
-    A("declares that period as a contract term.\n")
+    A("declares that period as a contract term. The numbers in it are checked too (P13, §9).\n")
+    A("**Read the Incoterm line carefully, because it says two different things.** Under **both** FOB and CFR")
+    A("(Incoterms 2020 A2/B2) the risk of loss or damage passes to the buyer when the goods are **on board at")
+    A("the load port**: CFR moves the *cost* of carriage to the seller, never the risk, and a CFR cargo that")
+    A("sinks mid-ocean is the desk's cargo. What the incoterm changes for this desk is who carries the freight")
+    A("*price* risk — the desk on FOB (it books the boxes, §6.4), the seller on CFR (freight is inside the price")
+    A("and a CFR-basis grade factor does not move when the lane does). An earlier draft of this page said risk")
+    A("sat with the seller until discharge on CFR, which is simply wrong, and the card now separates the two.\n")
+    A("**And on using FOB/CFR for containers at all.** ICC's own guidance recommends FCA/CPT/CIP for")
+    A("containerised cargo, precisely because \"on board\" does not describe a CY or terminal hand-over: the")
+    A("seller loses control of the box at the gate but keeps the risk until it is loaded, days later. This book")
+    A("uses FOB and CFR anyway, for one reason: that is what the non-ferrous scrap trade actually does — LC")
+    A("presentation is built around an on-board bill of lading, and a scrap SPA quoting CFR India is the market")
+    A("convention the grade factors in CONTRACTS §5 are quoted on. It is a deliberate departure from the ICC's")
+    A("preference, not an oversight, and the honest version of the answer is that the desk accepts a gate-to-")
+    A("loading gap it does not control on its three FOB tickets.\n")
     for _, r in tb.iterrows():
         t = by_id[r["trade_id"]]
         m = mcx[mcx["trade_id"] == r["trade_id"]]
@@ -677,11 +950,17 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
             f"{r['isri_grade_spec']}; moisture franchise {r['moisture_franchise_frac']:.3f}, contamination "
             f"limit {r['contamination_limit_frac']:.3f}, discount {r['discount_multiple']:.1f}× the excess, "
             f"rejection above +{r['rejection_excess_frac']:.3f}; radioactivity clause "
-            f"`{r['radioactivity_clause_key']}`, penalty schedule `{r['penalty_schedule_key']}`; LC quantity "
-            f"tolerance {r['quantity_tolerance_frac']:.0%}")
+            f"`{r['radioactivity_clause_key']}`, penalty schedule `{r['penalty_schedule_key']}`; "
+            + (f"SPA quantity tolerance {r['quantity_tolerance_frac']:.0%}, LC opened at the same "
+               f"{r['lc_amount_tolerance_frac']:.0%}" if pd.notna(r["quantity_tolerance_frac"])
+               else f"SPA states no quantity tolerance, so the LC is opened at UCP 600 art.30's "
+                    f"{r['lc_amount_tolerance_frac']:.0%}"))
         row("Incoterm (2.3)",
-            f"{r['named_place']}. Ocean freight booked by **{r['freight_booked_by']}**; freight risk borne by "
-            f"**{r['freight_risk_borne_by']}**")
+            f"{r['named_place']}. Ocean freight booked by **{r['freight_booked_by']}**; cargo risk passes "
+            f"{r['cargo_risk_passes']}; freight *price* risk borne by **{r['freight_risk_borne_by']}** — "
+            + ("a CFR-basis grade factor does not move when the lane does, so this cargo carries none for the "
+               "desk" if r["incoterm"] == "CFR"
+               else "the desk books the boxes under a written stop-loss (§6.4)"))
         row("Purchase price (2.4)",
             f"{r['purchase_pricing_type']}: "
             + (f"**{r['purchase_price_usd_t']:,.2f} USD/t** {r['incoterm']} against a trade-date parity of "
@@ -762,7 +1041,10 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
             row("Events (SIM)", ev
                 + (f". Chargeable dwell {r['chargeable_dwell_days']} day(s) per lot beyond "
                    f"{int(config.value('detention_free_days'))} free days ⇒ USD "
-                   f"{r['demurrage_usd_at_plan']:,.0f} of demurrage" if r["demurrage_usd_at_plan"] else ""))
+                   f"{r['demurrage_usd_at_plan_tiered']:,.0f} of detention up the registered slabs "
+                   f"(USD {r['demurrage_usd_at_plan']:,.0f} if every day were charged at the first-slab rate, "
+                   f"which is what the P3 engine still does — see §12)"
+                   if r["demurrage_usd_at_plan"] else ""))
         row("§5a evidence (2.9)",
             f"parity week {r['parity_week_end']}: base ₹{r['net_arb_inr_t']:,.0f}/MT, point-in-time mix "
             f"₹{r['net_arb_pit_mix_inr_t']:,.0f}/MT, conversion at ₹18k "
@@ -788,12 +1070,37 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("contract value (`mcx_al_margin_used_frac`, ASSUMPTION = 8 % minimum + 1 % ELM + ~1 % SPAN cushion). The")
     A("cash strain on a short book is on the way **up**, not on the way down: Phase 3's variation-margin")
     A("schedule should start at WINDOW_START for that reason.\n")
-    A("**Two execution facts worth reading.** First, on 08-Mar-2022 the near-month proxy moved −12.0 % against a")
-    A(f"{float(config.value('mcx_al_dpl_max_frac')):.0%} maximum daily price limit, so a real contract would have")
-    A("been limit-locked: T01 is bought on the 8th and hedged on the 9th, and carries one session naked rather")
-    A("than claiming a fill it could not have had. The validator warns (code P12) on any hedge action dated in a")
-    A("session beyond the slab. Second, a roll keeps the size of the line it continues, so the realised ratio")
-    A("drifts between decisions — that drift is visible in the `hedge_ratio_actual` column and is deliberate.\n")
+    A("**Three execution facts worth reading.** First, on 08-Mar-2022 the near-month proxy moved −12.0 % against")
+    A(f"a {float(config.value('mcx_al_dpl_max_frac')):.0%} maximum daily price limit, so a real contract would")
+    A("have been limit-locked: T01 is bought on the 8th and hedged on the 9th, and carries one session naked")
+    A("rather than claiming a fill it could not have had. The validator warns (code P12) on any hedge action")
+    A("dated in a session beyond the slab. Two things must be said beside that, and the first draft of this page")
+    A("said neither. The panel's MCX series is a computed import-parity proxy with **no price limits in it** — it")
+    A("prints the whole −12.0 % on the 8th — so the limit is a constraint the desk overlays on the proxy, not one")
+    A("the series contains; and on this occasion waiting a session was not a cost but a benefit, because the")
+    A("proxy had already printed the move and the 9th opened higher:")
+    t01 = mcx[(mcx["trade_id"] == "T01") & (mcx["entry_date"] == "2022-03-09")]
+    if len(t01):
+        gained = ((t01["entry_price_inr_kg"].iloc[0]
+                   - float(V.panel_row(dt.date(2022, 3, 8))["mcx_al_m2_inr_kg"]))
+                  * t01["position_mt"].sum() * units.KG_PER_MT)
+        A(f"the 300 lots went on at ₹{t01['entry_price_inr_kg'].iloc[0]:,.4f}/kg against the 08-Mar proxy close of")
+        A(f"₹{float(V.panel_row(dt.date(2022, 3, 8))['mcx_al_m2_inr_kg']):,.4f}/kg, which is "
+          f"**+₹{gained:,.0f}** on the hedge. A genuinely limit-locked contract would have gapped down on the 9th")
+        A("to catch up the unprinted move and the same delay would have cost money. The ticket says so.")
+    A("")
+    A("Second, the **roll is a gain by construction in this book and that is an artefact, not a result**. The")
+    A("panel builds MCX M1 and M2 from a single spot through a deterministic interest carry, so the modelled")
+    rolls_n, rolls_inr = _roll_pnl(mcx)
+    A(f"curve is in permanent contango: all **{rolls_n} rolls** in the book are gains, **₹{rolls_inr:,.0f}** in")
+    A("total, with no loss anywhere. A short that rolls in contango does collect the spread — but the real")
+    A("contract went into backwardation from 20-Jul-2022 (`lme_cash_3m_spread_usd_t` turns positive), where the")
+    A("same roll pays. Where a ticket calls the roll a *cost* of holding cargo (T07), that is the state of the")
+    A("world the proxy cannot show, and both the ticket and this page now say so. Phase 3's roll bucket should be")
+    A("read as the proxy's carry, not as evidence that rolling a short is free.")
+    A("")
+    A("Third, a roll keeps the size of the line it continues, so the realised ratio drifts between decisions —")
+    A("that drift is visible in the `hedge_ratio_actual` column and is deliberate.\n")
 
     A("\n### 6.2 Cross-exchange basis risk (Table 4 row 2.7c)\n")
     A("The desk owns LME-linked aluminium **scrap** and hedges it with MCX Aluminium, a **primary-ingot** contract")
@@ -831,10 +1138,23 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
                      "forward_mid_inr": "Mid ₹/USD", "rate_inr": "Dealt ₹/USD"},
                 {"notional_usd": ",.0f", "forward_mid_inr": ".4f", "rate_inr": ".4f"}))
     A("")
-    A("Three structures are worth pointing at. On the formula purchases the desk can only cover the **provisional**")
-    A("invoice at the B/L, because the final is not known until the quotational month closes: T02 books a")
-    A("**SELL_USD** on 01-Jun once the May average has come in below the provisional and the balance has become a")
-    A("supplier refund, and T05 simply **cancels** its final-invoice cover on 01-Jul for the same reason. T06")
+    A("**When each forward is dealt, and why it moved.** Every purchase-matched forward is booked **on the bill")
+    A("of lading**: that is the first day on which the desk knows both what it owes and when. The first draft of")
+    A("this book booked six tickets' forwards on the trade date with value dates that are exactly the actual")
+    A("B/L + 7 (or + 60) — dates nobody could have known when the forward was dealt, which made the hedge look")
+    A("perfect at zero cost. Under the convention this page now states, the desk instead runs an **uncovered USD")
+    A("payable from the trade date to the first B/L** (13 to 21 days on the fixed-price tickets), and that")
+    A("exposure is real and lands in Phase 3's FX bucket where it belongs. The alternative a desk with day-one")
+    A("certainty actually uses — cover at contract to an estimated date, then pay swap points to realign when the")
+    A("vessel moves — is NOT used here, because this project does not model swap points and a hedge whose")
+    A("realignment is free is worth more than a hedge. Say which one you are looking at before comparing.\n")
+    A("Two structures are worth pointing at. On the formula purchases the desk can only cover the **provisional**")
+    A("invoice at the B/L, because the final balance is unknown in size *and in sign* until the quotational month")
+    A("closes: T02 sells USD forward on 01-Jun once the May average has come in below the provisional and the")
+    A("balance has become a supplier refund, T05 does the same on 01-Jul after June closes, and T08 buys its")
+    A("balance forward on 01-Aug. (T05 previously carried a USD 200,000 **BUY** dealt at inception against an")
+    A("expected balance and cancelled when none appeared. That was not a hedge — it was a position on an unknown")
+    A("number, and it was removed in review; see §12.) T06")
     A(f"covers only {tb.loc[tb['trade_id'] == 'T06', 'fx_hedge_frac_target'].iloc[0]:.0%} of its payable on")
     A("purpose: the cargo had no rupee revenue contracted yet, and a fully covered payable against an")
     A("uncontracted sale is a view, not a hedge. The rupee then went from 77.26 to over 80, so that decision")
@@ -858,6 +1178,64 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("fixtures were taken on the book-by date. That is the honest freight story of 2022 and it is the opposite")
     A("of a spike: **freight was fixed high into a falling market**. `fixture_vs_market_inr` in Phase 3 will")
     A("measure that as a loss of competitiveness against a later importer, not as a loss on these cargoes.\n")
+    cf = _freight_counterfactual(book)
+    fw = _freight_weekly_stats()
+    A("**The stop-loss could not bind, so here is the decision that actually mattered.** A stop at +15 % of the")
+    A("trade-date index, live for at most ten business days, needed the reconstructed lane index to do something")
+    A(f"it never did: its largest weekly rise anywhere between Jan and Sep 2022 is "
+      f"{fw['usec_max_rise']:+.1%} (week to {fw['usec_max_rise_week']}, after the fixtures), and between 04-Mar")
+    A(f"and 29-Jul the largest weekly rise at all is {fw['usec_window_max_rise']:+.1%}. On the three fixture")
+    A(f"windows the stop sat {cf['headroom_frac'].min():.0%}–{cf['headroom_frac'].max():.0%} above the index —")
+    A("five consecutive record weeks, or thirty-odd typical ones, inside a ten-business-day life. Reporting")
+    A("'the stop was never touched' as discipline would therefore be reporting an unfalsifiable rule. The")
+    A("decision a desk really faces on an unbooked FOB cargo is **fix now, or stay open to the book-by date** —")
+    A("and that one is checkable:\n")
+    A(_md_table(cf, {"trade_id": "Trade", "trade_date": "Trade date", "index_at_trade": "Index then",
+                     "fix_now_usd_box": "Fix-now rate", "fixture_date": "Book-by date",
+                     "index_at_fixture": "Index then", "rate_usd_box": "Fixed at",
+                     "saved_usd": "Waiting gained USD"},
+                {"index_at_trade": ",.2f", "fix_now_usd_box": ",.0f", "index_at_fixture": ",.2f",
+                 "rate_usd_box": ",.0f", "saved_usd": ",.0f"}))
+    A("")
+    A(f"Waiting to the book-by date was worth **USD {cf['saved_usd'].sum():,.0f}** across the three cargoes — on")
+    A("a book of this size that is the entire freight layer, and it is the answer to Table 4 row 2.7(d), not the")
+    A("stop note. (Fix-now rate = the trade-date index at the same NVOCC spread the desk actually paid.)\n")
+    sp = _spread_sensitivity(book)
+    A("**And the spread itself is an assumption.** The desk pays 1.7–2.0 % over the assessed lane index on all")
+    A("three fixtures; no 2022 India-inbound NVOCC fixture exists in the cached sources, and real all-in margins")
+    A("on India-bound boxes in 2022 were wider than 2 %. What the same three fixtures cost at other spreads:\n")
+    A(_md_table(sp, {"trade_id": "Trade", "boxes": "Boxes", "actual_spread": "Spread paid",
+                     "actual_usd": "Paid USD", "usd_at_2%": "at +2 %", "usd_at_5%": "at +5 %",
+                     "usd_at_10%": "at +10 %"},
+                {"actual_spread": lambda v: f"{v:+.2%}", "actual_usd": ",.0f", "usd_at_2%": ",.0f",
+                 "usd_at_5%": ",.0f", "usd_at_10%": ",.0f"}))
+    A("")
+    A(f"At +10 % the three cargoes cost USD {sp['usd_at_10%'].sum() - sp['actual_usd'].sum():,.0f} more than the")
+    A("book pays — larger than everything the freight layer earned by waiting. The band in rule F2 is 0–5 %; the")
+    A("evidence for any point inside it is a judgement, and this row is where a reader should push.\n")
+
+    # ------------------------------------------------------------------ 6.5 schedule risk
+    A("\n### 6.5 Schedule risk — the exposure this book does not carry (Table 4 row 2.8)\n")
+    A("Nineteen sailings, twenty bills of lading, and until this review **not one day of schedule slippage**")
+    A("anywhere in the book — in the worst year for container schedule reliability on record. Two lots now carry")
+    A("the void-call arrival delay (T08, §7), which is the honest channel for that event, but every other B/L is")
+    A("still laycan-start + 2 days and every transit is still exactly the registered 5 or 40 days. That is a")
+    A("modelling convenience, and on the three M+1 tickets it is load-bearing rather than cosmetic: each asserts")
+    A("that its laycan sits inside one calendar month, **so the quotational period is fixed at signature**. If a")
+    A("bill of lading slips into the next month, the period moves with it and the purchase reprices against a")
+    A("different month's average:\n")
+    sl = _laycan_slip(book)
+    A(_md_table(sl, {"trade_id": "Trade", "lot_id": "Last lot", "lot_bl": "B/L", "laycan_end": "Laycan ends",
+                     "slack_days": "Slack days", "qty_mt": "MT", "qp_month": "QP", "qp_avg": "QP avg $",
+                     "next_month": "If it slips", "next_avg": "That avg $", "swing_inr": "Swing ₹"},
+                {"qty_mt": ",.0f", "qp_avg": ",.0f", "next_avg": ",.0f",
+                 "swing_inr": lambda v: f"{v/1e6:+,.1f} mn"}))
+    A("")
+    A("Read the size, not the sign: a single lot slipping one month is worth ₹1.5–9.4 mn on tickets whose whole")
+    A("day-one margin is a few tens of millions, and **T08's second B/L has one day of slack**. The book shows")
+    A("none of this exposure because no lot in it slips, which is not the same thing as the exposure not being")
+    A("there. A desk that prices M+1 must either buy laycan slack it can live with or accept that its quotational")
+    A("month is a coin toss on the last sailing; this book assumes the first and has not paid for it.\n")
 
     # ------------------------------------------------------------------ 7. events
     A("\n## 7. Operational events (Table 5 row 3.6, CONTRACTS §7.6)\n")
@@ -888,14 +1266,36 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("")
     A("The **logistics trigger is real and dated**: Container News, 27-Jul-2022, reported carriers voiding calls")
     A("at Nhava Sheva and Mundra (`docs/research/freight_notes.md` S4). The schema refuses any ticket that claims")
-    A("to know about it earlier. The dwell days attributed to it are simulated, and they are attached only to a")
-    A("lot that was actually in port at the time. The **buyer payment delay is entirely simulated** and is placed")
-    A("on the weakest name in the book, a Rajkot foundry that already pays 70 % of that parcel in advance — so")
-    A("the delay hits ₹96 mn of receivable rather than ₹321 mn of cargo, which is what the credit policy is for.")
+    A("to know about it earlier. The days attributed to it are simulated. **The channel matters and the first")
+    A("draft had it wrong**: a voided call is an ocean-side event, so its first-order effect is a rolled or")
+    A("omitted box — an arrival delay, not yard rent. That is now modelled where it can be, on T08, whose two")
+    A("lots were still at sea on 27-Jul (undelayed ETAs 01-Aug and 08-Aug). T07's two lots had already landed and")
+    A("cleared their Bills of Entry before the news broke, so what they carry is the plausible *second-order*")
+    A("landside consequence — a congested yard and slow evacuation once the omitted boxes come back through the")
+    A("same terminal — and both the ticket and this table now say which is which.\n")
+    A("**The radiation-portal box is not free, and it used to be.** An alarmed container at Mundra does not")
+    A("quietly leave the Bill of Entry while the rest of the consignment clears: it is referred to Customs and")
+    A("the AERB, the BoE is held, and the other 39 boxes accrue detention until the referral closes. That is")
+    A("event T08-LOG-3 — 14 simulated days, taking the lot to 24 days against 14 free, so 10 chargeable days on")
+    A("39 boxes. Re-export of the alarmed box itself needs Customs and DGFT permission and its own freight and")
+    A("handling, which this book does **not** model and which therefore understates the event. Both quality")
+    A("events also carry `claim_recovery_frac` **0.6**, not the 1.0 of the first draft: after an LC has paid at")
+    A("sight, a claim on the smallest yard on the register is an unsecured negotiation, and a desk that recovers")
+    A("100 % of every claim is a desk that is indifferent to out-turn — the opposite of why the clause exists.")
+    A("There is no sensitivity on that fraction anywhere in this project; Phase 3 should publish one (0.4 / 0.6 /")
+    A("1.0).\n")
+    A("**Detention is slabbed.** `demurrage_usd_per_box_day` is the FIRST-slab rate and its own register note")
+    A("says carriers escalate after five to ten days, so charging an eight- or ten-day delay at it understates")
+    A("the bill. `desk.book.validate.demurrage_usd` now walks the registered slabs")
+    A("(`demurrage_slab1_days`, `demurrage_slab2_days`, `demurrage_usd_per_box_day_slab2/3`) and")
+    A("`trade_book.csv` publishes both figures side by side — see §12 for what the P3 engine must adopt.\n")
+    A("The **buyer payment delay is entirely simulated** and is placed on the weakest name in the book, a Rajkot")
+    A("foundry that already pays 70 % of that parcel in advance — so the delay hits the balance rather than the")
+    A("whole cargo, which is what the credit policy is for. Read it with §2: the advance that keeps the")
+    A("receivable small is itself 1.8× that buyer's credit limit.")
     A("The **quality outcomes are simulated** but sit on the SPA's own registered clauses: T07's lot is 1.4")
     A("points over the moisture franchise and 1.1 points over the contamination limit (a weight deduction plus a")
-    A("1.65 % price discount, inside the 3-point rejection threshold), and T08 has one container stopped at the")
-    A("port radiation portal and re-exported for the seller's account.\n")
+    A("1.65 % price discount, inside the 3-point rejection threshold).\n")
 
     # ------------------------------------------------------------------ 8. provenance
     A("\n## 8. Provenance — what is real on this page\n")
@@ -924,9 +1324,20 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("| Counterparties, vessels, forwarders, banks, SPA references, survey outcomes, dwell days, the payment "
       "delay | SIM | everything with \"(SIM)\" after it |")
     A("")
+    A("**The freight row deserves its own sentence, because three tickets price off it.** Phase 0's own note for")
+    A("the week T01 trades in reads:\n")
+    A(f"> {' '.join(_freight_note(tb['trade_date'].min()).split())}\n")
+    A("So the lane level the FOB netbacks subtract was calibrated from material published about seven months")
+    A("after the week it describes, and the Gulf lane has no observational anchor at all — it is 600 USD/box")
+    A("assumed at 2022-03-04 and shaped by the US lane. The Gulf tickets are unaffected in price (CONTRACTS §5")
+    A("quotes the grade factor CFR, so no freight enters a Gulf purchase or its landed cost); the three US-lane")
+    A("FOB netbacks are not, and their tickets say so. `desk.book.validate` P13 refuses any note that claims")
+    A("otherwise.\n")
     A("**Two things this page does not do.** It never presents a simulated counterparty, vessel or event as real,")
     A("and it never quotes a price as something somebody offered — every contract price on this page is the")
-    A("output of a stated rule applied to the market data of its own date, and the rule is in §4.\n")
+    A("output of a stated rule applied to the market data of its own date, and the rule is in §4. What it")
+    A("**cannot** do is tell you what a counterparty would have said: there is no negotiation anywhere in this")
+    A("book, and §4's sensitivity is the honest way to read that.\n")
 
     # ------------------------------------------------------------------ 9. validation
     A("\n## 9. What this book is checked against\n")
@@ -950,9 +1361,25 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("| P10 | purchase prices sit within the stated band under trade-date parity |")
     A("| P11 | this phase's per-day §5 arithmetic reproduces Phase 1 exactly on parity value dates |")
     A("| P12 | (warning) a hedge action dated in a session beyond the MCX daily price limit |")
+    A("| P13 | every market number a rationale or terms note *quotes* reconciles to the panel, and no note claims "
+      "its inputs were point-in-time when the ticket's price basis rests on a reconstruction |")
+    A("| P14 | (warning) an advance the desk relies on exceeds that buyer's own credit limit by more than the "
+      "registered policy multiple |")
     A("")
-    A(f"The book currently passes with **0 errors and {sum(1 for i in issues if i.severity == 'WARNING')}")
-    A("warnings**. `tests/test_book.py` runs a mutation table: one deliberately broken copy of this book per")
+    warn = [i for i in issues if i.severity == "WARNING"]
+    A(f"The book passes with **0 errors and {len(warn)} warnings**, and the warnings are not noise to be cleared:")
+    A("all " + ("three" if len(warn) == 3 else str(len(warn))) + " are P14, the advance-reliance cap, on the")
+    A("three BUY_RJK_01 parcels (§2). A control that has never fired on the real book is a control nobody has")
+    A("tested; a control that fires and is then argued with in writing is the point.\n")
+    A("**What P13 can and cannot check.** It reconciles the shapes a desk actually writes — \"N dollars in a")
+    A("day\", \"N dollars off the D-Mon low\", \"N dollars under my netback\", \"rupee at XX.XX\", \"moved N % today\"")
+    A("— against the panel on the decision date or on the parity week the ticket cites, and it refuses the")
+    A("categorical claim that a ticket's inputs were all knowable on the day. It does **not** understand prose:")
+    A("a claim it cannot parse is not checked and is not counted as passing. It caught one wrong number in this")
+    A("book (T03's bounce off the 15-Mar low, typed as 180 dollars against a panel move of 306) and one")
+    A("unsupportable provenance claim (T01's \"every input is dated 08-Mar-2022 or earlier\"); both are fixed in")
+    A("the tickets, not in the scanner.\n")
+    A("`tests/test_book.py` runs a mutation table: one deliberately broken copy of this book per")
     A("code, asserting the code fires and the message names the thing that is wrong. A validation that has never")
     A("been shown to fail is not a control.\n")
 
@@ -978,30 +1405,106 @@ def render_doc(book: Book, tables: dict[str, pd.DataFrame], credit: pd.DataFrame
     A("priced off the same LME the cargo is priced off and the cross-exchange basis — the risk this book is most")
     A("exposed to in reality — is invisible in base runs. And nothing here is P&L: this phase produces positions")
     A("and terms; Phase 3 marks them.\n")
-    A("**The one thing a reader should take at face value** is the discipline: nine trades, all in weeks that")
-    A("passed three independent screens declared before any result existed, with every price and hedge size")
-    A("re-derived from data published on or before its own date.\n")
+    A("Four more things this book does not contain, each of which a physical desk would. There is **no")
+    A("negotiation**: no counterparty ever holds out, and both legs of every trade come out of the desk's own two")
+    A("pricing rules, which is why §4 publishes what the result looks like at other conventions. There is **no")
+    A("schedule slippage** except the two void-call arrival delays on T08 — nineteen sailings in the worst year")
+    A("on record for schedule reliability, and §6.5 sizes what one slipped bill of lading would have been worth.")
+    A("There is **no funding or facility limit** anywhere: this phase produces positions, and the cash they")
+    A("consume is Phase 3's to report, but no ticket was ever tested against a working-capital line. And the")
+    A("**grade reconstruction sets both the buy and the sell price** — the purchase is struck against a")
+    A("reconstructed parity and the sale against a replacement value built from the same factor — so it is not")
+    A("only an attribution exposure that nets out in a re-mark; it is in the contracted numbers themselves.\n")
+    A("**The one thing a reader should take at face value** is that every price, factor, fixture and hedge size")
+    A("here was re-derived, mechanically, from data dated on or before the day it is typed against, by code that")
+    A("raises. Not the trade *timing*: §3 shows the gate that produced it is a hindsight-mix screen, and this")
+    A("page says so rather than selling the discipline it would like to have had.\n")
 
     # ------------------------------------------------------------------ 11. changes during integration
     A("\n## 11. Changes during integration with Phase 3\n")
     A("Phase 2 (this book) and Phase 3 (`desk/mtm`, the valuation engine) were built concurrently against")
     A("`docs/design/30_position_model.md`. When they were joined the engine loaded this book, priced it and")
     A("passed every sign-off control on the first run.\n")
-    A("**No ticket was changed.** `config/trades.yaml` and `config/counterparties.yaml` are byte-for-byte what")
-    A("this phase published: no schema fix, no date reformatting, no missing technical field, and no economic")
-    A("correction. Nothing in the nine tickets broke eligibility, the horizon, the container arithmetic or a")
-    A("hedge-sizing rule when a second implementation valued them. That is the result of this heading, and it")
-    A("is reported here because an empty change log is only credible if someone says it is empty on purpose.\n")
+    A("**No ticket was changed by the integration.** `config/trades.yaml` and `config/counterparties.yaml` came")
+    A("through the join byte-for-byte: no schema fix, no date reformatting, no missing technical field, and no")
+    A("economic correction. Nothing in the nine tickets broke eligibility, the horizon, the container arithmetic")
+    A("or a hedge-sizing rule when a second implementation valued them. That is the result of this heading, and")
+    A("it is reported because an empty change log is only credible if someone says it is empty on purpose. The")
+    A("independent review that came after integration is a different matter and is logged in §12.\n")
     A("One **apparent** contradiction between the phases was resolved, on the Phase 3 side:\n")
     A("- Phase 3's event-3 table first reported a buyer credit-limit breach of 2.58x over 46 days, against the")
-    A("  peak utilisations of 79-93% this page reports. Neither book was wrong: Phase 3 was summing the")
-    A("  receivable *and* the pre-settlement exposure against `credit_limit_inr`, which counted an advance the")
-    A("  buyer had not yet paid as credit the desk had extended. CONTRACTS §7a.4 separates the two, and Phase 3")
-    A("  now checks the limit against the receivable, exactly as rule P04 does here. The two phases agree: peak")
-    A("  utilisation 83.4%, no breach on any day. See `docs/31_adverse_events.md` §3.4.\n")
+    A("  peak utilisations of 78-93% this page reports. Neither book was wrong, and neither number is the other's")
+    A("  answer: **they are two different measures and this paragraph used to conflate them.** Rule P04 here")
+    A("  measures, at every sale booking, the receivable plus the uncovered part of sales already contracted —")
+    A("  a booking-time control, and its peak is the 93% (BUY_MUN_01) in §2. Phase 3 measures the receivable")
+    A("  *daily*, per CONTRACTS §7a.4, and its peak is a different name on a different day; it publishes that")
+    A("  figure in `outputs/tables/adverse_event_3_logistics_credit.csv`, and this page does not restate it.")
+    A("  Two things follow that a reader should have. The P2 measure evaluated daily rather than at bookings")
+    A("  would exceed 100% on two names, because it counts contracted-but-uninvoiced sales; and neither measure")
+    A("  sees the advances, which is the exposure §2 and rule P14 exist for. \"The two phases agree\" was the")
+    A("  wrong claim: they measure different things, each cleanly, and both are published.\n")
     A("The engine's own two fixes (a final invoice that could precede its survey; an event known later than the")
     A("milestone it moves) were defects in the *engine*, not in these tickets, and are recorded in")
     A("`docs/30_mtm_attribution.md` §11.3.\n")
+
+    # ------------------------------------------------------------------ 12. changes during review
+    A("\n## 12. Changes during review\n")
+    A("Independent reviewers read this book as a trader, a controller and a spec auditor would. Their findings")
+    A("changed tickets, and CONTRACTS §5a forbids touching the eligibility rule after seeing results — so every")
+    A("change below is priced or worded, never a re-selection of trades. All nine trade dates, grades, lanes,")
+    A("laycans, tonnages and eligibility screens are exactly what this phase published. What changed:\n")
+    A("| # | Change | Tickets | Why |")
+    A("|---|---|---|---|")
+    A("| 1 | Sale prices re-derived with a **symmetric** payment-terms adjustment (rule S1: `price × wc_rate × "
+      "days`) instead of a flat ±₹500/MT | T01-S1 201,500→201,000; T01-S2 181,500→180,500; T04 195,500→194,500; "
+      "T06 185,000→185,250; T07 166,500→165,750; T09 168,750→168,500 | The flat deltas under-paid the buyer for "
+      "an advance (worth ₹1,436/MT on T01-S2 at the registered WC rate, paid as ₹500) and under-charged for "
+      "extra credit. Both errors ran the desk's way, on five of seven priced sales. |")
+    A("| 2 | USD/INR forwards matched to a purchase are **dealt on the bill of lading**, not on the trade date | "
+      "T01, T03, T04, T06, T07, T09 (12 lines re-dated) | Six tickets booked forwards on the trade date to "
+      "value dates that are exactly the *actual* B/L + 7 or + 60 — dates unknowable when the forward was dealt. "
+      "The desk now covers when the payable exists and carries the gap openly (rule H6, §6.3). |")
+    A("| 3 | T05's final-invoice cover replaced: a USD 200,000 BUY dealt at inception and cancelled becomes a "
+      "USD 90,000 **SELL** dealt on 01-Jul | T05 | The balance's size and sign were unknown until the June "
+      "quotational month closed; the original line was a position, not a hedge, and its cancellation handed the "
+      "desk a one-sided mid-market unwind. T02 and T08 already did this correctly. |")
+    A("| 4 | Documentary credits opened **≥ 10 days before the laycan** (`lc_open_days_before_laycan_min`) | "
+      "T06 17-May→13-May; T07 01-Jun→27-May; T08 14-Jun→10-Jun; T09 10-Aug→05-Aug | Five and six days is not "
+      "enough for a seller to have the credit checked and amended before stuffing a full parcel. |")
+    A("| 5 | The July-2022 void calls gain their **real channel**: two arrival-delay events on lots still afloat | "
+      "T08-LOG-1, T08-LOG-2 (+7 days each) | A voided call rolls or omits a box; it does not first show up as "
+      "yard rent on a lot that has already cleared its Bill of Entry (which is what T07's two dwell events "
+      "were). T07 keeps its dwell as the second-order landside consequence and says so. |")
+    A("| 6 | The radiation-portal rejection is **no longer free**: the consignment's BoE is held and the other "
+      "39 boxes accrue detention | T08-LOG-3 (+14 days dwell) | An alarmed box triggers an AERB/Customs "
+      "referral at consignment level. Re-export freight and permissions are still not modelled, so the event is "
+      "still under-stated. |")
+    A("| 7 | `claim_recovery_frac` 1.0 → **0.6** on both quality events | T07 L1, T08 L2 | After an LC has paid "
+      "at sight, a claim on the smallest yard on the register is an unsecured negotiation. Full recovery made "
+      "the desk indifferent to out-turn. |")
+    A("| 8 | Wrong or unsupportable statements corrected in ticket prose | T01 (the limit-lock story and the "
+      "\"every input is dated 08-Mar-2022 or earlier\" claim), T02 and T05 (the usance giveaway described as the "
+      "price of the tenor), T03 (\"180 dollars off the 15-Mar low\" → 306), T07 (T04's invoice cleared 25-Jul, "
+      "not 23-Jul), T09 (\"130 dollars\" → 82) | Each is now checked mechanically: P13 reconciles quoted market "
+      "numbers to the panel and refuses categorical provenance claims. |")
+    A("| 9 | Detention charged **up the registered slabs** rather than all at the first-slab rate | T07 L2 "
+      "(8 chargeable days), T08 L2 (10) | `demurrage_usd_per_box_day` is the first slab and says so in its own "
+      "register note. |")
+    A("| 10 | Incoterm wording corrected on every card | all nine | Under **both** FOB and CFR (Incoterms 2020 "
+      "A2/B2) the cargo risk passes when the goods are on board at the load port. CFR moves the *cost* of "
+      "carriage to the seller, never the risk; the card used to say risk sat with the seller until discharge. |")
+    A("")
+    A("**What was deliberately NOT changed.** The 50/50 arbitrage split stays — it was declared before the book")
+    A("was priced and re-fitting it after seeing results would be worse than disclosing it, so §4 publishes the")
+    A("sensitivity instead. The §5a gate stays, for the same reason, and §3 restates what it actually is. No")
+    A("trade was added, removed or re-dated, and no hedge was re-sized.\n")
+    A("**What this phase cannot fix and hands on.** The P3 engine must (a) adopt")
+    A("`desk.book.validate.demurrage_usd` for the slabbed detention schedule, (b) honour an optional")
+    A("`known_date` on a quality event instead of always deriving the survey date, (c) treat")
+    A("`quantity_tolerance_frac` with `is not None` rather than a falsy test, so a strict-quantity SPA stops")
+    A("silently inheriting a 10 % LC tolerance, and (d) publish per-buyer exposure rather than a compound")
+    A("`buyer_id` such as `BUY_MUN_01,BUY_RJK_01`, which no per-counterparty credit tracker can group. Nothing")
+    A("in this phase depends on those four; the numbers on this page are complete as published.\n")
     return "\n".join(out) + "\n"
 
 
@@ -1024,6 +1527,9 @@ def build(strict: bool = True) -> tuple[Book, dict[str, pd.DataFrame], list]:
         "trade_book.csv": trade_book_rows(book, elig),
         "trade_hedges.csv": trade_hedge_rows(book),
         "trade_eligibility_check.csv": elig,
+        # The §2 credit ladder was computed in-process and published nowhere, which is exactly where the two
+        # phases disagreed on "peak utilisation" (review finding, spec-honesty lens). It is a table now.
+        "trade_credit_exposure.csv": V.credit_exposure_frame(book),
     }
     return book, tables, issues
 
@@ -1032,7 +1538,7 @@ def main() -> None:
     book, tables, issues = build(strict=True)
     for name, df in tables.items():
         print(f"wrote {_write(df, name)}  ({len(df)} rows)")
-    credit = V.credit_exposure_frame(book)
+    credit = tables["trade_credit_exposure.csv"]
     doc_path = DOCS_DIR / "20_trade_book.md"
     doc_path.write_text(render_doc(book, tables, credit, issues))
     print(f"wrote {doc_path}")

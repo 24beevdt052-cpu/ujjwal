@@ -182,6 +182,46 @@ def test_exposures_are_additive_and_signed_the_way_the_contract_says(run):
     assert (e["unsold_mt"] >= 0).all()
 
 
+def test_the_declared_signs_are_a_BOOK_scope_claim_and_flip_at_trade_scope(run):
+    """CONTRACTS §7a.4's sign convention holds at BOOK scope. At TRADE scope any of the three can flip — and does.
+
+    T02 buys on a floating LME_M1_AVG (May) while its MCX-average sale prices off between 19 and 29 April, so for a
+    few weeks the desk is net SHORT metal on that ticket and legitimately hedges by BUYING lots. The numbers are
+    right; the *reading* is what a Phase 4 author gets wrong if the hand-off note's "physical delta >= 0, MCX delta
+    <= 0, lots <= 0" is taken as a book-wide invariant. Read the sign, do not assume it.
+    """
+    t = run.exposures[run.exposures["scope"] == "trade"]
+    flips = {
+        "lme_delta_physical_mt": t[t["lme_delta_physical_mt"] < -1e-6],
+        "lme_delta_mcx_mt": t[t["lme_delta_mcx_mt"] > 1e-6],
+        "mcx_lots_open": t[t["mcx_lots_open"] > 0],
+    }
+    for col, sub in flips.items():
+        assert len(sub) > 0, f"{col} no longer flips at trade scope — update docs/30 §5 and the hand-off note"
+        assert set(sub["trade_id"]) == {"T02"}, f"{col} now flips on {sorted(set(sub['trade_id']))}"
+
+
+def test_freight_bucket_moves_only_with_panel_freight(run, H, book):
+    """The control the residual cannot give: bucket (d) tracks the panel freight column and nothing else.
+
+    `residual` telescopes, so a dated market number read straight from `HistoryView` instead of through
+    `MarketState` lands silently in (g)/(f)/(0) and the residual never moves (docs/30 §4.3). What *does* catch that
+    class, for the block most at risk of it, is this: on a day when neither lane's panel freight moved, factor (d)
+    must be exactly zero for every trade; and on days when it did move, a ticket with open FOB freight must show it.
+    """
+    lanes = {t.trade_id: t.lane.value for t in book.trades}
+    att = run.attribution[run.attribution["trade_id"] != engine.BOOK_ID]
+    days = list(run.days)
+    moved = {d: any(H.freight_usd_t(d, ln) != H.freight_usd_t(p, ln) for ln in ("JEA_NSA", "USEC_MUN"))
+             for p, d in zip(days, days[1:])}
+    still = att[att["date"].map(lambda d: moved.get(d) is False)]
+    assert len(still) > 0
+    assert still["freight"].abs().max() == 0.0, "factor (d) moved on a day panel freight did not"
+    on_move = att[att["date"].map(lambda d: moved.get(d) is True)]
+    assert (on_move["freight"].abs() > 0).any(), "factor (d) never moves — the test has gone vacuous"
+    assert set(on_move.loc[on_move["freight"].abs() > 0, "trade_id"]) <= set(lanes)
+
+
 def test_hedge_ratio_is_blank_rather_than_absurd_when_the_physical_leg_is_flat():
     assert expo.hedge_ratio(100.0, 1000.0, HEDGE_RATIO_MIN_PHYSICAL_MT) == pytest.approx(-0.1)
     assert expo.hedge_ratio(1.0e6, 1.0, HEDGE_RATIO_MIN_PHYSICAL_USD) != expo.hedge_ratio(

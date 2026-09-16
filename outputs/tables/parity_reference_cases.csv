@@ -1,3 +1,4 @@
 ref_case,week_end,grade,lane,rule
 first_eligible,2022-03-04,zorba,JEA_NSA,"first trade-eligible in-window case (earliest week, then grade, then lane order)"
 june_trough,2022-06-17,zorba,JEA_NSA,lowest base net arb among 2022-06 weeks for the same grade-lane
+first_eligible_long_lane,2022-03-04,zorba,USEC_MUN,"the long-lane counterpart of `first_eligible`: same week and grade, the other lane"

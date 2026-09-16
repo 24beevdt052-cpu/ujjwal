@@ -54,6 +54,35 @@ def test_buckets_sum_to_the_daily_pnl(run):
     assert (total - df["daily_pnl_inr"]).abs().max() < 1e-6
 
 
+def test_book_pricing_fractions_are_tonnage_weighted(run, book):
+    """`purchase_priced_frac` / `sale_priced_frac` at BOOK scope read "share of the book that is priced".
+
+    They are the one pair of columns that is not a sum of the trade rows, so the weighting has to be stated. An
+    unweighted mean of tickets makes a 1,200 MT ticket count as much as a 2,520 MT one; the book row is weighted by
+    each ticket's contracted tonnage over the trades on the book that day.
+    """
+    qty = {t.trade_id: t.quantity_mt for t in book.trades}
+    e = run.exposures
+    trade, bk = e[e["scope"] == "trade"], e[e["scope"] == "book"].set_index("date")
+    for col in ("purchase_priced_frac", "sale_priced_frac"):
+        for d, sub in trade.groupby("date"):
+            w = sub["trade_id"].map(qty).to_numpy(float)
+            want = float((sub[col].to_numpy(float) * w).sum() / w.sum())
+            assert bk.loc[d, col] == pytest.approx(want, abs=1e-9)
+        assert (bk[col] >= -1e-12).all() and (bk[col] <= 1 + 1e-12).all()
+
+
+def test_no_panel_freight_move_means_no_freight_bucket(run, H):
+    """Bucket (d) is exactly zero on a day neither lane's panel freight moved (the docs/30 §4.3 complement)."""
+    att = run.attribution[run.attribution["trade_id"] != engine.BOOK_ID]
+    days = list(run.days)
+    still = {d for p, d in zip(days, days[1:])
+             if all(H.freight_usd_t(d, ln) == H.freight_usd_t(p, ln) for ln in ("JEA_NSA", "USEC_MUN"))}
+    sub = att[att["date"].isin(still)]
+    assert len(sub) > 0
+    assert sub["freight"].abs().max() == 0.0
+
+
 def test_leg_rows_sum_exactly_to_the_trade_rows(run):
     """Σ legs == the trade row. Leg rows are sparse: a day on which a leg moves nothing produces no row."""
     legs = run.attribution_leg.groupby(["date", "trade_id"], as_index=False)[list(PNL_BUCKETS)].sum()

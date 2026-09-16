@@ -14,9 +14,9 @@ Grades: Zorba 95/5, Taint/Tabor (ISRI-clean), Tense (ISRI-clean). Lanes: **JEA_N
 
 | File | Grain | Content |
 |---|---|---|
-| `outputs/tables/parity_weekly.csv` | week_end × grade × lane (43 × 3 × 2) | key inputs, every §5 line item, `window_open`, §5a flags `open_base`, `open_pit_mix`, `open_conv18k`, `trade_eligible`, their net arbs, USD memo |
+| `outputs/tables/parity_weekly.csv` | week_end × grade × lane (43 × 3 × 2) | key inputs, every §5 line item, `window_open`, §5a flags `open_base`, `open_pit_mix`, `open_conv18k`, `trade_eligible`, the no-hindsight disclosure gate `open_pit_conv18k` / `trade_eligible_pit`, their net arbs, USD memo |
 | `parity_sensitivity_cases.csv` / `_summary.csv` | case × week × grade × lane / case × grade × lane | the §5 required band (+ informational cases); open-week counts and flips vs base, in-window |
-| `parity_reference_cases.csv` | 2 rows | declared Table 1.5 reference cases and their selection rules |
+| `parity_reference_cases.csv` | 3 rows | declared Table 1.5 reference cases and their selection rules |
 | `parity_sensitivity_lme_fx.csv` (+`_wide`) | ref × LME shock × USD/INR | Table 1.5(a) P&L impact on 1,000 MT |
 | `parity_sensitivity_freight_duty.csv` (+`_wide`) | ref × terms × freight shock × BCD | Table 1.5(b) P&L impact on 1,000 MT (FOB and CFR terms) |
 | `parity_quality_scenarios.csv` | grade × moisture × contamination × yield | Table 1.6 settlement, recovery, landed per t recovered metal, net-arb impact |
@@ -59,7 +59,7 @@ Flags: *new inputs* = flags of the panel columns (`data/processed/series_provena
 1. **Goods paid at the 1-month forward, not spot** (`parity_goods_fx_basis = usdinr_fwd_1m`, ASSUMPTION). A sight LC is paid ~7 days after the B/L, which falls inside the 15-day shipment window after the decision, so the dollar payment is ~1 month out on both lanes; the domestic anchor is itself a forward (the MCX contract matched to the sale date). Valuing both legs at prices lockable on the decision day avoids booking the forward premium as margin. In the window this adds ₹342–₹606 per MT to landed cost (mean ₹470); `finance_inr_t` then covers LC payment → buyer receipt only. Spot is case `goods_fx_spot`.
 2. **Customs FX coverage.** `customs_usdinr_import` is used from its first notification to `customs_fx_notification_validity_days` (14) after the last one; outside that the register's `customs_fx_markup_frac` fallback applies (weeks ending 07-Jan–11-Feb (6), 07-Oct–28-Oct (4); none in the window). Column `customs_fx_src` labels each row.
 3. **Weeks.** W-FRI week_ends 07-Jan-2022 → 28-Oct-2022, each valued on its last panel day; every dated parameter path is read on that value date. `in_window` = the week (Sat–Fri) overlaps 2022-03-01…2022-08-31: 27 weeks, 04-Mar-2022 → 02-Sep-2022 (the last one is valued on 2 Sep because its Monday–Wednesday fall in August).
-4. **§5a flags** are three separate one-change cases combined with AND: `open_base`; `open_pit_mix` (grade factor = `grade_factor_mix_pit` + the registered differential); `open_conv18k` (conversion = the first value of `conversion_cost_sensitivity_inr_t_ingot` above base = ₹18,000/t ingot; the code raises if the register ever makes that anything other than the 18,000 the contract named). Case 3 can only close windows, so `trade_eligible = open_pit_mix ∧ open_conv18k` in practice.
+4. **§5a flags** are three separate one-change cases combined with AND: `open_base`; `open_pit_mix` (grade factor = `grade_factor_mix_pit` + the registered differential); `open_conv18k` (conversion = the first value of `conversion_cost_sensitivity_inr_t_ingot` above base = ₹18,000/t ingot; the code raises if the register ever makes that anything other than the 18,000 the contract named). Case 3 can only close windows, so `trade_eligible = open_pit_mix ∧ open_conv18k` in practice. **Read §6.1 before quoting the rule as point-in-time discipline: on this panel the point-in-time screen never binds and the binding screen reads a hindsight-reconstructed grade mix.**
 5. **PSIC** applies where the register says the origin/port pair needs one (`psic_required_uae_origin` for JEA_NSA = true; `psic_required_safe_origin_designated_port` for USEC_MUN = false).
 6. **Overrides.** Any sensitivity swaps an input column or a canonical register key (a scalar, a weekly series or a function of the *un-overridden* inputs) and re-runs the same `compute`; the base frame is never mutated (tested).
 
@@ -155,6 +155,25 @@ Counts are over the 27 in-window weeks. In total **82 of 162** in-window week ×
 Out-of-window context weeks that are eligible: 07-Jan–25-Feb (8) (every grade-lane); those rows exist only for look-ups and charts, not for trading. Every grade-lane has at least one eligible window week.
 
 How to read it. The base net arb is huge in the March spike and collapses into June–July: the constant anchor premium rides the MCX proxy down with LME, while the lag-2 grade factor *rises* through the crash (scrap prices lag LME), squeezing Zorba and Taint/Tabor below the hurdle. The point-in-time mix is three months staler, so it is low when the lag-2 mix is high and vice-versa — it opens June–July and shaves March. The ₹18k conversion case is what shuts Zorba and Taint/Tabor after early May: their August base margin (at most ₹9,266/t) does not survive the extra ₹6k per t of ingot (≈ ₹5,193–₹5,500 per t of scrap). Tense (lowest grade factor, highest recovery) is eligible 04-Mar–10-Jun (15), 22-Jul–02-Sep (7) on JEA_NSA and 04-Mar–10-Jun (15), 22-Jul–26-Aug (6) on USEC_MUN. Charts: `p1_net_arb_weekly.png`, `p1_window_heatmap.png`.
+
+### 6.1 What the §5a rule actually screens on (read this before quoting it)
+
+CONTRACTS §5a asks for three independent screens. On this panel they are not independent, and the one that a 2022 desk could genuinely have computed — `open_pit_mix`, the point-in-time grade mix — **never binds**: of 162 in-window grade × lane × week cases it is open in 152, and there is no case it closes that `open_conv18k` does not already close (0 such cases). `trade_eligible` is therefore **identical to `open_conv18k`** on every row of `parity_weekly.csv` (82 of 162 open; base alone 111, conv-18k alone 82).
+
+`open_base` and `open_conv18k` both read the **lag-2 DGCIS grade mix**, which is a hindsight reconstruction (§12): the unit values for month *m* were published around month *m+2*. So the binding screen is a screen a desk could not have run in the week it was trading. The rule is frozen and is not being re-interpreted — but a reader must not take the eligibility calendar as point-in-time discipline.
+
+`trade_eligible_pit` is published beside it as the honest counterpart: the same discipline with the point-in-time mix on **both** legs (`open_pit_mix ∧ open_pit_conv18k`). It opens **140 of 162** cases against 82 — **62 cases the published rule stood aside from**, and 4 the published rule allowed that it would have blocked:
+
+| Grade | Lane | Extra cases | Weeks the no-hindsight gate would have opened |
+|---|---|---|---|
+| zorba | JEA_NSA | 13 | 13-May–05-Aug (13) |
+| zorba | USEC_MUN | 13 | 13-May–05-Aug (13) |
+| taint_tabor | JEA_NSA | 12 | 13-May–29-Jul (12) |
+| taint_tabor | USEC_MUN | 13 | 06-May–29-Jul (13) |
+| tense | JEA_NSA | 5 | 17-Jun–15-Jul (5) |
+| tense | USEC_MUN | 6 | 17-Jun–15-Jul (5), 02-Sep |
+
+The consequence is concrete and unflattering. The published book's headline discipline is that it stood aside through the last leg of the crash; on the no-hindsight gate those weeks were **open**, so a desk trading the screen it could actually compute would have kept buying into the low. Phase 2 must not change the book for this (§5a forbids it) and Phase 3 must not re-cut the P&L for it — what changes is the claim: entry timing in this book is **not** point-in-time, and `docs/20_trade_book.md` and the interview pack say so. The rupee cost of the difference is a Phase 2/3 question, not a Phase 1 one.
 
 ## 7. Sensitivity band — the CONTRACTS §5 required cases
 
@@ -332,7 +351,34 @@ At base FX a −10% LME move costs ₹1.62 mn and −30% ₹4.85 mn on 1,000 MT;
 | −20% | 4.96 | 0.30 | −4.36 | −9.01 | −13.67 |
 | −40% | 5.25 | 0.60 | −4.05 | −8.69 | −13.34 |
 
-Freight matters little on the short Gulf lane (JEA_NSA freight ≈ USD 23.08/t). For scale, the same week on USEC_MUN (freight USD 106.41/t): +60% freight on FOB terms costs ₹5.13 mn per 1,000 MT. A BCD rise from 2.5% to 5% costs ₹4.66–5.79 mn per 1,000 MT at the two reference weeks, against at most ₹1.10 mn for any freight shock in the Gulf-lane grid at the base duty. Charts: `p1_sensitivity_lme_fx.png`, `p1_sensitivity_freight_duty.png`.
+**(a) LME × USD/INR — `first_eligible_long_lane` 04-Mar-2022 zorba USEC_MUN** (base net arb ₹49,904/t; ₹ million on 1,000 MT; all 9 FX columns in the CSV)
+
+| LME shock | 74 | 76 | 78 | 80 | 82 | base 76.34 |
+|---|---|---|---|---|---|---|
+| +10% | 4.68 | 6.72 | 8.76 | 10.80 | 12.84 | 7.07 |
+| +5% | 1.26 | 3.20 | 5.15 | 7.09 | 9.04 | 3.54 |
+| +0% | −2.17 | −0.32 | 1.54 | 3.39 | 5.24 | 0.00 |
+| −5% | −5.60 | −3.84 | −2.08 | −0.32 | 1.44 | −3.54 |
+| −10% | −9.03 | −7.36 | −5.69 | −4.02 | −2.36 | −7.07 |
+| −15% | −12.45 | −10.88 | −9.30 | −7.73 | −6.15 | −10.61 |
+| −20% | −15.88 | −14.40 | −12.92 | −11.44 | −9.95 | −14.15 |
+| −25% | −19.31 | −17.92 | −16.53 | −15.14 | −13.75 | −17.68 |
+| −30% | −22.74 | −21.44 | −20.14 | −18.85 | −17.55 | −21.22 |
+
+At base FX a −10% LME move costs ₹7.07 mn and −30% ₹21.22 mn on 1,000 MT; each ₹1 on USD/INR (78→79, LME unchanged) is worth ₹0.93 mn. The margin is long LME and long USD because the anchor (primary aluminium at 7.5% duty, × recovery) carries more metal value than the scrap cost (grade factor × LME at 2.75% duty) while conversion and port costs stay fixed in rupees. Window open in 90 of 90 grid cells.
+
+**(b) Freight × BCD, FOB terms — `first_eligible_long_lane`** (₹ million on 1,000 MT; CFR rows all equal the 0% freight row)
+
+| Freight shock | BCD 0% | BCD 2.5% | BCD 5% | BCD 7.5% | BCD 10% |
+|---|---|---|---|---|---|
+| +60% | 0.84 | −5.13 | −11.11 | −17.08 | −23.06 |
+| +40% | 2.51 | −3.42 | −9.35 | −15.28 | −21.21 |
+| +20% | 4.17 | −1.71 | −7.59 | −13.48 | −19.36 |
+| +0% | 5.84 | 0.00 | −5.84 | −11.67 | −17.51 |
+| −20% | 7.50 | 1.71 | −4.08 | −9.87 | −15.66 |
+| −40% | 9.17 | 3.42 | −2.32 | −8.07 | −13.81 |
+
+Freight matters little on the short Gulf lane (JEA_NSA freight ≈ USD 23.08/t): at the base duty no freight shock in the Gulf-lane grid moves the margin by more than ₹1.10 mn per 1,000 MT. For scale, the same week on USEC_MUN (freight USD 106.41/t): +60% freight on FOB terms costs ₹5.13 mn per 1,000 MT — the `first_eligible_long_lane` row of `parity_sensitivity_freight_duty.csv`, published so this number can be checked without re-running the model (worst long-lane shock at the base duty ₹5.13 mn). A BCD rise from 2.5% to 5% costs ₹4.66–5.84 mn per 1,000 MT across the reference cases. Charts: `p1_sensitivity_lme_fx.png`, `p1_sensitivity_freight_duty.png`.
 
 ## 9. Table 1.6 — scrap reality check (SPA settlement, moisture, contamination, yield)
 
@@ -427,7 +473,7 @@ The anchor is MCX Aluminium (panel PROXY: duty-paid LME cash import parity × IN
 ## 12. Hindsight and provenance disclosure
 
 - **Freight levels are hindsight reconstructions** (CONTRACTS §4.3): the WCI shape is PROXY, the lane levels are ASSUMPTION calibrated to Container News anchors published up to ~7 months after the March 2022 weeks (`freight_weekly.csv` notes, 106 weeks). Under CFR terms freight only moves the FOB memo; under FOB terms see §8(b).
-- **The lag-2 grade mix is a hindsight reconstruction**: DGCIS unit values for month m+2 were not published during month m. That is why §5a requires the point-in-time mix — itself an ASSUMPTION about the DGCIS release lag (verify PENDING).
+- **The lag-2 grade mix is a hindsight reconstruction**: DGCIS unit values for month m+2 were not published during month m. §5a adds the point-in-time mix as a screen against exactly that — itself an ASSUMPTION about the DGCIS release lag (verify PENDING) — **but on this panel that screen never binds, so `trade_eligible` reduces to a screen built on the lag-2 reconstruction (§6.1).** The eligibility calendar is therefore not a point-in-time calendar, and `trade_eligible_pit` is published beside it to show the difference.
 - Grade differentials, the anchor premium and conversion cost come from 2024–25 evidence applied to 2022 (ASSUMPTION). USD/INR is the ECB cross (PROXY for the RBI reference rate). MCX is the import-parity proxy.
 - The realised M+1 averages and every 'hindsight_' column are labelled and are never inputs to a flag.
 - No trade decision here uses data published after its week, except through the disclosed reconstructions above; `eligible_on` enforces the latest week_end ≤ trade date.
@@ -435,6 +481,8 @@ The anchor is MCX Aluminium (panel PROXY: duty-paid LME cash import parity × IN
 ## 13. What this does and doesn't tell you
 
 **Does:** it shows, per grade and lane, whether the published ingredients of a 2022 import margin — LME, the rupee, notified duties, container logistics, a secondary-ingot anchor and recovery physics — added up to more than a ₹5,000/t hurdle, which assumption moves that answer, and by how much a price, FX, freight or duty shock changes it. It gives Component 2 a rule it cannot bend after the fact: trade only where the base, the point-in-time grade mix and a higher conversion cost all agree.
+
+**Doesn't, first:** that rule is *unbendable*, not *point-in-time*. Two of its three screens read the lag-2 grade mix, the third never binds, and §6.1 measures what that costs: the no-hindsight gate would have been open in 140 of 162 in-window cases against the published rule's 82, including every week of the June–July trough. Anyone quoting the book's standing-aside as discipline must quote that with it.
 
 **Doesn't:** it is not a record of real 2022 margins. No 2022 scrap grade quote, secondary-ingot price or freight fixture was retrievable, so the level of the margin (tens of thousands of rupees in March, below zero in July) is a model output, not a market fact; the spread between the required cases (median ₹71,342/t, up to ₹94,725/t in a week) is the honest error bar. The weekly flag also ignores execution: supplier availability, the 40–73 days between paying for the cargo and being paid for it in a window when LME cash fell 42% from its 07-Mar peak to its 15-Jul low, credit limits, and quality claims beyond the SPA schedule. A window being open is a licence to look for a trade, not evidence that the trade made money — that is Phase 3's job.
 

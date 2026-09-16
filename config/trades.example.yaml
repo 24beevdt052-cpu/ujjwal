@@ -374,7 +374,7 @@ trades:
           at 2,130.0 CFR, 7.5 USD/t under parity, against the desk taking the cargo without a buyer in hand.
       payment:
         instrument: LC_SIGHT
-        lc_open_date: 2022-06-14
+        lc_open_date: 2022-06-10               # >= lc_open_days_before_laycan_min before the 20-Jun laycan (V11)
         issuing_bank: "Western India Commercial Bank (SIM)"
         confirmed: false
 

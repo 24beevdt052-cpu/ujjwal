@@ -179,3 +179,38 @@ def test_book_param_fallback_matches_the_design_table():
         assert "boe_lag_days" in FALLBACKS_USED
         assert any(r["key"] == "boe_lag_days" for r in fallback_report())
     assert set(BOOK_PARAM_FALLBACKS) >= {"lc_sight_payment_lag_days", "survey_lag_days", "provisional_invoice_frac"}
+
+
+def test_a_typed_quality_known_date_moves_the_survey_and_the_claim():
+    """CONTRACTS §7a.2: a `QualityEvent.known_date` is an executed fact and must beat the derived survey date.
+
+    The date is load-bearing — it sets the claim-settlement date and the window in which a ticket is over-hedged
+    against a weight it has not agreed yet — so a late, disputed or re-sampled survey has to be expressible. A
+    survey cannot happen before the cargo lands, so a typed date earlier than arrival is clamped to the arrival.
+    """
+    import datetime as _dt
+    from dataclasses import replace
+
+    from desk import HORIZON_END
+    from desk.mtm import lifecycle as lc
+    from desk.mtm import run as mrun
+    from desk.mtm.history import MarketHistory
+
+    book = mrun.load()
+    H = MarketHistory()
+    ticket = next((t for t in book.trades if t.events.quality), None)
+    if ticket is None:
+        pytest.skip("no quality event in the current book")
+    q = ticket.events.quality[0]
+    lot = ticket.lot(q.lot_id)
+    base = lc.lot_dates(ticket, lot, HORIZON_END, H)
+    assert q.known_date is None                      # the whole of this book leaves it derived
+
+    def with_known(d):
+        ev = replace(ticket.events, quality=(replace(q, known_date=d),) + ticket.events.quality[1:])
+        return lc.lot_dates(replace(ticket, events=ev), lot, HORIZON_END, H)
+
+    late = with_known(base.survey_cal + _dt.timedelta(days=9))
+    assert late.survey_cal == base.survey_cal + _dt.timedelta(days=9)
+    assert late.claim_settle > base.claim_settle
+    assert with_known(_dt.date(2021, 1, 1)).survey_cal == base.arrival_cal

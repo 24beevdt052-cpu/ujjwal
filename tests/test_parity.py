@@ -171,6 +171,28 @@ def test_section_5a_flag_logic(parity, inputs):
     assert (parity["open_pit_mix"] == (parity["net_arb_pit_mix_inr_t"] > parity["margin_threshold_inr_t"])).all()
 
 
+def test_no_hindsight_gate_is_published_and_the_5a_rule_is_unchanged(parity, inputs):
+    """§6.1: `trade_eligible` is frozen; `trade_eligible_pit` is the disclosure beside it, not a replacement."""
+    # the ex-ante rule is untouched by the disclosure column
+    assert (parity["trade_eligible"] == (parity["open_base"] & parity["open_pit_mix"] & parity["open_conv18k"])).all()
+    # the point-in-time screen never binds on this panel: it closes nothing conv18k does not already close
+    win = parity[parity["in_window"]]
+    assert int((win["open_base"] & win["open_conv18k"] & ~win["open_pit_mix"]).sum()) == 0
+    assert (win["trade_eligible"] == win["open_conv18k"]).all()
+    # the honest gate applies the point-in-time mix to BOTH legs and is strictly the both-changes case
+    both = model.compute(model.apply_overrides(inputs, model.section_5a_overrides()["open_pit_conv18k"]))
+    assert np.allclose(both["net_arb_inr_t"], parity["net_arb_pit_conv18k_inr_t"])
+    assert (parity["open_pit_conv18k"] == (parity["net_arb_pit_conv18k_inr_t"]
+                                           > parity["margin_threshold_inr_t"])).all()
+    assert (parity["trade_eligible_pit"] == (parity["open_pit_mix"] & parity["open_pit_conv18k"])).all()
+    # a stricter conversion cost can only close a window, on the point-in-time mix as on the base one
+    assert (~parity["open_pit_conv18k"] | parity["open_pit_mix"]).all()
+    # and it really does open the weeks the published rule stood aside from, including the June-July trough
+    extra = win[win["trade_eligible_pit"] & ~win["trade_eligible"]]
+    assert len(extra) > 0
+    assert ((extra["week_end"] >= "2022-06-17") & (extra["week_end"] <= "2022-07-15")).any()
+
+
 def test_eligible_on_uses_latest_week_end_on_or_before(parity):
     ok, we, row = model.eligible_on("2022-03-09", "zorba", "JEA_NSA", parity)
     assert we == pd.Timestamp("2022-03-04") and ok == bool(row["trade_eligible"])
@@ -306,20 +328,26 @@ def test_grids_zero_at_base_and_reference_rules(inputs, parity):
     same = parity[(parity["grade"] == first.grade) & (parity["lane"] == first.lane)
                   & (parity["week_end"].dt.to_period("M") == sensitivity.REFERENCE_TROUGH_MONTH)]
     assert trough.week_end == same.loc[same["net_arb_inr_t"].idxmin(), "week_end"]
+    # the third reference case is the long-lane counterpart of the first: same week and grade, other lane, added so
+    # the §8 freight-scale figure is published rather than only computed in the doc generator
+    long_lane = refs[2]
+    assert long_lane.ref == "first_eligible_long_lane"
+    assert (long_lane.week_end, long_lane.grade) == (first.week_end, first.grade) and long_lane.lane != first.lane
+    n = len(refs)
     lf = sensitivity.lme_fx_grid(inputs, refs)
     base_cells = lf[(lf["lme_shock_pct"] == 0) & lf["usdinr_is_base"]]
-    assert len(base_cells) == 2 and np.allclose(base_cells["pnl_impact_1000mt_inr"], 0.0, atol=1e-6)
-    assert len(lf) == 2 * 9 * 10
-    # monotone: a higher LME (same FX) raises this parity margin at both reference weeks
+    assert len(base_cells) == n and np.allclose(base_cells["pnl_impact_1000mt_inr"], 0.0, atol=1e-6)
+    assert len(lf) == n * 9 * 10
+    # monotone: a higher LME (same FX) raises this parity margin at every reference case
     at_base_fx = lf[lf["usdinr_is_base"]].sort_values(["ref_case", "lme_shock_pct"])
     assert (at_base_fx.groupby("ref_case")["pnl_impact_1000mt_inr"].diff().dropna() > 0).all()
     fd = sensitivity.freight_duty_grid(inputs, refs)
     zero = fd[(fd["freight_shock_pct"] == 0) & (fd["bcd_rate_pct"] == 2.5)]
-    assert len(zero) == 4 and np.allclose(zero["pnl_impact_1000mt_inr"], 0.0, atol=1e-6)
+    assert len(zero) == 2 * n and np.allclose(zero["pnl_impact_1000mt_inr"], 0.0, atol=1e-6)
     cfr = fd[fd["freight_terms"] == "CFR_seller_books_freight"]
     assert cfr.groupby(["ref_case", "bcd_rate_pct"])["pnl_impact_1000mt_inr"].nunique().max() == 1
     wide = sensitivity.lme_fx_wide(lf)
-    assert wide.shape[0] == 2 * 9
+    assert wide.shape[0] == n * 9
 
 
 def test_anchor_correlation_reproduces_phase0(panel):

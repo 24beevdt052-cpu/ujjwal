@@ -216,7 +216,23 @@ def test_hedge_stack_is_complete_per_trade(book):
     rolls = [tr for t in book.trades for tr in t.hedges.mcx.tranches
              if tr.exit_reason is schema.HedgeExitReason.ROLL]
     assert len(rolls) >= 6, "a six-month book on a 40-day lane rolls many times"
-    assert any(x.cancel_date for t in book.trades for x in t.hedges.fx_forwards.lines)
+    # A final-invoice balance is unknown in size AND sign until the quotational month closes, so its cover may
+    # only be dealt after the period ends — the book used to carry one booked at inception and cancelled, which
+    # was a position rather than a hedge (review finding, trader lens).
+    finals = [(t, x) for t in book.trades for x in t.hedges.fx_forwards.lines
+              if x.matched_leg is schema.MatchedLeg.PURCHASE_FINAL]
+    assert finals, "the three formula tickets each settle a final balance"
+    for t, x in finals:
+        assert x.cancel_date is None, f"{x.fwd_id}: a hedge dealt on a known balance is not cancelled"
+        assert x.booking_date > V.ticket_schedule(t).pricing_end, f"{x.fwd_id} is dealt before its period closes"
+    assert {x.direction for _, x in finals} == {schema.FxDirection.BUY_USD, schema.FxDirection.SELL_USD}
+    # Every purchase-invoice/provisional cover is dealt on or after the first B/L: before that the payment date
+    # does not exist, and a forward struck to a date nobody could know is hindsight with a plausible face.
+    for t in book.trades:
+        first_bl = min(l.bl_date for l in t.shipment.lots)
+        for x in t.hedges.fx_forwards.lines:
+            if x.matched_leg in (schema.MatchedLeg.PURCHASE_INVOICE, schema.MatchedLeg.PURCHASE_PROVISIONAL):
+                assert x.booking_date >= first_bl, f"{x.fwd_id} booked {x.booking_date}, first B/L {first_bl}"
 
 
 def test_no_hypothetical_freight_swap_in_the_base_book(book):
@@ -285,15 +301,27 @@ def test_operational_events_for_adverse_event_three(book):
 
     logistics = [(t, g) for t in book.trades for g in t.events.logistics]
     assert logistics
+    transit = {"JEA_NSA": "transit_days_jea_nsa", "USEC_MUN": "transit_days_usec_mun"}
+    void_calls = []
     for t, g in logistics:
-        assert g.known_date >= schema.VOID_CALL_EVIDENCE_DATE
-        assert any(m in g.real_trigger_ref.lower() for m in schema.VOID_CALL_MARKERS)
-        assert "freight_notes" in g.real_trigger_ref
+        assert g.real_trigger_ref.strip(), f"{g.event_id} needs a real, dated trigger"
         assert g.flag is schema.Flag.SIM
-        # the lot it delays must actually be in port in July 2022, or the trigger is not its trigger
-        lot = V.ticket_schedule(t).lots
-        arrival = next(l.arrival for l in lot if l.lot_id == g.lot_id)
-        assert dt.date(2022, 7, 1) <= arrival <= dt.date(2022, 8, 15), f"{g.event_id} arrival {arrival}"
+        lot = t.lot(g.lot_id)
+        # The undelayed ETA: when the box would have arrived if nothing had happened to it.
+        eta = lot.bl_date + dt.timedelta(days=int(config.value(transit[t.lane.value], t.trade_date)))
+        if any(m in g.real_trigger_ref.lower() for m in schema.VOID_CALL_MARKERS):
+            void_calls.append(g)
+            assert g.known_date >= schema.VOID_CALL_EVIDENCE_DATE
+            assert "freight_notes" in g.real_trigger_ref
+        if g.arrival_delay_days:
+            # a rolled or omitted box has to still be at sea when the omission is announced
+            assert eta >= g.known_date, f"{g.event_id}: lot had already landed on {eta}"
+        if g.extra_dwell_days:
+            # yard rent needs the box to be in the yard
+            assert eta <= g.known_date + dt.timedelta(days=int(config.value("detention_free_days"))), g.event_id
+    assert void_calls, "adverse event #3 is anchored to the real 27-Jul-2022 void calls"
+    assert any(g.arrival_delay_days > 0 for g in void_calls), \
+        "a voided call rolls or omits a box: at least one lot must carry the arrival-delay channel"
 
     free_days = int(config.value("detention_free_days"))
     chargeable = [l for t in book.trades for l in V.ticket_schedule(t).lots if l.chargeable_dwell_days > 0]
@@ -477,9 +505,10 @@ def test_sale_prices_sit_between_replacement_value_and_netback(book):
             ref = V.market_reference(s.contract_date, t.grade.value, t.lane.value)
             price = book_run._sale_price_at(t, s, s.contract_date)
             assert ref["replacement_inr_t"] <= price <= ref["netback_inr_t"], f"{t.trade_id}/{s.sale_id}"
-            want = ref["replacement_inr_t"] + V.DESK_ARB_SHARE_FRAC * (ref["netback_inr_t"]
-                                                                       - ref["replacement_inr_t"])
-            assert abs(price - want) <= V.SALE_PRICE_BAND_INR_T
+            mid = ref["replacement_inr_t"] + V.DESK_ARB_SHARE_FRAC * (ref["netback_inr_t"]
+                                                                      - ref["replacement_inr_t"])
+            want = mid + V.sale_terms_delta_inr_t(s, mid, s.contract_date)
+            assert abs(price - want) <= V.SALE_PRICE_BAND_INR_T, f"{t.trade_id}/{s.sale_id}"
 
 
 # ------------------------------------------------------------------------------------------ mutation table
@@ -612,10 +641,113 @@ def test_p12_warns_on_a_limit_locked_session(raw, tmp_path, panel_days):
     assert V._dpl_move(dt.date(2022, 3, 8)) < -float(config.value("mcx_al_dpl_max_frac"))
 
 
+def test_p13_fires_on_a_market_number_that_ties_to_nothing(raw, tmp_path, panel_days):
+    """The claim this caught in review: T03 said the LME had bounced 180 dollars off the 15-Mar low; it was 306."""
+    doc = copy.deepcopy(raw)
+    t = _ticket(doc, "T03")
+    t["rationale"]["text"] = t["rationale"]["text"].replace("bounced 306 dollars", "bounced 180 dollars")
+    issues = _mutated(doc, tmp_path, panel_days)
+    hit = [i for i in issues if i.code == "P13"]
+    assert hit and "180 dollars" in hit[0].message
+    assert "306" in hit[0].message, "the message must name what the panel actually gives"
+
+
+def test_p13_accepts_the_measures_a_trader_may_reasonably_use(book):
+    """A move may be measured to the trade date or to the parity week the ticket itself cites — not to nothing."""
+    t09 = book.trade("T09")
+    assert V.numeric_claim_hits(t09, "the LME has put 82 dollars on since the 15-Jul low", t09.trade_date) == []
+    assert V.numeric_claim_hits(t09, "the LME has put 300 dollars on since the 15-Jul low", t09.trade_date)
+
+
+def test_p13_fires_on_a_provenance_claim_the_ticket_cannot_support(raw, tmp_path, panel_days):
+    """T01 used to close its terms note with 'Every input is dated 08-Mar-2022 or earlier'. Two never are."""
+    doc = copy.deepcopy(raw)
+    t = _ticket(doc, "T01")
+    t["purchase"]["pricing"]["terms_basis_note"] += " Every input is dated 08-Mar-2022 or earlier."
+    issues = _mutated(doc, tmp_path, panel_days)
+    hit = [i for i in issues if i.code == "P13"]
+    assert hit and "grade factor" in hit[0].message and "freight" in hit[0].message
+
+
+def test_p14_warns_when_the_desk_leans_on_an_advance_bigger_than_the_line(book, issues):
+    """The receivable limit cannot see an advance; P14 can, and it fires three times on the real book."""
+    warned = [i for i in issues if i.code == "P14"]
+    assert len(warned) == 3 and all(i.severity == "WARNING" for i in warned)
+    assert all("BUY_RJK_01" in i.message for i in warned)
+    cap = float(config.value("buyer_advance_limit_multiple_of_credit_limit"))
+    for t in book.trades:
+        for sale in t.sales:
+            adv = sale.payment.advance_frac or 0.0
+            if not adv:
+                continue
+            limit = float(book.counterparty(sale.buyer_id).credit_limit_inr or 0.0)
+            qty = sum(t.lot_weight_mt(t.lot(x)) for x in sale.lot_ids)
+            price = (sale.pricing.price_inr_t if sale.pricing.type is schema.SalePricingType.FIXED
+                     else V._mcx_sale_price_at(sale, sale.contract_date, t))
+            breached = qty * price * adv > limit * cap
+            assert breached == any(f"trades({t.trade_id}).sales({sale.sale_id})" in i.where for i in warned)
+
+
+def test_the_sale_terms_adjustment_is_symmetric(book):
+    """An advance must be worth to the buyer what the same days of credit would cost the desk."""
+    day = dt.date(2022, 6, 1)
+    wc = float(config.value("wc_rate_inr_pa", day))
+    price = 200000.0
+
+    def sale(adv=None, credit=None, terms="CREDIT"):
+        return schema.Sale(
+            sale_id="S1", buyer_id="BUY_X", contract_date=day, lot_ids=("L1",), delivery_basis="x",
+            pricing=schema.SalePricing(type=schema.SalePricingType.FIXED, price_inr_t=price),
+            payment=schema.SalePayment(terms=schema.SalePaymentTerms[terms], advance_frac=adv,
+                                       credit_days=credit))
+
+    plus_15 = V.sale_terms_delta_inr_t(sale(credit=45), price, day)
+    full_advance = V.sale_terms_delta_inr_t(sale(adv=1.0, terms="ADVANCE"), price, day)
+    assert plus_15 == pytest.approx(price * wc * 15 / 365)
+    assert full_advance == pytest.approx(-price * wc * 30 / 365)
+    # the old flat +/-500 rule was worth 0.34x the advance and 0.66x the credit charge: neither, and asymmetric
+    assert abs(full_advance) > 2 * abs(plus_15) - 1e-9
+    assert V.sale_terms_delta_inr_t(sale(credit=30), price, day) == pytest.approx(0.0)
+
+
+def test_demurrage_walks_the_registered_slabs(book):
+    """A long delay is not charged at the first-slab rate: the register's own note says carriers escalate."""
+    day = dt.date(2022, 7, 28)
+    r1 = float(config.value("demurrage_usd_per_box_day", day))
+    n1 = int(config.value("demurrage_slab1_days", day))
+    assert V.demurrage_usd(10, 0, day) == 0.0
+    assert V.demurrage_usd(10, n1, day) == pytest.approx(10 * n1 * r1), "inside slab 1 nothing changes"
+    eight = V.demurrage_usd(45, 8, day)
+    assert eight > 45 * 8 * r1, "past the first slab the rate steps up"
+    longest = max((l.chargeable_dwell_days for t in book.trades for l in V.ticket_schedule(t).lots), default=0)
+    assert longest > n1, "the book must actually exercise a second slab, or the schedule is untested"
+
+
+def test_a_quality_event_may_carry_its_own_known_date(raw, tmp_path, panel_days):
+    """CONTRACTS §7a.2: the events blocks each carry a known_date. A late or disputed survey has to be sayable."""
+    doc = copy.deepcopy(raw)
+    t = _ticket(doc, "T07")
+    q = t["events"]["quality"][0]
+    q["known_date"] = dt.date(2022, 7, 30)
+    b = schema.load_book(*_written(doc, tmp_path), strict=False, panel_days=panel_days)
+    assert b.trade("T07").events.quality[0].known_date == dt.date(2022, 7, 30)
+    q["known_date"] = dt.date(2022, 1, 5)          # before the lot ships
+    issues = schema.validate_book(
+        schema.load_book(*_written(doc, tmp_path), strict=False, panel_days=panel_days), panel_days=panel_days)
+    assert "V20" in {i.code for i in issues if i.severity == "ERROR"}
+
+
+def _written(doc: dict, tmp_path):
+    tp = tmp_path / "trades.yaml"
+    tp.write_text(yaml.safe_dump(doc, sort_keys=False))
+    return tp, CPS
+
+
 # ------------------------------------------------------------------------------------------------- outputs
 def test_run_writes_three_tables_and_is_deterministic(tmp_path):
     book, first, _ = book_run.build(strict=True)
-    assert set(first) == {"trade_book.csv", "trade_hedges.csv", "trade_eligibility_check.csv"}
+    assert set(first) == {"trade_book.csv", "trade_hedges.csv", "trade_eligibility_check.csv",
+                          "trade_credit_exposure.csv"}
     _, second, _ = book_run.build(strict=True)
     for name, df in first.items():
         a = df.to_csv(index=False, lineterminator="\n").encode()
@@ -633,7 +765,7 @@ def test_trade_book_table_shape(book):
     for col in ("isri_grade_spec", "moisture_franchise_frac", "contamination_limit_frac", "discount_multiple",
                 "rejection_excess_frac", "radioactivity_clause_key", "penalty_schedule_key",
                 "purchase_pricing_type", "payment_instrument", "sale_payment_terms", "laycan_start",
-                "vessels", "freight_risk_borne_by", "rationale"):
+                "vessels", "cargo_risk_passes", "freight_risk_borne_by", "rationale"):
         assert df[col].notna().all(), col
     assert df["rationale"].str.len().min() > 400
     assert df["quantity_mt"].sum() == pytest.approx(sum(t.quantity_mt for t in book.trades))
@@ -653,9 +785,10 @@ def test_methods_doc_is_generated_and_complete(book):
                     "## 5. Ticket cards", "## 6. The hedge stack",
                     "### 6.2 Cross-exchange basis risk", "### 6.4 The freight risk layer",
                     "## 7. Operational events", "## 8. Provenance",
-                    "## 9. What this book is checked against",
+                    "### 6.5 Schedule risk", "## 9. What this book is checked against",
                     "## 10. What this does and doesn't tell you",
-                    "## 11. Changes during integration with Phase 3"):
+                    "## 11. Changes during integration with Phase 3",
+                    "## 12. Changes during review"):
         assert heading in md, heading
     for t in book.trades:
         assert f"### {t.trade_id} —" in md
@@ -670,9 +803,9 @@ def test_methods_doc_is_generated_and_complete(book):
             cells = [c for c in line.split("|")[1:-1]]
             assert all("\\" not in c or "\\|" in line for c in cells)
     assert "(SIM)" in md
-    # the integration log is the last thing on the page, and it says whether any ticket had to change
-    assert md.rstrip().endswith("§11.3.")
-    assert "**No ticket was changed.**" in md
+    # the change logs are the last thing on the page: integration first, then the independent review
+    assert "**No ticket was changed by the integration.**" in md
+    assert md.rstrip().endswith("the numbers on this page are complete as published.")
 
 
 def test_trade_hedges_table_covers_every_instrument(book):

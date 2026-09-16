@@ -19,11 +19,24 @@ today's and revalues the whole ticket:
 factor cross-terms. Every cross-term (ΔLME × ΔFX and friends) lands in the factor swapped **later**, which is the
 convention CONTRACTS §7.4 fixes and §12 of the design doc states plainly in the "doesn't tell you" paragraph.
 
-**The residual is a control, not arithmetic hygiene** (design D9). The day's total is computed *independently* from
-the cash ledger — `Δ[realised P&L + funding + Σ mtm]` — while the buckets come from the chain. They agree only if the
-valuation has no hidden input: a parameter read at a date other than the clock, history read beyond the clock,
-contract logic touching the wall calendar, or a realised amount that the estimate does not converge to at settlement.
-Any of those shows up as a non-zero residual, and `|residual| <= ₹1` per trade-day is therefore a real sign-off.
+**What the residual actually proves** (design D9, narrowed during the Phase 1-3 review). The day's total is computed
+*independently* from the cash ledger — `Δ[realised P&L + funding + Σ mtm]` — while the buckets come from the chain.
+The chain telescopes by construction (`Σ buckets = V8(t) - V0(t) + accruals` and `V0(t) = V8(t-)`), so
+
+    residual(t) == Δ[ ledger realised P&L − the clock-valued realised P&L the chain carries ]
+
+and it is exactly the **settled-flow convergence** control: every flow's estimate must equal the amount it settles
+for on its own settle date, stay frozen afterwards, and the funding accrual must be booked once. That is the class
+`tests/test_mtm_synthetic.py` plants (a flow that keeps marking after it has settled) and it is a real sign-off —
+but it is narrower than "no hidden input".
+
+**What it does NOT catch.** A dated market number read from `HistoryView` instead of through `MarketState` never
+reaches the ledger either, so it telescopes into the chain's last movers — (g), (f) and (0) — and leaves the
+residual at float noise. A reviewer planted `HV.freight_usd_t(tau, lane)` inside `curves.replacement_value` and the
+residual never moved while ₹108 m walked between buckets. The guards against *that* class are the `_UNASSIGNED`
+assertion in `desk.mtm.state` (every `MarketState` field must belong to a bucket), the point-in-time `LookaheadError`
+guard, `tests/test_mtm_curves.py::test_freight_bucket_moves_only_with_panel_freight` (bucket (d) moves when and only
+when panel freight moves), and code review — not the residual.
 """
 
 from __future__ import annotations

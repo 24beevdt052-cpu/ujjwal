@@ -25,6 +25,13 @@ PALETTE = {
 }
 
 # Attribution factor order + colours (Table 5, 3.2 a–g) — keep identical across all charts.
+# The (f) and (g) labels name what the bucket actually holds rather than only what the spec calls it, because both
+# are wider than their spec names and a reader who takes them at face value gets them wrong (docs/30 §4.2, §13.2):
+#   (f) is everything that changes when the events-as-of date advances — demurrage and claims, but also the
+#       restatement of the unsold-cargo inventory mark from B/L weight to accepted weight when a survey lands. It is
+#       the *inception* value of those events, not their lifetime cost (read `event_cost_lifetime_*` for that).
+#   (g) is the last block swapped, so besides carry and executed roll spreads it absorbs every cross-term the
+#       documented order pushes to the end — above all ΔLME × ΔFX on USD-priced physical.
 FACTOR_ORDER = ["lme_flat", "cross_exchange_basis", "grade_spread", "freight", "fx", "demurrage_penalty", "roll_term_structure"]
 FACTOR_LABELS = {
     "lme_flat": "(a) LME flat price",
@@ -32,8 +39,8 @@ FACTOR_LABELS = {
     "grade_spread": "(c) Grade / scrap spread",
     "freight": "(d) Freight vs fixture",
     "fx": "(e) USD/INR",
-    "demurrage_penalty": "(f) Demurrage / penalties",
-    "roll_term_structure": "(g) Roll / term structure",
+    "demurrage_penalty": "(f) Events known that day\n(demurrage, claims, restatements)",
+    "roll_term_structure": "(g) Carry, roll and cross-terms",
 }
 # Full P&L bucket list for attribution tables: day-one deal margin + the seven market factors (CONTRACTS §7).
 PNL_BUCKETS = ["new_deal"] + FACTOR_ORDER

@@ -14,7 +14,13 @@ residual, the ledger identity, the zero-by-construction proxy basis, the zero li
 the cross-phase reconciliation of the replacement mark to Phase 1 are sign-off gates, not diagnostics.
 
 Sensitivity runs (never base P&L, per CONTRACTS §7.5 and design D13) write `_mcx_mirror` and `_grade_pit` variants of
-the attribution, exposure and event-1 tables.
+the attribution, exposure and event-1 tables. `desk.mtm.sensitivity` adds the *result* sensitivities on top:
+`pnl_sensitivity_*` re-derives every typed price through the desk's own S1/S2 rules under each registered band value
+and re-runs the whole engine (a re-mark alone would move `domestic_anchor_premium_inr_t` by exactly zero rupees),
+`mcx_roll_carry` splits each executed roll into the INR carry the panel proxy creates by construction and genuine
+term structure, and `mcx_basis_risk` publishes the LME–MCX basis as a two-sided per-ticket range with an explicit
+test of the unit-beta assumption the hedge sizing rests on. `pnl_controls.csv` is written twice — once by the base
+`build()` and once at the end of `main()` with those two extra control rows appended.
 """
 
 from __future__ import annotations
@@ -22,12 +28,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from desk import HORIZON_END
 from desk.book import schema as bs
-from desk.mtm import charts, engine, events as ev
-from desk.mtm.constants import fallback_report
+from desk.mtm import charts, engine, events as ev, sensitivity as sens
+from desk.mtm.constants import LEDGER_TOL_INR, fallback_report
 from desk.mtm.history import MarketHistory, panel_days
 from desk.paths import CONFIG_DIR, TABLES_DIR, ensure_dirs
 from desk.reporting.style import PNL_BUCKETS
@@ -146,6 +153,7 @@ def _write_cashflows(book: bs.Book, H: MarketHistory, run: engine.BookRun) -> pd
             print(f"[mtm] {target.name} already written by another phase — writing {name}.csv beside it "
                   "and reconciling against it")
             row = _reconcile_cashflows(existing, cf, run.days[-1])
+    write(cf, name)
     if row is None:
         row = {"date": run.days[-1], "check": "cashflow_reconciliation_vs_p2", "value": float("nan"),
                "tolerance": float("nan"),
@@ -182,17 +190,20 @@ def main() -> None:
     base = build(book, H, label="base")
 
     # sensitivities — never base P&L (CONTRACTS §7.5, design D13)
+    mirror = mirror_res = None
     try:
         mirror = MarketHistory(mcx_source="mirror")
-        build(book, mirror, label="mcx_mirror", suffix="_mcx_mirror")
+        mirror_res = build(book, mirror, label="mcx_mirror", suffix="_mcx_mirror")
     except (FileNotFoundError, ValueError) as exc:
         print(f"[mtm] MCX mirror sensitivity skipped: {exc}")
     pit = MarketHistory(grade_source="pit")
-    build(book, pit, label="grade_pit", suffix="_grade_pit")
+    pit_res = build(book, pit, label="grade_pit", suffix="_grade_pit")
 
     _charts(book, base, H)
 
-    controls = base["controls"]
+    extra = _result_sensitivities(book, H, base, mirror, mirror_res, pit_res)
+    controls = pd.concat([base["controls"], extra], ignore_index=True)
+    write(controls, "pnl_controls")                       # rewritten with the §13.9-§13.11 control rows appended
     failed = controls[controls["status"] == "FAIL"]
     print(controls.to_string(index=False))
     if len(failed):
@@ -202,6 +213,46 @@ def main() -> None:
     book_row = run.attribution[(run.attribution["trade_id"] == engine.BOOK_ID)
                                & (run.attribution["date"] == run.days[-1])].iloc[0]
     print(f"[mtm] book cumulative P&L at {HORIZON_END}: ₹{book_row['cum_pnl_inr']:,.0f}")
+
+
+def _result_sensitivities(book: bs.Book, H: MarketHistory, base: dict, mirror: MarketHistory | None,
+                          mirror_res: dict | None, pit_res: dict) -> pd.DataFrame:
+    """The §13.9–§13.11 result sensitivities, and the two control rows that keep them honest.
+
+    These answer questions the base run cannot: *would this book still have made money* if a registered ASSUMPTION
+    had taken another value in its own band (`pnl_sensitivity_*`), how much of every MCX roll is INR carry the proxy
+    creates by construction (`mcx_roll_carry`), and how large is the LME–MCX basis risk the base run prices at zero,
+    read as a two-sided range rather than as a netted total (`mcx_basis_risk`). None of them is base P&L.
+    """
+    run = base["run"]
+    per, summary = sens.run_cases(book, H, pit_run=pit_res["run"])
+    write(per, "pnl_sensitivity_pricing")
+    write(summary, "pnl_sensitivity_summary")
+
+    carry = sens.roll_carry(book, H)
+    write(carry, "mcx_roll_carry")
+    if mirror is not None:
+        write(sens.roll_carry(book, mirror), "mcx_roll_carry_mcx_mirror")
+        write(sens.basis_risk(run.attribution, mirror_res["run"].attribution, H, mirror), "mcx_basis_risk")
+
+    end = run.days[-1]
+    published = float(run.attribution.loc[(run.attribution["trade_id"] == engine.BOOK_ID)
+                                          & (run.attribution["date"] == end), "cum_pnl_inr"].iloc[0])
+    rederived = float(summary.loc[summary["case"] == "base", "cum_pnl_horizon_inr"].iloc[0])
+    metal = float(carry["metal_pnl_inr"].abs().max()) if len(carry) else 0.0
+    rows = [
+        # The re-pricing cases are only worth reading if re-deriving the BASE case through the same S1/S2 rules
+        # reproduces the published book. That is what makes the other rows a sensitivity and not a second model.
+        {"date": end, "check": "sensitivity_base_repricing_vs_book", "value": rederived - published,
+         "tolerance": LEDGER_TOL_INR, "scope": "book cum P&L at HORIZON_END"},
+        # On a PROXY day the whole roll spread is INR carry by construction; anything else would mean the panel
+        # formula and this decomposition had drifted.
+        {"date": end, "check": "roll_carry_metal_component_max_abs", "value": metal,
+         "tolerance": LEDGER_TOL_INR, "scope": "inr (PANEL_PROXY rolls)"},
+    ]
+    df = pd.DataFrame(rows)
+    df["status"] = np.where(df["value"].abs() <= df["tolerance"], "PASS", "FAIL")
+    return df[["date", "check", "value", "tolerance", "scope", "status"]]
 
 
 def _charts(book: bs.Book, base: dict, H: MarketHistory) -> None:

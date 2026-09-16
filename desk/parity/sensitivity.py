@@ -231,11 +231,17 @@ def reference_cases(parity: pd.DataFrame) -> list[RefCase]:
     same = p[(p["grade"] == first["grade"]) & (p["lane"] == first["lane"])
              & (p["week_end"].dt.to_period("M") == REFERENCE_TROUGH_MONTH)]
     trough = same.sort_values(["net_arb_inr_t", "week_end"]).iloc[0]
+    other_lane = [l for l in model.LANES if l != first["lane"]][0]
     return [
         RefCase("first_eligible", first["week_end"], first["grade"], first["lane"],
                 "first trade-eligible in-window case (earliest week, then grade, then lane order)"),
         RefCase("june_trough", trough["week_end"], trough["grade"], trough["lane"],
                 f"lowest base net arb among {REFERENCE_TROUGH_MONTH} weeks for the same grade-lane"),
+        # Added in the Phase 1-3 review: §8 quoted a freight-scale number on the long lane that no published CSV
+        # contained, so the reader could not check the one figure that gives freight risk its size. The long-lane
+        # counterpart of `first_eligible` is now a declared reference case and both grids carry it.
+        RefCase("first_eligible_long_lane", first["week_end"], first["grade"], other_lane,
+                "the long-lane counterpart of `first_eligible`: same week and grade, the other lane"),
     ]
 
 

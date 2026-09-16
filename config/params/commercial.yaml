@@ -243,3 +243,48 @@ secondary_raw_material_cost_share:
   source: "[CRISIL] Sept 2021: 'Raw material cost (scrap) typically accounts for 80-85% of the total cost (inclusive of all taxes and duties)'; the value is the midpoint of that published range (a transformation, hence PROXY; the DIRECT statement is the range 0.80–0.85)"
   verify: "VERIFIED 2026-09-16 that CRISIL Research publishes the 80–85% range (cached CMR PDF, industry estimate, not a measured 2022 figure); the midpoint is a convention"
   note: "Context for conversion_cost_inr_t and for the interview answer 'why is scrap spread, not LME, the P&L driver for a secondary smelter'. Same report: '85-90% of scrap is imported' (FY2020) and secondary aluminium 'continues to be 25-30% cheaper than primary aluminium'."
+
+# ---------------------------------------------------------------------------------------------------------------
+# Desk commercial policy caps added in the Phase 1-3 review (2026-09-16). These are the desk's OWN rules, flagged
+# ASSUMPTION; none of them is a statute. `msme_max_payment_days` above stays in the register as context only —
+# MSMED 2006 s.15 binds a BUYER that purchases from a registered micro/small SUPPLIER, and in this book the desk is
+# the seller and is not MSME-registered, so the statute does not reach a single sale here (review finding, trader
+# lens, minor). The 45-day number survives as a desk policy cap; the justification does not.
+# ---------------------------------------------------------------------------------------------------------------
+max_domestic_credit_days:
+  value: 45
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk policy (docs/20_trade_book.md rule C1): the longest credit the desk will grant a domestic buyer, set at the same 45 days the MSMED Act would impose if the desk were a registered micro/small supplier — a convenient benchmark, not a statutory obligation on these sales"
+  verify: "N/A — desk policy assumption. The statutory context (msme_max_payment_days) is separately VERIFIED"
+  note: >
+    Enforced by desk.book.schema V09 on every sale's credit_days and on each buyer's credit_days_default.
+    One ticket (T06) uses the full 45 days and pays for them in the sale price (rule S1). The cap exists because
+    a secondary smelter's own receivable cycle is 45-60 days: longer credit is the buyer's working capital, not
+    the desk's, and the desk would rather be paid than be a lender.
+
+lc_open_days_before_laycan_min:
+  value: 10
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk policy: a seller wants the documentary credit checked, amendable and in hand before it starts stuffing containers; scrap SPAs commonly require the LC 10-15 days before the laycan opens"
+  verify: "PENDING — no citable 2022 scrap SPA clause in the cached sources; the 10-15 day convention is trade practice reported in ISRI/BIR member guidance, not a document this project holds"
+  note: >
+    Minimum calendar days between purchase.payment.lc_open_date and shipment.laycan_start, enforced by
+    desk.book.schema V11. Four tickets (T06, T07, T08, T09) were re-dated in the Phase 1-3 review because they
+    opened their credits five or six days before the laycan, which no seller of a full container parcel would
+    have accepted. Range 10-15; the desk uses the lower end because all nine parcels are with counterparties it
+    has dealt with before.
+
+buyer_advance_limit_multiple_of_credit_limit:
+  value: 1.0
+  unit: multiple_of_credit_limit_inr
+  flag: ASSUMPTION
+  source: "Desk policy added in the Phase 1-3 review: a pre-settlement advance is not credit the desk extends, but it is performance exposure to the same balance sheet — if the advance does not arrive the desk owns unsold cargo with its hedge already lifted"
+  verify: "N/A — desk policy assumption"
+  note: >
+    Cap on the advance the desk will RELY ON from one buyer, expressed as a multiple of that buyer's own
+    credit_limit_inr. desk.book.validate P14 warns (it does not refuse) when a contracted advance exceeds it, and
+    the three BUY_RJK_01 parcels in this book all do — 1.26x, 1.53x and 1.83x of a Rs 120 mn line. Those warnings
+    are the point: the limit definition in CONTRACTS §7a.4 counts receivables only, so a book that never breaches
+    it can still be running its largest single exposure to its weakest name.

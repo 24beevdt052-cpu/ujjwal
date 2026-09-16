@@ -12,7 +12,12 @@
 # Credit-limit policy (desk, stated before the book was priced):
 #   * A limit is the cap on CREDIT exposure to that buyer = invoiced-and-unpaid receivables plus the
 #     not-advance-covered part of sales already contracted but not yet invoiced. It is checked at every sale
-#     booking by `desk.book.validate` and written to outputs/tables/trade_book.csv.
+#     booking by `desk.book.validate` (rule P04) and published as outputs/tables/trade_credit_exposure.csv.
+#   * A limit therefore does NOT see an advance, and on this book the advances are much larger than the
+#     receivables they replace. That is performance exposure, not credit — if an advance fails the desk owns
+#     unsold cargo with its hedge already lifted — and it is capped separately at
+#     `buyer_advance_limit_multiple_of_credit_limit` x the buyer's own limit, checked by rule P14. The three
+#     BUY_RJK_01 parcels breach that cap (1.26x, 1.53x, 1.83x) and the warnings stand: see docs/20 §2.
 #   * The limit is sized at roughly 15–25 days of that buyer's own purchases, i.e. 4–8 % of its (SIM) turnover.
 #     A buyer whose limit will not carry the parcel buys on an advance, or waits until the previous invoice
 #     clears — both happen in this book (T04/T07 and the 26-Jul booking of T07).
@@ -20,8 +25,10 @@
 #     (M+1 final-invoice refunds and quality claims), which is the only direction credit runs on the buy side
 #     once the cargo is paid for under an LC.
 #
-# Provenance: every field is SIM (a simulated counterparty) except the registered policy caps it is checked
-# against — `msme_max_payment_days` (DIRECT, 45) and `fx_hedge_no_documentation_limit_usd` (DIRECT).
+# Provenance: every field is SIM (a simulated counterparty) except the registered caps it is checked against —
+# `max_domestic_credit_days` (ASSUMPTION, 45: a desk policy cap, NOT the MSMED Act, which binds a buyer paying a
+# registered micro/small supplier and so reaches no sale in this book), `fx_hedge_no_documentation_limit_usd`
+# (DIRECT) and `buyer_advance_limit_multiple_of_credit_limit` (ASSUMPTION).
 
 schema_version: 1
 
@@ -138,8 +145,10 @@ counterparties:
     note: >-
       The strongest name in the book and the anchor buyer for Mundra cargo: a 60,000 t/yr secondary smelter
       forty minutes from the port gate, on an MCX-average formula for its floating-priced cargoes. The limit is
-      ~4.7 % of (SIM) turnover, about 17 days of its own buying, and the book runs it to 93 % in late April —
-      which is why T08 waits until 09-Aug, after the T05 invoice clears, to contract its sale.
+      ~4.7 % of (SIM) turnover, about 17 days of its own buying, and the book runs it to 93 % at the 25-Apr
+      booking — which is why T08 waits until 09-Aug, after the T05 invoice clears, to contract its sale. (That
+      93 % is the booking-time measure rule P04 checks; Phase 3 measures the receivable daily and reports a
+      different, lower peak. Two measures, both published — see docs/20 §11.)
     profile:
       relationship_start: 2019-11-04
       years_in_business: 19
@@ -171,8 +180,8 @@ counterparties:
       The JNPT-belt smelter, forty kilometres from Nhava Sheva, and the only buyer in the book for the Gulf lane —
       so it takes four of nine cargoes. That concentration is a finding, not an oversight: it is the single
       largest credit exposure the desk runs and it is the reason the Gulf-lane parcels are the smallest in the
-      book. Peak utilisation 88 % on 26-Apr. Takes all three grades, which is why the taint/tabor parcel could
-      be placed at all.
+      book. Peak booking-time utilisation 88 % on 26-Apr. Takes all three grades, which is why the taint/tabor
+      parcel could be placed at all.
     profile:
       relationship_start: 2019-04-15
       years_in_business: 16
@@ -203,10 +212,17 @@ counterparties:
     note: >-
       A Rajkot-cluster foundry: small, lumpy order book, thin balance sheet, and the weakest name the desk will
       deal with at all. Every parcel it takes is majority-advance (T01 S2 outright, T04 75 %, T07 70 %), so its
-      credit exposure never exceeds ~₹96 mn against a ₹120 mn limit even on a ₹321 mn cargo. It is also the
-      simulated late payer in adverse event #3 — chosen because a foundry funding itself on its own customers'
-      receivables is exactly the name that stretches when domestic ingot prices fall, not because the outcome
-      was wanted somewhere.
+      *credit* exposure never exceeds ~₹94 mn against a ₹120 mn limit even on a ₹313 mn cargo.
+      READ THAT WITH WHAT IT COSTS. The advances that keep the receivable small are ₹152 mn, ₹184 mn and
+      ₹219 mn — 1.26x, 1.53x and 1.83x this name's own credit limit, and the last of them is ~15 % of its
+      (SIM) annual turnover, wired in one day. A balance sheet that can pay ₹219 mn up front is not obviously
+      the balance sheet that then goes four weeks past due on the ₹94 mn balance, and the book carries both
+      because it wanted a weak name and a working credit policy on the same ticket. Rule P14 warns on all three
+      and the warnings are left standing rather than argued away; Phase 5's credit model should score
+      pre-settlement performance exposure as well as receivables, and the advance-default case belongs in its
+      stress set. It is also the simulated late payer in adverse event #3 — chosen because a foundry funding
+      itself on its own customers' receivables is exactly the name that stretches when domestic ingot prices
+      fall, not because the outcome was wanted somewhere.
     profile:
       relationship_start: 2021-02-08
       years_in_business: 11

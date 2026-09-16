@@ -210,7 +210,14 @@ def lot_dates(t: bs.Ticket, lot: bs.Lot, E: dt.date, H) -> LotDates:
 
     transit = int(H.param(f"transit_days_{lane.lower()}", b))
     arrival_cal = b + dt.timedelta(days=transit + arrival_delay)
+    # The joint survey is normally `arrival + survey_lag_days`. CONTRACTS §7a.2 lets a ticket type a `known_date`
+    # on a quality event when the survey was late, disputed or re-sampled — an executed fact, not a derived one —
+    # and a typed date wins, because the claim-settlement date and the over-hedge window both hang off it. A
+    # survey cannot be known before the cargo lands, so an earlier typed date is clamped to the arrival.
     survey_cal = arrival_cal + dt.timedelta(days=int(H.param("survey_lag_days", b)))
+    typed = [q.known_date for q in t.events.quality if q.lot_id == lot.lot_id and q.known_date is not None]
+    if typed:
+        survey_cal = max(max(typed), arrival_cal)
     boe_cal = arrival_cal + dt.timedelta(days=int(H.param("boe_lag_days", b)))
     clearance = int(H.param("clearance_delivery_days", b))
     release_cal = arrival_cal + dt.timedelta(days=clearance + extra_dwell)
@@ -551,7 +558,15 @@ def _lc_flows(t: bs.Ticket, dates: Mapping[str, LotDates], C: dt.date, H, *, usa
         return []
     presentation = int(H.param("lc_presentation_period_days", lc.lc_open_date))
     validity_days = (t.shipment.laycan_end + dt.timedelta(days=presentation) - lc.lc_open_date).days
-    tol = t.purchase.spa.quantity_tolerance_frac or float(H.param("lc_amount_tolerance_frac", lc.lc_open_date))
+    # Two different terms, and the ticket grammar cannot yet tell them apart. The SPA quantity tolerance is what the
+    # seller may ship; `lc_amount_tolerance_frac` is what the CREDIT will pay against (UCP 600 art. 30). A ticket
+    # that states an SPA tolerance sizes the credit on it (T01, T03 at 0.05); the other seven state none, so the
+    # credit takes the registered tolerance. `schema.SpaTerms.quantity_tolerance_frac` defaults to 0.0 rather than
+    # None, so a ticket that deliberately typed a strict 0.00 is today indistinguishable from one that stated
+    # nothing and would also take the fallback — a latent falsy-zero, not an error on this book (docs/30 §11.6).
+    # Fix in the Phase 2-owned schema: `float | None = None`, after which `is None` is the whole rule here.
+    spa_tol = t.purchase.spa.quantity_tolerance_frac
+    tol = float(spa_tol) if spa_tol else float(H.param("lc_amount_tolerance_frac", lc.lc_open_date))
     ld0 = dates[t.shipment.lots[0].lot_id]
 
     def lc_value_usd(M, tau, HV):

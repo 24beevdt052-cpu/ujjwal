@@ -225,6 +225,17 @@ class MarketHistory:
         return (self._theo(d, float(r.lme_cash_usd_t), float(r.usdinr), float(r.inr_rate_3m_pa), m)
                 + info["basis"][info["m2_month"]])
 
+    def mcx_theo_inr_kg(self, d) -> float:
+        """The near-month duty-paid parity price on `d` — the theo the basis is measured against (D4)."""
+        d = to_date(d)
+        r = self.row(d)
+        return self._theo(d, float(r.lme_cash_usd_t), float(r.usdinr), float(r.inr_rate_3m_pa),
+                          self.cal.m1_month_on(d))
+
+    def mcx_observed_inr_kg(self, d) -> float:
+        """The near-month price this source actually reports on `d` (panel column, bhavcopy, or mirror close)."""
+        return self._mcx[to_date(d)]["m1_px"]
+
     def mcx_basis_for(self, state: MarketState, d, month) -> float:
         """Basis to apply to a contract month at clock `d` (unlisted months take the furthest listed one)."""
         basis = state.mcx_basis_inr_kg

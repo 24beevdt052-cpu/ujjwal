@@ -110,7 +110,8 @@ LINE_ITEMS = ["cfr_usd_t", "payload_scale", "freight_usd_t", "fob_usd_t", "insur
               "av_customs_inr_t", "goods_inr_t", "bcd_inr_t", "sws_inr_t", "igst_inr_t", "port_inr_t",
               "finance_inr_t", "igst_finance_inr_t", "landed_inr_t", "recovery_frac", "anchor_inr_t",
               "byproduct_inr_t", "conversion_inr_t", "net_arb_inr_t", "margin_threshold_inr_t", "window_open"]
-CASE_FLAGS = ["open_base", "open_pit_mix", "open_conv18k", "trade_eligible"]
+CASE_FLAGS = ["open_base", "open_pit_mix", "open_conv18k", "trade_eligible", "open_pit_conv18k",
+              "trade_eligible_pit"]
 
 # CONTRACTS §5a — declared ex ante; the conversion case is "one grid step above base" and the contract names 18,000.
 SECTION_5A_CONVERSION_INR_T_INGOT = 18000
@@ -351,9 +352,19 @@ def conversion_step_above_base() -> float:
 
 
 def section_5a_overrides() -> dict[str, dict[str, Override]]:
+    """The two one-change §5a cases, plus the both-changes case that is the **no-hindsight** gate.
+
+    `open_pit_conv18k` applies the point-in-time mix *and* the higher conversion cost together. It is not part of
+    the §5a rule — that rule is frozen (CONTRACTS §5a) and this changes nothing about it — but it is the version of
+    the same discipline a 2022 desk could actually have computed, because the §5a base and conv18k legs both read
+    the lag-2 mix, which was published months later. `trade_eligible_pit` is published beside `trade_eligible` so a
+    reader can see exactly how much of the book's standing-aside came from a reconstruction (docs/10 §6).
+    """
     return {
         "open_pit_mix": mix_variant_overrides(PIT_MIX_KEY),
         "open_conv18k": {"conversion_cost_inr_t": conversion_step_above_base()},
+        "open_pit_conv18k": {**mix_variant_overrides(PIT_MIX_KEY),
+                             "conversion_cost_inr_t": conversion_step_above_base()},
     }
 
 
@@ -371,8 +382,12 @@ def build_parity_weekly(inputs: pd.DataFrame | None = None) -> pd.DataFrame:
     out["open_pit_mix"] = cases["open_pit_mix"]["window_open"].values
     out["open_conv18k"] = cases["open_conv18k"]["window_open"].values
     out["trade_eligible"] = out["open_base"] & out["open_pit_mix"] & out["open_conv18k"]
+    # The no-hindsight counterpart, published as disclosure only: `trade_eligible` above is untouched (§5a).
+    out["open_pit_conv18k"] = cases["open_pit_conv18k"]["window_open"].values
+    out["trade_eligible_pit"] = out["open_pit_mix"] & out["open_pit_conv18k"]
     out["net_arb_pit_mix_inr_t"] = cases["open_pit_mix"]["net_arb_inr_t"].values
     out["net_arb_conv18k_inr_t"] = cases["open_conv18k"]["net_arb_inr_t"].values
+    out["net_arb_pit_conv18k_inr_t"] = cases["open_pit_conv18k"]["net_arb_inr_t"].values
     out["net_arb_usd_t"] = base["net_arb_usd_t"].values
     return out
 

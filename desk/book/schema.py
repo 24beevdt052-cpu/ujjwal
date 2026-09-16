@@ -348,7 +348,10 @@ class SpaTerms:
     rejection_excess_frac: float | None = None            # default spa_contamination_rejection_excess_frac
     radioactivity_clause_key: str = "radioactivity_clause"
     penalty_schedule_key: str = "rejection_penalty_schedule"
-    quantity_tolerance_frac: float = 0.0                  # LC sizing only; B/L weight is not toleranced (design §9)
+    # None = the SPA states no quantity tolerance, so the LC is opened with UCP 600 art.30's default; 0.0 means
+    # a deliberately strict-quantity SPA. The two are different instructions and a falsy check conflates them
+    # (review finding, controller lens): `x or default` silently gives a strict SPA the 10 % default.
+    quantity_tolerance_frac: float | None = None          # LC sizing only; B/L weight is not toleranced (design §9)
     extra: dict = field(default_factory=dict)
 
 
@@ -517,7 +520,15 @@ class Hedges:
 
 @dataclass(frozen=True)
 class QualityEvent:
-    """Joint-survey outcome for one lot (SIM). Known on the survey date; before it the ticket assumes nominal quality."""
+    """Joint-survey outcome for one lot (SIM).
+
+    `known_date` is the day the survey result exists, i.e. the day the desk may act on it. It is OPTIONAL: left
+    out (the whole of this book), the engine derives it as arrival + `survey_lag_days`, which is the normal case.
+    It is typed only when the survey was late, disputed or re-sampled, because that is an executed fact and not a
+    derived one — CONTRACTS §7a.2 requires the field, and without it a late survey cannot be expressed at all
+    (review finding, trader lens, minor). An engine that reads a typed `known_date` must use it in place of the
+    derived survey date; `desk/mtm/lifecycle.py` does not yet, which is why no ticket types one.
+    """
 
     lot_id: str
     moisture_actual_frac: float
@@ -525,6 +536,7 @@ class QualityEvent:
     rejected_boxes: int = 0
     rejection_reason: RejectionReason | None = None
     claim_recovery_frac: float = 1.0
+    known_date: dt.date | None = None
     flag: Flag = Flag.SIM
     note: str = ""
     extra: dict = field(default_factory=dict)
@@ -720,7 +732,7 @@ def _read_spa(raw: Any, where: str) -> SpaTerms:
         rejection_excess_frac=_opt_float(d.get("rejection_excess_frac"), _where(where, "rejection_excess_frac")),
         radioactivity_clause_key=str(d.get("radioactivity_clause_key", "radioactivity_clause")),
         penalty_schedule_key=str(d.get("penalty_schedule_key", "rejection_penalty_schedule")),
-        quantity_tolerance_frac=_float(d.get("quantity_tolerance_frac", 0.0), _where(where, "quantity_tolerance_frac")),
+        quantity_tolerance_frac=_opt_float(d.get("quantity_tolerance_frac"), _where(where, "quantity_tolerance_frac")),
         extra=d["extra"],
     )
 
@@ -922,8 +934,8 @@ def _read_events(raw: Any, where: str) -> Events:
     for i, r in enumerate(_seq(d.get("quality"), _where(where, "quality"))):
         qw = f"{_where(where, 'quality')}[{i}]"
         q = _fields(r, qw, ("lot_id", "moisture_actual_frac", "contamination_actual_frac", "rejected_boxes",
-                            "rejection_reason", "claim_recovery_frac", "flag", "note"),
-                    derived=("known_date", "payable_mt", "discount_frac", "claim_usd"))
+                            "rejection_reason", "claim_recovery_frac", "known_date", "flag", "note"),
+                    derived=("payable_mt", "discount_frac", "claim_usd"))
         quality.append(QualityEvent(
             lot_id=_str(_req(q, "lot_id", qw), _where(qw, "lot_id")),
             moisture_actual_frac=_float(_req(q, "moisture_actual_frac", qw), _where(qw, "moisture_actual_frac")),
@@ -932,6 +944,7 @@ def _read_events(raw: Any, where: str) -> Events:
             rejected_boxes=_int(q.get("rejected_boxes", 0), _where(qw, "rejected_boxes")),
             rejection_reason=_opt_enum(RejectionReason, q.get("rejection_reason"), _where(qw, "rejection_reason")),
             claim_recovery_frac=_float(q.get("claim_recovery_frac", 1.0), _where(qw, "claim_recovery_frac")),
+            known_date=_opt_date(q.get("known_date"), _where(qw, "known_date")),
             flag=_enum(Flag, q.get("flag", Flag.SIM.value), _where(qw, "flag")),
             note=str(q.get("note", "")), extra=q["extra"]))
     logistics = []
@@ -1139,11 +1152,11 @@ def validate_counterparties(cps: Sequence[Counterparty]) -> list[Issue]:
                                    "a buyer needs a credit limit (0 means advance-only); it feeds the P5 tracker"))
             elif c.credit_limit_inr < 0:
                 issues.append(_err("V03", f"{w}.credit_limit_inr", "must be >= 0"))
-            cap = int(config.value("msme_max_payment_days"))
+            cap = int(config.value("max_domestic_credit_days"))
             if c.credit_days_default is not None and c.credit_days_default > cap:
                 issues.append(_err("V09", f"{w}.credit_days_default",
                                    f"{c.credit_days_default} days exceeds the desk policy cap "
-                                   f"msme_max_payment_days = {cap}"))
+                                   f"max_domestic_credit_days = {cap}"))
         if c.profile.relationship_start > WINDOW_START:
             issues.append(_warn("V03", f"{w}.profile.relationship_start",
                                 f"relationship starts after WINDOW_START ({WINDOW_START}); P5 payment history is empty"))
@@ -1315,6 +1328,14 @@ def validate_trades(trades: Sequence[Ticket], counterparties: Sequence[Counterpa
             issues.append(_err("V11", f"{yw}.lc_open_date",
                                f"{pay.lc_open_date} must fall between the trade date {t.trade_date} and the laycan "
                                f"start {sh.laycan_start} — the seller will not ship without a workable LC"))
+        else:
+            lead_min = int(config.value("lc_open_days_before_laycan_min", t.trade_date))
+            lead = (sh.laycan_start - pay.lc_open_date).days
+            if lead < lead_min:
+                issues.append(_err("V11", f"{yw}.lc_open_date",
+                                   f"{pay.lc_open_date} is {lead} days before the laycan opens on "
+                                   f"{sh.laycan_start}; a seller wants the credit checked and amendable at least "
+                                   f"lc_open_days_before_laycan_min = {lead_min} days before it starts stuffing"))
         if pay.confirmed and pay.confirmation_charges_for is None:
             issues.append(_err("V11", f"{yw}.confirmation_charges_for",
                                "say who pays the confirmation fee (APPLICANT creates a desk cashflow)"))
@@ -1426,7 +1447,10 @@ def validate_trades(trades: Sequence[Ticket], counterparties: Sequence[Counterpa
                 if sp.price_inr_t is not None:
                     issues.append(_err("V14", f"{spw}.price_inr_t", "not used with MCX_AVG sale pricing"))
             yp, ypw = s.payment, f"{sw}.payment"
-            cap = int(config.value("msme_max_payment_days"))
+            # Desk policy, NOT a statute: MSMED 2006 s.15 binds a buyer purchasing from a registered micro/small
+            # supplier. Here the desk is the seller and is not MSME-registered, so the Act reaches none of these
+            # sales; `msme_max_payment_days` stays in the register as context (review finding, trader lens).
+            cap = int(config.value("max_domestic_credit_days"))
             if yp.terms is SalePaymentTerms.ADVANCE:
                 if yp.advance_frac is None or abs(yp.advance_frac - 1.0) > 1e-9:
                     issues.append(_err("V15", f"{ypw}.advance_frac", "ADVANCE means advance_frac = 1.0"))
@@ -1444,7 +1468,8 @@ def validate_trades(trades: Sequence[Ticket], counterparties: Sequence[Counterpa
                     issues.append(_err("V15", f"{ypw}.credit_days", "ADVANCE_PLUS_CREDIT needs credit_days >= 1"))
             if yp.credit_days is not None and yp.credit_days > cap:
                 issues.append(_err("V09", f"{ypw}.credit_days",
-                                   f"{yp.credit_days} days exceeds the desk policy cap msme_max_payment_days = {cap}"))
+                                   f"{yp.credit_days} days exceeds the desk policy cap "
+                                   f"max_domestic_credit_days = {cap}"))
             if yp.terms in (SalePaymentTerms.ADVANCE, SalePaymentTerms.ADVANCE_PLUS_CREDIT):
                 if yp.advance_date is None:
                     issues.append(_err("V15", f"{ypw}.advance_date", "an advance needs its payment date"))
@@ -1594,6 +1619,12 @@ def validate_trades(trades: Sequence[Ticket], counterparties: Sequence[Counterpa
                 issues.append(_err("V20", f"{qw}.contamination_actual_frac", "must be a fraction in 0..0.5"))
             if not (0.0 <= q.claim_recovery_frac <= 1.0):
                 issues.append(_err("V20", f"{qw}.claim_recovery_frac", "must be a fraction in 0..1"))
+            if q.known_date is not None and q.lot_id in lot_ids:
+                bl = t.lot(q.lot_id).bl_date
+                if not (bl < q.known_date <= HORIZON_END):
+                    issues.append(_err("V20", f"{qw}.known_date",
+                                       f"a survey result exists after the lot ships ({bl}) and inside the engine "
+                                       f"horizon ({HORIZON_END}); {q.known_date} does not"))
         for g in t.events.logistics:
             gw = f"{w}.events.logistics({g.event_id})"
             if g.lot_id not in lot_ids:

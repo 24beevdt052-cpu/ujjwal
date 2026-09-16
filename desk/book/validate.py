@@ -24,6 +24,10 @@ Codes P01–P12, each with a test in `tests/test_book.py`:
     P10  purchase price / factor sits within a stated band of the trade-date parity price.
     P11  cross-phase control: this module's per-day §5 line items reproduce Phase 1 on parity value dates.
     P12  (warning) the MCX proxy moved beyond the exchange's maximum daily price limit on a hedge action day.
+    P13  the market numbers a rationale or terms note *quotes* reconcile to the panel, and no note claims its
+         inputs were point-in-time when the ticket's own price basis rests on a reconstruction.
+    P14  (warning) a contracted advance the desk relies on exceeds that buyer's own credit limit by more than
+         the registered policy multiple — performance exposure the receivable-only limit definition cannot see.
 
 Nothing here reads a value dated after the date it is checking against: every look-up goes through
 `market_reference(date, ...)` or `panel_row(date)`, both of which take the decision date as their clock.
@@ -68,16 +72,30 @@ BOE_LAG_DAYS = 1                       # ASSUMPTION — igst_credit_lag_days not
 FINAL_INVOICE_LAG_BDAYS = 5            # ASSUMPTION — seller computes the M+1 average and invoices by T/T
 CLAIM_SETTLE_LAG_DAYS = 30             # ASSUMPTION — survey report, seller acceptance, credit note
 FREIGHT_BOOKING_DAYS_BEFORE_BL = 10    # ASSUMPTION — NVOCC space-confirmation lead time
+LC_AMOUNT_TOLERANCE_FRAC = 0.10        # ASSUMPTION — UCP 600 art.30 'about' tolerance an LC is opened with when
+                                       # the SPA states no quantity tolerance of its own (they are different
+                                       # concepts: art.30 sizes the credit, the SPA sizes the cargo)
 
 # Desk policy (docs/20_trade_book.md §6). Stated before the book was priced; never fitted to an outcome.
 FREIGHT_STOP_LOSS_FRAC = 0.15          # stop = trade-date lane index x (1 + this)
 FIXTURE_SPREAD_BAND = (0.0, 0.05)      # an NVOCC all-in rate sits 0-5 % over the assessed lane index
 DESK_ARB_SHARE_FRAC = 0.50             # domestic sale price = replacement + this x (netback - replacement)
-SALE_PRICE_BAND_INR_T = 1500.0         # tolerance on that rule, covering the stated negotiation deltas
+SALE_PRICE_ROUNDING_INR_T = 250.0      # sale prices are quoted to the nearest 250 ₹/MT
+SALE_PRICE_BAND_INR_T = 150.0          # tolerance on the rule once the payment-terms delta is priced explicitly
+SALE_CREDIT_BASELINE_DAYS = 30         # the terms the half-the-gap price is quoted on; anything else is priced
 PURCHASE_DISCOUNT_BAND_USD_T = (0.0, 30.0)   # the desk bids 0-30 USD/t under trade-date parity
 PURCHASE_FACTOR_BAND = (0.0, 0.010)    # a formula purchase is contracted 0-1.0 point under the trade-date factor
 HEDGE_RATIO_TOL = 0.06                 # |implied ratio - target| at a non-roll entry
 MCX_LOT_TOL = 1                        # lots
+FIXTURE_SPREAD_SENSITIVITY = (0.02, 0.05, 0.10)   # NVOCC all-in spread over the index, published as a range
+                                       # because the 1.7-2.0 % the book uses is an ASSUMPTION with no 2022
+                                       # India-inbound fixture evidence behind it (docs/20 §6.4)
+
+# Tolerances for P13, the reconciliation of prose numbers to the panel. A trader writes round numbers, so the
+# check is deliberately loose: it exists to catch a claim that ties to nothing, not to police rounding.
+CLAIM_TOL_USD_T = 2.0
+CLAIM_TOL_USDINR = 0.01
+CLAIM_TOL_PCT_POINTS = 0.3
 
 MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
@@ -505,6 +523,153 @@ def rationale_hindsight_hits(text: str, asof: dt.date, allowed_months: Iterable[
     return hits
 
 
+# Numbers a desk note may quote, and how each one is reconciled to the panel (P13). Only these shapes are
+# checked: the scan is honest about what it cannot parse rather than pretending to understand prose.
+_CLAIM_USD_IN_A_DAY = re.compile(r"([\d,]+(?:\.\d+)?)\s*dollars(?:[^.;]{0,40}?)\bin a day\b", re.I)
+_CLAIM_USD_OFF_LOW = re.compile(
+    r"([\d,]+(?:\.\d+)?)\s*dollars\b[^.;]{0,30}?\b(?:off|since)\s+the\s+(\d{1,2})[-/ ]("
+    + "|".join(MONTHS) + r")[a-z]*\s+(low|high)", re.I)
+_CLAIM_USD_UNDER = re.compile(
+    r"([\d,]+(?:\.\d+)?)\s*(?:dollars|USD/t)\s+under\s+(?:my own |my |the )?(netback|parity)", re.I)
+_CLAIM_RUPEE_AT = re.compile(r"rupee[^.;]{0,25}?\bat\s+(\d{2}\.\d{2})\b", re.I)
+_CLAIM_PCT_TODAY = re.compile(r"moved\s+(\d{1,2}(?:\.\d+)?)\s*%\s*(?:today|on the trade date)", re.I)
+# A note may not claim its own inputs were knowable on the day: two of them never are (CONTRACTS §4.3,
+# scrap_grades.yaml). Deleting the claim is the fix; the numbers stay.
+_CLAIM_POINT_IN_TIME = re.compile(
+    r"every input is dated|all inputs are dated|every input here is dated|no input here is a reconstruction", re.I)
+RECONSTRUCTED_INPUTS = ("the grade factor (a lag-2 unit-value reconstruction, scrap_grades.yaml)",
+                        "the lane freight level (level inputs published months later, CONTRACTS §4.3)")
+
+
+def _last_panel_day(d: dt.date) -> dt.date:
+    """The last panel day on or before `d` (a parity week_end is a Friday, which need not be a trading day)."""
+    days = [x for x in panel_days() if x <= d]
+    if not days:
+        raise ValueError(f"no panel day on or before {d}")
+    return days[-1]
+
+
+def _panel_prev(d: dt.date) -> dt.date | None:
+    days = panel_days()
+    i = days.index(d)
+    return None if i == 0 else days[i - 1]
+
+
+def _lme(day: dt.date) -> dict[str, float]:
+    row = panel_row(day)
+    return {"LME cash": float(row["lme_cash_usd_t"]), "LME 3M": float(row["lme_3m_usd_t"])}
+
+
+def numeric_claim_hits(t: Ticket, text: str, asof: dt.date) -> list[str]:
+    """Market numbers quoted in desk prose that do not reconcile to the panel (P13).
+
+    What it checks — and the list is the honest limit of the control:
+      * "N dollars ... in a day"          -> the one-session move in LME cash or 3M on `asof`;
+      * "N dollars off/since the D-Mon low/high" -> the move from that day to `asof`, or to the last panel day of
+        the parity week the ticket cites (a trader may measure to either, and the ticket declares both);
+      * "N dollars / N USD/t under netback|parity" -> the ticket's own P10 discount at the trade date;
+      * "rupee ... at XX.XX"              -> `usdinr` on `asof`;
+      * "moved N % today|on the trade date" -> the one-session move in the MCX proxy or LME on `asof`.
+    Anything else — "106 dollars a tonne", "a thousand dollars", "12 % in a session" as a general statement — is
+    NOT checked, and P13 says so rather than implying the whole prose is reconciled.
+    """
+    hits: list[str] = []
+    refs = {"trade date": asof}
+    try:
+        refs["parity week"] = _last_panel_day(t.rationale.parity_week_end)
+    except ValueError:                                          # pragma: no cover - a week before the panel
+        pass
+
+    def _fail(claim: str, want: float, candidates: dict[str, float], tol: float, unit: str) -> None:
+        if any(abs(want - v) <= tol for v in candidates.values()):
+            return
+        near = ", ".join(f"{k} {v:,.2f}" for k, v in sorted(candidates.items()))
+        hits.append(f"{claim!r} (panel gives {near} {unit})")
+
+    for m in _CLAIM_USD_IN_A_DAY.finditer(text):
+        want = float(m[1].replace(",", ""))
+        prev = _panel_prev(asof)
+        if prev is None:
+            continue
+        cands = {f"{k} 1-day": abs(v - _lme(prev)[k]) for k, v in _lme(asof).items()}
+        _fail(m.group(0), want, cands, CLAIM_TOL_USD_T, "USD/t")
+
+    for m in _CLAIM_USD_OFF_LOW.finditer(text):
+        want = float(m[1].replace(",", ""))
+        cited = dt.date(asof.year, MONTHS[m[3].lower()[:3]], int(m[2]))
+        if cited > asof or cited not in set(panel_days()):
+            continue                                            # P08 owns forward dates; a non-panel day is not ours
+        cands = {}
+        for label, ref in refs.items():
+            for k, v in _lme(ref).items():
+                cands[f"{k} to {label}"] = abs(v - _lme(cited)[k])
+        _fail(m.group(0), want, cands, CLAIM_TOL_USD_T, "USD/t")
+
+    if t.purchase.pricing.type is PurchasePricingType.FIXED and t.purchase.pricing.price_usd_t is not None:
+        ref = market_reference(t.trade_date, t.grade.value, t.lane.value)
+        parity_px = ref["fob_usd_t"] if t.purchase.incoterm is Incoterm.FOB else ref["cfr_usd_t"]
+        for m in _CLAIM_USD_UNDER.finditer(text):
+            want = float(m[1].replace(",", ""))
+            _fail(m.group(0), want, {f"{t.purchase.incoterm.value} parity less the contract price":
+                                     parity_px - t.purchase.pricing.price_usd_t}, CLAIM_TOL_USD_T, "USD/t")
+
+    for m in _CLAIM_RUPEE_AT.finditer(text):
+        want = float(m[1])
+        cands = {f"usdinr on the {label}": float(panel_row(ref)["usdinr"]) for label, ref in refs.items()}
+        _fail(m.group(0), want, cands, CLAIM_TOL_USDINR, "₹/USD")
+
+    prev = _panel_prev(asof)
+    if prev is not None:
+        moves = {"MCX M1": "mcx_al_m1_inr_kg", "MCX M2": "mcx_al_m2_inr_kg",
+                 "LME cash": "lme_cash_usd_t", "LME 3M": "lme_3m_usd_t"}
+        cands = {k: abs(float(panel_row(asof)[c]) / float(panel_row(prev)[c]) - 1.0) * 100.0
+                 for k, c in moves.items()}
+        for m in _CLAIM_PCT_TODAY.finditer(text):
+            _fail(m.group(0), float(m[1]), cands, CLAIM_TOL_PCT_POINTS, "%")
+    return hits
+
+
+def provenance_claim_hits(text: str) -> list[str]:
+    """A categorical point-in-time claim about inputs that are reconstructions (P13). Never true in this book."""
+    return [m.group(0) for m in _CLAIM_POINT_IN_TIME.finditer(text)]
+
+
+def demurrage_usd(boxes: int, chargeable_days: int, day: dt.date) -> float:
+    """Detention/ground rent on `boxes` for `chargeable_days` beyond the free days, up the registered slabs.
+
+    Carriers escalate: `demurrage_usd_per_box_day` is the FIRST-slab rate and its own register note says so, so
+    charging eight days at it (the July-2022 congestion case) understates the bill. The engine must use this
+    same schedule or the two phases publish different demurrage (docs/20_trade_book.md §12).
+    """
+    if chargeable_days <= 0 or boxes <= 0:
+        return 0.0
+    n1 = int(config.value("demurrage_slab1_days", day))
+    n2 = int(config.value("demurrage_slab2_days", day))
+    r1 = float(config.value("demurrage_usd_per_box_day", day))
+    r2 = float(config.value("demurrage_usd_per_box_day_slab2", day))
+    r3 = float(config.value("demurrage_usd_per_box_day_slab3", day))
+    d1 = min(chargeable_days, n1)
+    d2 = min(max(chargeable_days - n1, 0), n2)
+    d3 = max(chargeable_days - n1 - n2, 0)
+    return boxes * (d1 * r1 + d2 * r2 + d3 * r3)
+
+
+def sale_terms_delta_inr_t(s: Sale, mid_inr_t: float, day: dt.date) -> float:
+    """The payment-terms adjustment to the half-the-gap sale price, in ₹/MT (desk rule S1).
+
+    Symmetric by construction, which the first draft of this book was not: it charged a flat ₹500/MT per
+    fortnight of extra credit but paid only ₹500/MT for a *full* advance, so both errors ran the desk's way on
+    every advance ticket. Both sides are now the same number — the desk's own registered working-capital rate on
+    the days the money actually moves — so an advance is worth what it costs the desk to fund, and extra credit
+    costs the buyer what it costs the desk to give.
+    """
+    wc = float(config.value("wc_rate_inr_pa", day))
+    adv = s.payment.advance_frac or 0.0
+    credit = s.payment.credit_days or 0
+    days = (credit - SALE_CREDIT_BASELINE_DAYS) * (1.0 - adv) - SALE_CREDIT_BASELINE_DAYS * adv
+    return mid_inr_t * wc * days / units.DAY_COUNT_INR
+
+
 def declared_future_months(t: Ticket, sched: TicketSchedule) -> set[str]:
     """Month names the ticket declares as contract periods, so a note may use them forward."""
     out: set[str] = set()
@@ -797,6 +962,19 @@ def validate(book: Book, *, strict_schema: bool = True) -> list[Issue]:
                                    f"cites {sorted(set(hits))}, which post-date the decision on {asof}: a "
                                    f"decision may use only information published on or before it "
                                    f"(CONTRACTS §1.2)"))
+            # --- P13 the numbers in the prose, and the provenance it claims for them
+            bad = numeric_claim_hits(t, text, asof)
+            if bad:
+                issues.append(_err("P13", label,
+                                   "quotes market numbers that do not reconcile to the panel: "
+                                   + "; ".join(bad)))
+            claims = provenance_claim_hits(text)
+            if claims:
+                issues.append(_err("P13", label,
+                                   f"claims {sorted(set(claims))}, which cannot be true of this ticket: its "
+                                   f"price basis rests on " + " and ".join(RECONSTRUCTED_INPUTS)
+                                   + ". State the dates of the inputs that ARE point-in-time and name the ones "
+                                     "that are not; do not make the categorical claim."))
 
         # --- P09 sale prices inside [replacement, netback]
         for s in t.sales:
@@ -809,12 +987,15 @@ def validate(book: Book, *, strict_schema: bool = True) -> list[Issue]:
                 issues.append(_err("P09", sw,
                                    f"{price:,.0f} ₹/MT on {s.contract_date} is outside the defensible range "
                                    f"[replacement {lo:,.0f}, netback {hi:,.0f}]"))
-            want = lo + DESK_ARB_SHARE_FRAC * (hi - lo)
+            mid = lo + DESK_ARB_SHARE_FRAC * (hi - lo)
+            delta = sale_terms_delta_inr_t(s, mid, s.contract_date)
+            want = mid + delta
             if abs(price - want) > SALE_PRICE_BAND_INR_T:
                 issues.append(_warn("P09", sw,
-                                    f"{price:,.0f} ₹/MT is {price - want:+,.0f} from the desk's "
-                                    f"{DESK_ARB_SHARE_FRAC:.0%}-of-the-gap rule ({want:,.0f}); the stated "
-                                    f"negotiation deltas should be within ±{SALE_PRICE_BAND_INR_T:,.0f}"))
+                                    f"{price:,.0f} ₹/MT is {price - want:+,.0f} from the desk's rule "
+                                    f"({DESK_ARB_SHARE_FRAC:.0%} of the gap = {mid:,.0f}, payment terms "
+                                    f"{delta:+,.0f} at wc_rate_inr_pa, = {want:,.0f}); a quoted price may only "
+                                    f"differ by the ±{SALE_PRICE_BAND_INR_T:,.0f} rounding tolerance"))
 
         # --- P10 purchase price against trade-date parity
         ref = market_reference(t.trade_date, t.grade.value, t.lane.value)
@@ -844,6 +1025,28 @@ def validate(book: Book, *, strict_schema: bool = True) -> list[Issue]:
                                f"booking {r['credit_value_inr']:,.0f} ₹ of credit on {r['contract_date']} takes "
                                f"{r['buyer_id']} to {r['exposure_after_inr']:,.0f} ₹ against a limit of "
                                f"{r['credit_limit_inr']:,.0f} ₹"))
+
+    # --- P14 pre-settlement advance reliance (performance exposure the receivable-only limit cannot see)
+    mult = float(config.value("buyer_advance_limit_multiple_of_credit_limit"))
+    for t in book.trades:
+        for s in t.sales:
+            adv = s.payment.advance_frac or 0.0
+            if adv <= 0:
+                continue
+            buyer = book.counterparty(s.buyer_id)
+            limit = float(buyer.credit_limit_inr or 0.0)
+            qty = sum(t.lot_weight_mt(t.lot(lid)) for lid in s.lot_ids)
+            price = (s.pricing.price_inr_t if s.pricing.type is SalePricingType.FIXED
+                     else _mcx_sale_price_at(s, s.contract_date, t))
+            amount = qty * price * adv
+            if limit and amount > limit * mult + 1e-6:
+                issues.append(_warn("P14", f"trades({t.trade_id}).sales({s.sale_id}).payment.advance_frac",
+                                    f"the desk is relying on a {adv:.0%} advance of {amount:,.0f} ₹ from "
+                                    f"{s.buyer_id} on {s.payment.advance_date}, {amount / limit:.2f}x its own "
+                                    f"credit limit of {limit:,.0f} ₹ against a policy cap of "
+                                    f"{mult:.2f}x (buyer_advance_limit_multiple_of_credit_limit). This is not "
+                                    f"credit extended, so P04 cannot see it — it is performance exposure: if "
+                                    f"the advance fails the desk owns the cargo unsold with its hedge lifted"))
 
     issues.extend(cross_phase_control())
     return issues

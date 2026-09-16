@@ -229,6 +229,46 @@ demurrage_usd_per_box_day:
     Blended 20ft/40ft first-slab figure; carriers escalate slabs after 5-10 days, so long delays cost more per day.
     Range 15-75 USD/box/day. Used by P3 attribution factor (f) and the 'BIS-QCO + demurrage' stress.
 
+demurrage_slab1_days:
+  value: 5
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: Indian import detention tariffs are slabbed, and the first slab typically runs 5 days (some carriers 7-10) beyond free time before the rate steps up"
+  verify: "PENDING — same evidence gap as demurrage_usd_per_box_day: retrieve a 2022 Wayback copy of a carrier's India import detention slab table (Maersk/MSC/CMA India local charges)"
+  note: >
+    Length of the first chargeable slab, counted from the end of detention_free_days. Added in the Phase 1-3
+    review: the book previously charged every chargeable day at the first-slab rate, which under-states a long
+    delay — exactly the case the July-2022 congestion creates (T07 L2 runs 8 chargeable days).
+
+demurrage_slab2_days:
+  value: 5
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk assumption: the second detention slab typically runs a further 5 days before the highest slab applies"
+  verify: "PENDING — as demurrage_slab1_days"
+  note: "Length of the second chargeable slab. Days beyond slab 1 + slab 2 are charged at demurrage_usd_per_box_day_slab3."
+
+demurrage_usd_per_box_day_slab2:
+  value: 70
+  unit: usd_per_box_per_day
+  flag: ASSUMPTION
+  source: "Desk assumption: carriers roughly double the per-day rate on the second detention slab (the 2x step is the common shape of published India import detention tariffs)"
+  verify: "PENDING — as demurrage_slab1_days"
+  note: >
+    2x demurrage_usd_per_box_day. Range 30-150 USD/box/day. The multiple, not the level, is the assumption being
+    made here; the level inherits the first slab's evidence gap.
+
+demurrage_usd_per_box_day_slab3:
+  value: 105
+  unit: usd_per_box_per_day
+  flag: ASSUMPTION
+  source: "Desk assumption: the top detention slab runs at roughly 3x the first-slab rate"
+  verify: "PENDING — as demurrage_slab1_days"
+  note: >
+    3x demurrage_usd_per_box_day, applied to every chargeable day beyond slab 1 + slab 2. Range 45-225.
+    desk.book.validate.demurrage_usd() implements the schedule; the P3 engine must use the same function (see
+    docs/20_trade_book.md §12) or the two phases will publish different demurrage.
+
 # ---------------------------------------------------------------------------------------------------------------
 # Freight level calibration (used by desk.data.fetch_freight)
 # ---------------------------------------------------------------------------------------------------------------
