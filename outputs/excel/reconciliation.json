@@ -43,7 +43,7 @@
   "scope": "full workbook",
   "scope_note": "Every formula cell in every sheet is recalculated; nothing is sampled.",
   "scoreboard": "PASS",
-  "seconds": 153.1,
+  "seconds": 167.3,
   "sheets": {
     "Attribution": {
       "constant": 2485,
