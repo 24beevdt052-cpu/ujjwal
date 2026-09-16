@@ -252,8 +252,9 @@ Two offset ratios are published because they answer different questions:
 | cost of that cover (bank margin at inception + the forward legs' carry) | −9,786,254 |
 
 **Settlements.** All 25 forward lines settled inside the horizon; none was open at 2022-10-31. Realised settlement
-cash was **+₹19,557,673** across the book, from **−₹0.41 m on T01** (four BUY_USD lines struck on 08-Mar and
-18-Mar, before the slide) to +₹6.54 m on T05 and +₹6.40 m on T02. The book carries exactly two SELL_USD lines —
+cash was **+₹19,557,673** across the book, from **−₹0.41 m on T01** (four BUY_USD lines: one dealt on 18-Mar against
+the freight payable, three dealt on the 29-Mar, 04-Apr and 07-Apr bills of lading for value 05–14 Apr, at the very
+start of the slide) to +₹6.54 m on T05 and +₹6.40 m on T02. The book carries exactly two SELL_USD lines —
 T02-FX-3 and T05-FX-3 — and `docs/20_trade_book.md` §6.3 explains why. Each line settles at
 `sign × notional × (X(τ, value_date) − K)`, with `X` the spot on the value date once settled — the formula is
 carried in `trade_cashflows.csv`.
@@ -462,7 +463,7 @@ per-ticket spread says the same (`outputs/tables/mcx_basis_risk.csv`):
 | netted book total (what a single headline would show) | +18,402,493 |
 
 Read the **range**, not the netted total: on a book of nine tickets the netting is luck, and on one ticket the
-basis is worth about ±₹1.9 crore on ₹2–5 crore of trade P&L.
+basis is worth about ±₹1.9 crore against −₹1.2 to +₹6.4 crore of per-ticket P&L.
 
 **The unit-beta assumption, tested.** The engine hedges by holding the MCX basis and letting LME and FX drive the
 MCX price — which is exactly an assumption that MCX moves one-for-one with duty-paid LME parity. On the mirror,

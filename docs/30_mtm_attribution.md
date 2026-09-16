@@ -359,8 +359,13 @@ Three definitions worth knowing before reading the columns:
 ### 5.1 The Phase 4 API
 
 ```python
-desk.mtm.valuation.revalue_book(book, H, t, shocks=None, extra_events=(), mcx_hold_basis=True) -> np.ndarray
+desk.mtm.valuation.revalue_book(book, H, t, shocks=None, extra_events=(), mcx_hold_basis=True,
+                                cache=None, funding=None) -> np.ndarray
 ```
+
+`book` is `desk.mtm.run.load()`, `H` is `desk.mtm.history.MarketHistory()`; pass one `ScheduleCache(book, H)` as
+`cache` when calling repeatedly. The value returned is `Π_val` = realised P&L to `t` + MTM of open legs, **excluding
+funding**; pass `funding` (trade_id → accrued funding to `t`) to get cumulative P&L comparable to `cum_pnl_inr`.
 
 Instantaneous full revaluation at clock `t` (contracts and events as of `t`); shape `(n_trades, n_paths)`. `shocks`
 takes scalars or equal-length numpy arrays: `lme_cash_logret`, `usdinr_logret`, `freight_logret` or
@@ -462,7 +467,7 @@ Charts (all through `desk.reporting.style.save_fig`, so every one carries the SI
 `p3_event1_hedged_vs_unhedged`, `p3_event2_fx_offset`.
 
 **Two presentation traps in `mtm_daily.csv` and `attribution_leg_daily.csv`.** The `FUNDING` leg carries
-`status = settled`, `settle_date = HORIZON_END` and its whole accrual inside `realised_cum_inr`, so a reader summing
+`status = settled`, a `settle_date` equal to each row's own date (`HORIZON_END` on the last row) and its whole accrual inside `realised_cum_inr`, so a reader summing
 `realised_cum_inr` picks up ₹32.6 m of "realised cash" that never moved on any date: the identity the engine closes is
 **realised + funding accrual + MTM** (CONTRACTS §7.3 states it without the funding term; §11.7 lists the amendment),
 and `trade_cashflows.csv` correctly carries no funding row. And `attribution_leg_daily.csv` has no `residual` column
@@ -579,13 +584,13 @@ outcome are simulated. Specifically:
   all 13 rolls are gains and the entire ₹0.84 crore of roll P&L is INR carry (§13.10). Re-priced on a parity curve
   that carries the LME's own cash–3M slope and CIP rupee points, the same rolls make ₹0.73 crore — ₹0.59 crore of
   rupee-over-dollar rate carry and ₹0.14 crore of metal contango — and the one roll dealt in LME backwardation (T07,
-  20-Jul) loses ₹0.33 crore of metal carry. So the proxy overstates roll P&L by ₹0.11 crore here, and the rate
+  20-Jul) loses ₹0.03 crore (₹3.3 lakh) of metal carry. So the proxy overstates roll P&L by ₹0.11 crore here, and the rate
   differential, not the metal curve, is what keeps a short roll positive. A ticket rationale that frames rolling
   as a cost is describing the metal half of a market this engine cannot represent.
 * **Bucket (c) is the largest market bucket in this book and it is a reconstruction — of the result, not only of
   the split.** Grade factors rest on a lag-2 DGCIS unit-value ratio published months after the fact; on the
   9-trade book the grade-spread bucket is **+₹103.3 m** against an LME-flat bucket of **−₹30.0 m**. Re-running with
-  the point-in-time mix as a **re-mark** moves ₹140 m between (0) and (c) and changes the book's P&L by zero
+  the point-in-time mix as a **re-mark** moves ₹140 m out of (c), ₹128 m of it into (0), and changes the book's P&L by zero
   rupees (§13.6) — but that is because a re-mark leaves every typed price alone, and **the same reconstruction set
   those prices**: the purchase bids are trade-date parity (grade factor × LME) less a discount, and the sale
   prices are half the gap between a replacement mark and a netback that both move with it. Re-priced through the
