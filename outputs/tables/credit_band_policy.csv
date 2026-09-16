@@ -1,0 +1,5 @@
+band,pd_lower_frac,pd_upper_frac,band_max_credit_utilisation_frac,band_max_advance_reliance_multiple,band_limit_multiplier,band_max_credit_days,band_review_frequency_days,limit_action
+A,0.0,0.02,1.0,1.0,1.0,45,180,MAINTAIN — eligible for a limit increase at the next review
+B,0.02,0.05,0.9,1.0,1.0,30,90,MAINTAIN — watch utilisation; no increase without a clean review
+C,0.05,0.12,0.75,0.5,1.0,30,30,FREEZE — no increase; security for any credit balance; advance reliance capped at 0.5x limit
+D,0.12,1.0,0.5,0.0,0.5,0,7,REDUCE — cut the line to 50 %; advance or cash-against-documents only; do not lift the hedge before the advance arrives

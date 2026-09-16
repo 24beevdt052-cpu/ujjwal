@@ -1,0 +1,21 @@
+metric,value,unit,note
+plan_parity_week_end,2022-02-25,date,liq_plan_parity_week_end
+plan_value_date,2022-02-25,date,parity_weekly.csv value_date
+plan_wc_rate_pa,0.095,rate_pa,wc_rate_inr_pa on the plan value date
+plan_throughput_mt_pa,30000.0,mt_per_year,liq_plan_throughput_mt_pa
+plan_mean_landed_inr_t,187774.36666666667,inr_t,mean over the six grade x lane cases
+plan_funded_inr_years_per_mt,32326.403508771928,inr_years_per_mt,mean (finance_inr_t + igst_finance_inr_t) / wc_rate: rupee-years of funding one tonne of throughput needs
+plan_cash_cycle_days_equiv,62.836783796200194,days,the same expressed as days of mean landed cost (P1 finance_days_* plus the IGST credit lag)
+plan_avg_funded_balance_inr,969792105.2631578,inr,throughput x mean (finance_inr_t + igst_finance_inr_t) / wc_rate: average funded balance of the plan
+fb_limit_rule_inr,1000000000.0,inr,plan balance rounded UP by liq_facility_rounding_inr
+fb_limit_registered_inr,1000000000.0,inr,liq_fb_wc_limit_inr
+fb_limit_matches_rule,True,bool,
+plan_lc_value_inr_t,177064.15106986664,inr_t,mean cif_usd_t x usdinr over the six cases
+plan_lc_tenor_days,60.0,days,liq_plan_lc_tenor_days
+plan_avg_lc_outstanding_inr,873193073.7692053,inr,throughput x LC value per tonne x tenor / 365
+lc_limit_rule_inr,1000000000.0,inr,plan LC outstanding rounded UP by liq_facility_rounding_inr
+lc_limit_registered_inr,1000000000.0,inr,liq_nfb_lc_limit_inr
+lc_limit_matches_rule,True,bool,
+min_cash_buffer_inr,150000000.0,inr,liq_min_cash_buffer_frac_of_fb_limit x fund-based limit
+memo_plan_mcx_m1_inr_kg,273.2448,inr_kg,MCX M1 (PROXY) on the plan value date
+memo_im_on_two_months_plan_hedged_inr,136622400.0,inr,two months of plan throughput hedged 1:1 at mcx_al_margin_used_frac: the buffer's anchor

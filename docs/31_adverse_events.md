@@ -56,7 +56,7 @@ or before `d` (CONTRACTS §1, §5a).
 | Date | LME Aluminium cash, USD/t | Note |
 |---|---|---|
 | 2022-03-07 | **3,984.5** (3M 3,968.0) | the all-time high, and the panel's window maximum |
-| 2022-03-08 | 3,500.5 | **−12.2 %** (−12.95 % in logs) — the largest one-day fall anywhere in the 2018–2022 panel |
+| 2022-03-08 | 3,500.5 | **−12.1 %** (−12.95 % in logs) — the largest one-day fall anywhere in the 2018–2022 panel |
 | 2022-03-31 | 3,503.0 | cash–3M spread turns to contango (−15.0) and stays there until late July |
 | 2022-04-29 | 3,039.0 | |
 | 2022-05-31 | 2,816.5 | |

@@ -1,0 +1,12 @@
+check,value,tolerance,status
+cash_categories_sum_vs_book_cash_balance_max_abs,0.1,1.0,PASS
+cash_mcx_category_vs_vm_table_cum_margin_cash_max_abs,0.06,1.0,PASS
+cashflow_vm_leg_vs_vm_table_cum_vm_max_abs,0.0,1.0,PASS
+cashflow_im_leg_vs_vm_table_im_stock_max_abs,0.05,1.0,PASS
+cashflow_charges_vs_vm_table_cum_txn_cost_max_abs,0.0,1.0,PASS
+vm_table_im_stock_vs_book_mcx_im_max_abs,0.01,1.0,PASS
+vm_table_net_margin_identity_max_abs,0.03,1.0,PASS
+cum_margin_cash_equals_vm_plus_charges_minus_im_stock_max_abs,0.07,1.0,PASS
+funding_need_decomposition_max_abs,0.0,1.0,PASS
+headroom_arithmetic_max_abs,0.0,1.0,PASS
+lots_net_open_vs_book_mcx_lots_open_max_abs,0.0,1.0,PASS

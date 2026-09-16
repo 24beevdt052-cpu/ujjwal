@@ -1,0 +1,11 @@
+split,bin,n_obs,pd_min,pd_max,pd_mean_fitted,pd_mean_true,n_defaults,default_rate_observed,label
+train,1,168,0.00022908,0.00714534,0.00380256,0.00567229,0,0.0,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+train,2,168,0.00717886,0.01417081,0.01058756,0.01367861,2,0.01190476,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+train,3,168,0.0141992,0.02731526,0.02019298,0.0231241,3,0.01785714,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+train,4,168,0.02736326,0.05723375,0.03924944,0.03889585,9,0.05357143,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+train,5,168,0.0580993,0.79393307,0.15235794,0.12150959,24,0.14285714,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+test,1,72,0.00126221,0.00769426,0.00475489,0.00700158,0,0.0,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+test,2,72,0.00771119,0.01406863,0.01047543,0.01359725,0,0.0,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+test,3,72,0.01414829,0.02790417,0.02017181,0.02276762,2,0.02777778,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+test,4,72,0.02800229,0.05024083,0.0370279,0.03596586,4,0.05555556,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"
+test,5,72,0.05139566,0.75779231,0.14706665,0.11394665,6,0.08333333,"ILLUSTRATIVE SYNTHETIC DATA — fictional buyer population, not real counterparties"

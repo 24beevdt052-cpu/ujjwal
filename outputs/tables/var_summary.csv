@@ -1,0 +1,121 @@
+metric,scope,value,unit,note
+book_days_with_position,book_window,120.0,count,2022-03-09 .. 2022-08-31
+var_mean_garch,book_window,4273445.77,inr,
+var_median_garch,book_window,3584856.52,inr,
+var_max_garch,book_window,43530334.54,inr,on 2022-03-09
+var_min_garch,book_window,24708.14,inr,on 2022-08-31
+exceptions_garch,book_window,7.0,count,
+var_mean_hist250,book_window,3982608.06,inr,
+var_median_hist250,book_window,3315345.75,inr,
+var_max_hist250,book_window,20851511.71,inr,on 2022-04-21
+var_min_hist250,book_window,23511.53,inr,on 2022-08-31
+exceptions_hist250,book_window,5.0,count,
+var_mean_hist60,book_window,4925146.41,inr,
+var_median_hist60,book_window,4008287.87,inr,
+var_max_hist60,book_window,30063773.2,inr,on 2022-04-21
+var_min_hist60,book_window,21543.71,inr,on 2022-08-31
+exceptions_hist60,book_window,2.0,count,
+days_garch_var_above_hist_base,book_window,53.0,count,
+days_after_mcx_exit_or_roll,book_window,16.0,count,exposure on these days still carries the exiting MCX contract (docs/40 §7)
+var_mean_garch_ex_mcx_exit_roll_days,book_window,3920972.16,inr,
+var_mean_hist250_ex_mcx_exit_roll_days,book_window,3545879.71,inr,
+var_mean_hist60_ex_mcx_exit_roll_days,book_window,4424363.27,inr,
+ratio_mean_var_garch_to_hist_base,book_window,1.07302695,x,
+realised_market_pnl_worst_day,book_window,-10646507.82,inr,on 2022-04-11
+realised_market_pnl_std,book_window,2761097.17,inr,sample std of the backtest P&L; 1.645 x this is a no-model yardstick for the VaR level
+realised_market_pnl_sum,book_window,-14561635.34,inr,"(a)+(b)+(d)+(e) over the backtest days; NOT the book P&L (which is ₹195.9 m at WINDOW_END, not sign-robust: −₹105.4 m .. +₹334.3 m across the registered anchor-premium grid)"
+garch_var_lme_physical_plus_mcx_standalone_mean,book_window,36126363.36,inr,gross LME VaR if the MCX short did not offset the physical (both standalone)
+garch_var_lme_net_mean,book_window,3947757.68,inr,
+garch_var_fx_physical_forwards_standalone_mean,book_window,2340210.45,inr,
+garch_var_fx_mcx_leg_standalone_mean,book_window,2614322.2,inr,
+garch_var_fx_net_mean,book_window,1168603.26,inr,physical+forwards and the MCX leg's FX delta netted on one USD/INR factor (unit beta)
+var_freight_hist250_mean,book_window,51384.16,inr,
+var_freight_hist250_max,book_window,528736.0,inr,
+garch_var_incl_spread_memo_mean,book_window,5027280.96,inr,
+garch_var_mcx_beta_sensitivity_mean,book_window,17250339.18,inr,"SENSITIVITY, PESSIMISTIC END: MCX leg at the DAILY beta 0.452 + basis residual from R² 0.294 (mcx_basis_risk.csv); asynchronous MCX/LME closes bias a daily beta down (var_mcx_beta.csv)"
+hist_base_var_mcx_beta_sensitivity_mean,book_window,16075925.84,inr,"SENSITIVITY, as above"
+garch_var_mcx_beta_weekly_sensitivity_mean,book_window,8478145.81,inr,"SENSITIVITY, CENTRAL: MCX leg at the WEEKLY beta 0.752 + basis residual from weekly R² 0.903 (var_mcx_beta.csv)"
+hist_base_var_mcx_beta_weekly_sensitivity_mean,book_window,7827810.7,inr,"SENSITIVITY, as above"
+crash_fortnight_var_mean_garch,E1_CRASH_FORTNIGHT,5001759.39,inr,return days after 2022-04-22 .. 2022-05-09
+crash_fortnight_exceptions_garch,E1_CRASH_FORTNIGHT,2.0,count,
+crash_fortnight_var_mean_hist250,E1_CRASH_FORTNIGHT,4869383.98,inr,return days after 2022-04-22 .. 2022-05-09
+crash_fortnight_exceptions_hist250,E1_CRASH_FORTNIGHT,2.0,count,
+crash_fortnight_var_mean_hist60,E1_CRASH_FORTNIGHT,7100627.07,inr,return days after 2022-04-22 .. 2022-05-09
+crash_fortnight_exceptions_hist60,E1_CRASH_FORTNIGHT,0.0,count,
+crash_fortnight_market_pnl_sum,E1_CRASH_FORTNIGHT,-24741033.04,inr,
+lme_return_2022_03_08,LME,-0.12950602,frac,the day after the all-time high (DIRECT)
+sigma_lme_forecast_for_2022_03_08_garch,LME,0.0288763,frac,forecast made at the 2022-03-07 ATH close
+z_of_2022_03_08_return_garch,LME,-4.4848552,sigma,
+sigma_lme_forecast_for_2022_03_08_hist250,LME,0.01672029,frac,forecast made at the 2022-03-07 ATH close
+z_of_2022_03_08_return_hist250,LME,-7.74544178,sigma,
+sigma_lme_forecast_for_2022_03_08_hist60,LME,0.02020826,frac,forecast made at the 2022-03-07 ATH close
+z_of_2022_03_08_return_hist60,LME,-6.40856719,sigma,
+sigma_lme_garch_on_one_month_before_window,LME,0.01122234,frac,forecast FOR 2022-02-01 (made at the previous close)
+sigma_lme_hist250_on_one_month_before_window,LME,0.01498915,frac,forecast FOR 2022-02-01 (made at the previous close)
+sigma_lme_hist60_on_one_month_before_window,LME,0.01689558,frac,forecast FOR 2022-02-01 (made at the previous close)
+sigma_lme_garch_on_window_start,LME,0.0300875,frac,forecast FOR 2022-03-01 (made at the previous close)
+sigma_lme_hist250_on_window_start,LME,0.01624719,frac,forecast FOR 2022-03-01 (made at the previous close)
+sigma_lme_hist60_on_window_start,LME,0.01848001,frac,forecast FOR 2022-03-01 (made at the previous close)
+sigma_lme_garch_on_day_after_ath,LME,0.0288763,frac,forecast FOR 2022-03-08 (made at the previous close)
+sigma_lme_hist250_on_day_after_ath,LME,0.01672029,frac,forecast FOR 2022-03-08 (made at the previous close)
+sigma_lme_hist60_on_day_after_ath,LME,0.02020826,frac,forecast FOR 2022-03-08 (made at the previous close)
+sigma_lme_garch_on_two_days_after_ath,LME,0.05396829,frac,forecast FOR 2022-03-09 (made at the previous close)
+sigma_lme_hist250_on_two_days_after_ath,LME,0.01861659,frac,forecast FOR 2022-03-09 (made at the previous close)
+sigma_lme_hist60_on_two_days_after_ath,LME,0.02622699,frac,forecast FOR 2022-03-09 (made at the previous close)
+sigma_lme_garch_on_crash_fortnight_start,LME,0.01854699,frac,forecast FOR 2022-04-22 (made at the previous close)
+sigma_lme_hist250_on_crash_fortnight_start,LME,0.01961436,frac,forecast FOR 2022-04-22 (made at the previous close)
+sigma_lme_hist60_on_crash_fortnight_start,LME,0.02844873,frac,forecast FOR 2022-04-22 (made at the previous close)
+sigma_lme_garch_on_crash_fortnight_end,LME,0.02131975,frac,forecast FOR 2022-05-09 (made at the previous close)
+sigma_lme_hist250_on_crash_fortnight_end,LME,0.02004005,frac,forecast FOR 2022-05-09 (made at the previous close)
+sigma_lme_hist60_on_crash_fortnight_end,LME,0.02949267,frac,forecast FOR 2022-05-09 (made at the previous close)
+sigma_lme_garch_on_e1_trough,LME,0.01581221,frac,forecast FOR 2022-07-15 (made at the previous close)
+sigma_lme_hist250_on_e1_trough,LME,0.02079037,frac,forecast FOR 2022-07-15 (made at the previous close)
+sigma_lme_hist60_on_e1_trough,LME,0.02018887,frac,forecast FOR 2022-07-15 (made at the previous close)
+sigma_lme_garch_on_window_end,LME,0.01948877,frac,forecast FOR 2022-08-31 (made at the previous close)
+sigma_lme_hist250_on_window_end,LME,0.02114318,frac,forecast FOR 2022-08-31 (made at the previous close)
+sigma_lme_hist60_on_window_end,LME,0.01755893,frac,forecast FOR 2022-08-31 (made at the previous close)
+sigma_lme_garch_rise_into_ath_x,LME,2.78964904,x,forecast for 2022-03-08 / the method's lowest forecast in the month before WINDOW_START (2022-02-04)
+sigma_lme_garch_max_before_ath,LME,0.0309923,frac,on 2022-02-28
+sigma_lme_hist250_rise_into_ath_x,LME,1.11729279,x,forecast for 2022-03-08 / the method's lowest forecast in the month before WINDOW_START (2022-02-07)
+sigma_lme_hist250_max_before_ath,LME,0.01658268,frac,on 2022-03-07
+sigma_lme_hist60_rise_into_ath_x,LME,1.40571385,x,forecast for 2022-03-08 / the method's lowest forecast in the month before WINDOW_START (2022-02-10)
+sigma_lme_hist60_max_before_ath,LME,0.01972359,frac,on 2022-03-07
+sigma_lme_garch_window_peak,LME,0.05396829,frac,on 2022-03-09
+sigma_lme_hist250_window_peak,LME,0.02114318,frac,on 2022-08-31
+sigma_lme_hist60_window_peak,LME,0.0300579,frac,on 2022-05-10
+sigma_fx_garch_window_peak,FX,0.00457856,frac,on 2022-03-01
+sigma_fx_hist250_window_peak,FX,0.00310651,frac,on 2022-03-25
+sigma_fx_hist60_window_peak,FX,0.00369661,frac,on 2022-05-18
+garch_lme_first_window_fit_omega_pct2,LME,0.08263264,omega_pct2,estimated on 1056 returns to 2022-03-04
+garch_lme_first_window_fit_alpha,LME,0.13198839,alpha,estimated on 1056 returns to 2022-03-04
+garch_lme_first_window_fit_beta,LME,0.82825121,beta,estimated on 1056 returns to 2022-03-04
+garch_lme_first_window_fit_persistence,LME,0.9602396,persistence,estimated on 1056 returns to 2022-03-04
+garch_lme_first_window_fit_half_life_days,LME,17.08418692,half_life_days,estimated on 1056 returns to 2022-03-04
+garch_lme_first_window_fit_uncond_vol_daily_frac,LME,0.01441619,uncond_vol_daily_frac,estimated on 1056 returns to 2022-03-04
+garch_lme_last_fit_omega_pct2,LME,0.04563416,omega_pct2,estimated on 1260 returns to 2022-12-23
+garch_lme_last_fit_alpha,LME,0.11116638,alpha,estimated on 1260 returns to 2022-12-23
+garch_lme_last_fit_beta,LME,0.8743974,beta,estimated on 1260 returns to 2022-12-23
+garch_lme_last_fit_persistence,LME,0.98556377,persistence,estimated on 1260 returns to 2022-12-23
+garch_lme_last_fit_half_life_days,LME,47.66701499,half_life_days,estimated on 1260 returns to 2022-12-23
+garch_lme_last_fit_uncond_vol_daily_frac,LME,0.01777944,uncond_vol_daily_frac,estimated on 1260 returns to 2022-12-23
+garch_lme_boundary_fits,LME,0.0,count,of 210 weekly fits; alpha+beta >= 0.999 or alpha ~ 0
+garch_lme_nonconverged_fits,LME,0.0,count,
+garch_t_lme_first_window_fit_nu,LME,8.49280047,dof,
+garch_t_lme_first_window_var_multiplier,LME,1.61376865,x,unit-variance t 95 % quantile vs Normal 1.6449
+garch_fx_first_window_fit_omega_pct2,FX,0.01116473,omega_pct2,estimated on 1056 returns to 2022-03-04
+garch_fx_first_window_fit_alpha,FX,0.08929032,alpha,estimated on 1056 returns to 2022-03-04
+garch_fx_first_window_fit_beta,FX,0.8280919,beta,estimated on 1056 returns to 2022-03-04
+garch_fx_first_window_fit_persistence,FX,0.91738222,persistence,estimated on 1056 returns to 2022-03-04
+garch_fx_first_window_fit_half_life_days,FX,8.03825251,half_life_days,estimated on 1056 returns to 2022-03-04
+garch_fx_first_window_fit_uncond_vol_daily_frac,FX,0.0036761,uncond_vol_daily_frac,estimated on 1056 returns to 2022-03-04
+garch_fx_last_fit_omega_pct2,FX,0.01084024,omega_pct2,estimated on 1260 returns to 2022-12-23
+garch_fx_last_fit_alpha,FX,0.08532382,alpha,estimated on 1260 returns to 2022-12-23
+garch_fx_last_fit_beta,FX,0.8312582,beta,estimated on 1260 returns to 2022-12-23
+garch_fx_last_fit_persistence,FX,0.91658202,persistence,estimated on 1260 returns to 2022-12-23
+garch_fx_last_fit_half_life_days,FX,7.95772193,half_life_days,estimated on 1260 returns to 2022-12-23
+garch_fx_last_fit_uncond_vol_daily_frac,FX,0.00360487,uncond_vol_daily_frac,estimated on 1260 returns to 2022-12-23
+garch_fx_boundary_fits,FX,24.0,count,of 210 weekly fits; alpha+beta >= 0.999 or alpha ~ 0
+garch_fx_nonconverged_fits,FX,0.0,count,
+garch_t_fx_first_window_fit_nu,FX,4.64412372,dof,
+garch_t_fx_first_window_var_multiplier,FX,1.54657751,x,unit-variance t 95 % quantile vs Normal 1.6449
+first_garch_forecast_date,LME,2018-12-28,date,

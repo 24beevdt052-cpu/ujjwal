@@ -1,0 +1,11 @@
+snapshot_id,snapshot_date,scenario_id,trade_id,boxes,uncleared_lots,adjustment_inr,future_receipts_inr,released_mt,retained_mt,replacement_inr_t,loss_inr,implied_recovery_frac,api_adjustment_inr
+ATH_PLUS_1,2022-03-08,qco_hold_demurrage,T01,120.0,3.0,-14281439.69,,,,,,,
+PEAK_GROSS_LME,2022-04-21,qco_hold_demurrage,T01,120.0,3.0,-14173793.61,,,,,,,
+PEAK_GROSS_LME,2022-04-21,qco_hold_demurrage,T02,48.0,1.0,-5988881.11,,,,,,,
+PEAK_GROSS_LME,2022-04-21,qco_hold_demurrage,T03,60.0,2.0,-6900500.69,,,,,,,
+PEAK_GROSS_LME,2022-04-21,qco_hold_demurrage,T04,60.0,2.0,-7086896.81,,,,,,,
+PEAK_GROSS_LME,2022-04-21,qco_hold_demurrage,T05,100.0,2.0,-11405954.03,,,,,,,
+PEAK_BUYER_CONTRACTED,2022-07-27,buyer_default,T07,,,,308526353.02,0.0,1890.0,156064.4612,28312612.96,0.9082327565,-28312612.96
+PEAK_BUYER_CONTRACTED,2022-07-27,buyer_default_with_lme_minus_15pct_memo,T07,,,,308526353.02,0.0,1890.0,133013.7214,69700216.19,0.77408666875,-69700216.19
+PEAK_BUYER_CONTRACTED,2022-07-27,qco_hold_demurrage,T07,90.0,2.0,-9711148.7,,,,,,,
+PEAK_BUYER_CONTRACTED,2022-07-27,qco_hold_demurrage,T08,80.0,2.0,-8632132.18,,,,,,,

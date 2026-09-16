@@ -10,16 +10,19 @@ Flags: **DIRECT** = observed from a named public source; **PROXY** = real observ
 
 | YAML file | Owner | Params | DIRECT | PROXY | ASSUMPTION | VERIFIED | PARTIAL | PENDING | N/A |
 |---|---|---|---|---|---|---|---|---|---|
-| `commercial.yaml` | P0 regulatory/contract research | 21 | 5 | 4 | 12 | 6 | 3 | 3 | 9 |
+| `commercial.yaml` | P0 regulatory/contract research | 24 | 5 | 4 | 15 | 6 | 3 | 4 | 11 |
 | `exchange.yaml` | P0 regulatory/contract research | 32 | 26 | 1 | 5 | 20 | 7 | 2 | 3 |
-| `logistics.yaml` | P0 freight/logistics | 26 | 3 | 1 | 22 | 3 | 1 | 20 | 2 |
+| `logistics.yaml` | P0 freight/logistics | 32 | 3 | 1 | 28 | 3 | 1 | 26 | 2 |
 | `market_proxy.yaml` | P0 market-data | 1 | 0 | 1 | 0 | 0 | 1 | 0 | 0 |
+| `parity.yaml` | P1 parity | 15 | 0 | 0 | 15 | 0 | 0 | 1 | 14 |
 | `rates.yaml` | P0 market-data | 7 | 3 | 2 | 2 | 5 | 0 | 1 | 1 |
 | `regulatory.yaml` | P0 regulatory/contract research | 22 | 14 | 2 | 6 | 9 | 6 | 2 | 5 |
+| `risk.yaml` | P4/P5 risk | 53 | 0 | 0 | 53 | 0 | 0 | 3 | 50 |
+| `risk_credit.yaml` | unassigned | 21 | 0 | 0 | 21 | 0 | 0 | 0 | 21 |
 | `scrap_grades.yaml` | P0 regulatory/contract research | 25 | 0 | 5 | 20 | 4 | 6 | 7 | 8 |
-| **Total** |  | 134 | 51 | 16 | 67 | 47 | 24 | 35 | 28 |
+| **Total** |  | 232 | 51 | 16 | 165 | 47 | 24 | 46 | 115 |
 
-## Open items: PENDING (35)
+## Open items: PENDING (46)
 
 Nothing below may be presented as checked. Each row's last column is the recorded next step.
 
@@ -28,6 +31,7 @@ Nothing below may be presented as checked. Each row's last column is the recorde
 | **`conversion_cost_inr_t`** | commercial.yaml | ASSUMPTION | 12000 | no 2022 Indian secondary-smelter cost disclosure retrieved. Next step: cost-of-production note in a listed Indian secondary aluminium producer's 2022 annual report/DRHP (power + fuel + consumables per tonne). |
 | **`domestic_anchor_premium_inr_t`** | commercial.yaml | ASSUMPTION | -9000 | no 2022 ADC12/LM6 India price series was retrievable (AlCircle/BigMint 2022 archives not found in public). Next step: weekly 2022 ADC12 ex-Delhi/Chennai from BigMint or an automaker's 2022 monthly alloy settlement prices, compared with MCX near-month. |
 | **`usance_interest_spread_pa`** | commercial.yaml | ASSUMPTION | 0.015 | no 2022 buyer's-credit quote retrieved; check an Indian bank or buyer's-credit arranger's 2022 indicative pricing |
+| **`lc_open_days_before_laycan_min`** | commercial.yaml | ASSUMPTION | 10 | no citable 2022 scrap SPA clause in the cached sources; the 10-15 day convention is trade practice reported in ISRI/BIR member guidance, not a document this project holds |
 | **`mcx_al_margin_used_frac`** | exchange.yaml | ASSUMPTION | 0.1 | replace with MCXCCL daily SPAN aluminium margin % for Mar–Aug 2022 if the risk-parameter archive becomes retrievable |
 | **`fx_forward_bank_margin_inr`** | exchange.yaml | ASSUMPTION | 0.1 | no 2022 bank rate card for corporate forward margins was retrieved; check RBI FX-Retail platform documentation / RBI speeches on retail FX spreads for an order of magnitude |
 | **`container_payload_mt_20ft`** | logistics.yaml | ASSUMPTION | 25.0 | confirm typical Zorba / Taint-Tabor 20ft load weights from a Jebel Ali shipper's packing list or a BigMint/Fastmarkets methodology note |
@@ -49,10 +53,20 @@ Nothing below may be presented as checked. Each row's last column is the recorde
 | **`insurance_rate`** | logistics.yaml | ASSUMPTION | 0.001 | obtain an indicative 2022 marine cargo rate for metal scrap from an Indian insurer's published tariff guidance or a broker note |
 | **`detention_free_days`** | logistics.yaml | ASSUMPTION | 14 | retrieve a 2022 Wayback copy of a carrier's India import detention tariff (standard free days) and a JNPT/Mundra CFS free-period schedule |
 | **`demurrage_usd_per_box_day`** | logistics.yaml | ASSUMPTION | 35 | retrieve 2022 Wayback copies of a carrier's India import detention slabs (USD/day by box size) and a CFS ground-rent tariff (INR/day) |
+| **`demurrage_slab1_days`** | logistics.yaml | ASSUMPTION | 5 | same evidence gap as demurrage_usd_per_box_day: retrieve a 2022 Wayback copy of a carrier's India import detention slab table (Maersk/MSC/CMA India local charges) |
+| **`demurrage_slab2_days`** | logistics.yaml | ASSUMPTION | 5 | as demurrage_slab1_days |
+| **`demurrage_usd_per_box_day_slab2`** | logistics.yaml | ASSUMPTION | 70 | as demurrage_slab1_days |
+| **`demurrage_usd_per_box_day_slab3`** | logistics.yaml | ASSUMPTION | 105 | as demurrage_slab1_days |
+| **`rejected_box_hold_days`** | logistics.yaml | ASSUMPTION | 45 | no 2022 case record or CBIC/AERB published timeline in the cached sources; the 30-60 day cycle is desk judgement for a referral that involves a second regulator |
+| **`rejected_box_reexport_cost_usd_per_box`** | logistics.yaml | ASSUMPTION | 3000 | retrieve a 2022 carrier export THC tariff at Mundra and any published AERB/Customs re-export procedure cost; the component magnitudes are desk estimates, not quotes |
 | **`freight_jea_nsa_usd_box_ref`** | logistics.yaml | ASSUMPTION | 600 | no citable 2022 Jebel Ali->Nhava Sheva quote found (Platts WCI India-Middle East assessments and Xeneta are paywalled; S&P pages return 403). Next step: a 2022 Wayback copy of a Freightos/SeaRates/iContainers JEA->INNSA rate page, or a BigMint/Fastmarkets 2022 UAE-origin scrap CFR vs FOB spread |
+| **`lme_cash_prompt_bdays`** | parity.yaml | ASSUMPTION | 2 | stated from the standard LME convention, not re-read from the LME contract specification in Phase 1. Next step: LME Aluminium contract specification page (prompt date structure). |
 | **`wc_rate_spread_over_mclr_pa`** | rates.yaml | ASSUMPTION | 0.025 | no 2022 sanction letter or published spread for a comparable borrower retrieved. Next step: a listed metals trader's FY2022-23 annual report (borrowing-cost note) to back out its working-capital rate over MCLR. |
 | **`psic_cost_usd_per_box`** | regulatory.yaml | ASSUMPTION | 40.0 | obtain an inspection-agency (PSIA) 2022 quote or published fee for radiation + explosives inspection of a 20ft scrap container at Jebel Ali |
 | **`nfmims_min_lead_days`** | regulatory.yaml | PROXY | 5 | confirm 60/5-day window and 75-day validity in the DGFT notification text |
+| **`mc_buyer_default_recovery_frac`** | risk.yaml | ASSUMPTION | 0.25 | compare with published realisation rates for operational creditors in Indian insolvency resolutions (IBBI quarterly newsletter) |
+| **`liq_fb_wc_limit_inr`** | risk.yaml | ASSUMPTION | 1000000000.0 | no 2022 sanction letter for a comparable importer was retrieved. Next step: a listed Indian non-ferrous metals trader's FY2022-23 annual report (sanctioned fund-based working-capital limits against turnover). |
+| **`liq_nfb_lc_limit_inr`** | risk.yaml | ASSUMPTION | 1000000000.0 | as liq_fb_wc_limit_inr |
 | **`grade_factor_mix_pit`** | scrap_grades.yaml | ASSUMPTION | linear path, 10 points: 2021-12-15: 0.789; 2022-01-15: 0.759; 2022-... | the ~1-month DGCIS release lag behind this construction is assumed, not verified. Next step: check TRADESTAT/DGCIS release calendar for 8-digit monthly import data in 2022. |
 | **`contamination_frac_zorba`** | scrap_grades.yaml | ASSUMPTION | 0.06 | the 95/5 composition is trade naming, not an ISRI definition; confirm from a BigMint/Fastmarkets Zorba methodology note or a packing-list assay |
 | **`metal_yield_frac_zorba`** | scrap_grades.yaml | ASSUMPTION | 0.93 | no published Indian smelter yield for Zorba retrieved; check a BigMint/Fastmarkets Zorba methodology note or an Indian secondary smelter DRHP |
@@ -121,7 +135,7 @@ Labelled DIRECT because a named source states the value, but verification is inc
 
 ## `config/params/commercial.yaml`
 
-Owner: P0 regulatory/contract research · 21 parameters · DIRECT 5, PROXY 4, ASSUMPTION 12.
+Owner: P0 regulatory/contract research · 24 parameters · DIRECT 5, PROXY 4, ASSUMPTION 15.
 
 | Key | Value | Unit | Flag | Verify |
 |---|---|---|---|---|
@@ -146,6 +160,9 @@ Owner: P0 regulatory/contract research · 21 parameters · DIRECT 5, PROXY 4, AS
 | `domestic_buyer_credit_days` | 30 | days | ASSUMPTION | N/A |
 | `msme_max_payment_days` | 45 | days | DIRECT | VERIFIED |
 | `secondary_raw_material_cost_share` | 0.825 | frac_of_total_cost | PROXY | VERIFIED |
+| `max_domestic_credit_days` | 45 | days | ASSUMPTION | N/A |
+| `lc_open_days_before_laycan_min` | 10 | days | ASSUMPTION | **PENDING** |
+| `buyer_advance_limit_multiple_of_credit_limit` | 1.0 | multiple_of_credit_limit_inr | ASSUMPTION | N/A |
 
 ### `conversion_cost_inr_t`  — **PENDING**
 
@@ -315,6 +332,30 @@ Owner: P0 regulatory/contract research · 21 parameters · DIRECT 5, PROXY 4, AS
 - **Verify:** **VERIFIED** — 2026-09-16 that CRISIL Research publishes the 80–85% range (cached CMR PDF, industry estimate, not a measured 2022 figure); the midpoint is a convention
 - **Justification:** Context for conversion_cost_inr_t and for the interview answer 'why is scrap spread, not LME, the P&L driver for a secondary smelter'. Same report: '85-90% of scrap is imported' (FY2020) and secondary aluminium 'continues to be 25-30% cheaper than primary aluminium'.
 
+### `max_domestic_credit_days`
+
+- **Value:** 45
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk policy (docs/20_trade_book.md rule C1): the longest credit the desk will grant a domestic buyer, set at the same 45 days the MSMED Act would impose if the desk were a registered micro/small supplier — a convenient benchmark, not a statutory obligation on these sales
+- **Verify:** **N/A** — desk policy assumption. The statutory context (msme_max_payment_days) is separately VERIFIED
+- **Justification:** Enforced by desk.book.schema V09 on every sale's credit_days and on each buyer's credit_days_default. One ticket (T06) uses the full 45 days and pays for them in the sale price (rule S1). The cap exists because a secondary smelter's own receivable cycle is 45-60 days: longer credit is the buyer's working capital, not the desk's, and the desk would rather be paid than be a lender.
+
+### `lc_open_days_before_laycan_min`  — **PENDING**
+
+- **Value:** 10
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk policy: a seller wants the documentary credit checked, amendable and in hand before it starts stuffing containers; scrap SPAs commonly require the LC 10-15 days before the laycan opens
+- **Verify:** **PENDING** — no citable 2022 scrap SPA clause in the cached sources; the 10-15 day convention is trade practice reported in ISRI/BIR member guidance, not a document this project holds
+- **Justification:** Minimum calendar days between purchase.payment.lc_open_date and shipment.laycan_start, enforced by desk.book.schema V11. Four tickets (T06, T07, T08, T09) were re-dated in the Phase 1-3 review because they opened their credits five or six days before the laycan, which no seller of a full container parcel would have accepted. Range 10-15; the desk uses the lower end because all nine parcels are with counterparties it has dealt with before.
+
+### `buyer_advance_limit_multiple_of_credit_limit`
+
+- **Value:** 1.0
+- **Unit:** multiple_of_credit_limit_inr · **Flag:** ASSUMPTION
+- **Source:** Desk policy added in the Phase 1-3 review: a pre-settlement advance is not credit the desk extends, but it is performance exposure to the same balance sheet — if the advance does not arrive the desk owns unsold cargo with its hedge already lifted
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Cap on the advance the desk will RELY ON from one buyer, expressed as a multiple of that buyer's own credit_limit_inr. desk.book.validate P14 warns (it does not refuse) when a contracted advance exceeds it, and the three BUY_RJK_01 parcels in this book all do — 1.26x, 1.53x and 1.83x of a Rs 120 mn line. Those warnings are the point: the limit definition in CONTRACTS §7a.4 counts receivables only, so a book that never breaches it can still be running its largest single exposure to its weakest name.
+
 ## `config/params/exchange.yaml`
 
 Owner: P0 regulatory/contract research · 32 parameters · DIRECT 26, PROXY 1, ASSUMPTION 5.
@@ -416,7 +457,7 @@ Owner: P0 regulatory/contract research · 32 parameters · DIRECT 26, PROXY 1, A
 - **Unit:** frac_of_prev_close · **Flag:** DIRECT
 - **Source:** [C385]/[C617] 'Daily Price Limits': narrower slab of 4%, relaxed to 6% without cooling-off, then 9% after a 15-minute cooling-off; beyond 9% in steps of 3% when international prices move more
 - **Verify:** **VERIFIED** — 2026-09-16 (SEBI circular 27-Sep-2022, attached to MCX/TRD/556/2022, later allowed direct relaxation — after the window)
-- **Justification:** LME official cash moved more than 4% on 10 days between 24-Feb and 31-Aug-2022 in lme_daily.csv (−12.2% on 08-Mar-2022, −5.3% on 15-Mar), so the 4% narrow slab was a live constraint on MCX price discovery in the window; whether MCX actually invoked the 6%/9% relaxations on those days was not checked.
+- **Justification:** LME official cash moved more than 4% on 10 days between 24-Feb and 31-Aug-2022 in lme_daily.csv (−12.1% on 08-Mar-2022, −5.3% on 15-Mar), so the 4% narrow slab was a live constraint on MCX price discovery in the window; whether MCX actually invoked the 6%/9% relaxations on those days was not checked.
 
 ### `mcx_al_dpl_relaxed_frac`
 
@@ -612,7 +653,7 @@ Owner: P0 regulatory/contract research · 32 parameters · DIRECT 26, PROXY 1, A
 
 ## `config/params/logistics.yaml`
 
-Owner: P0 freight/logistics · 26 parameters · DIRECT 3, PROXY 1, ASSUMPTION 22.
+Owner: P0 freight/logistics · 32 parameters · DIRECT 3, PROXY 1, ASSUMPTION 28.
 
 | Key | Value | Unit | Flag | Verify |
 |---|---|---|---|---|
@@ -636,6 +677,12 @@ Owner: P0 freight/logistics · 26 parameters · DIRECT 3, PROXY 1, ASSUMPTION 22
 | `insured_value_uplift` | 1.1 | multiple_of_cif_value | DIRECT | PARTIAL |
 | `detention_free_days` | 14 | days | ASSUMPTION | **PENDING** |
 | `demurrage_usd_per_box_day` | 35 | usd_per_box_per_day | ASSUMPTION | **PENDING** |
+| `demurrage_slab1_days` | 5 | days | ASSUMPTION | **PENDING** |
+| `demurrage_slab2_days` | 5 | days | ASSUMPTION | **PENDING** |
+| `demurrage_usd_per_box_day_slab2` | 70 | usd_per_box_per_day | ASSUMPTION | **PENDING** |
+| `demurrage_usd_per_box_day_slab3` | 105 | usd_per_box_per_day | ASSUMPTION | **PENDING** |
+| `rejected_box_hold_days` | 45 | days | ASSUMPTION | **PENDING** |
+| `rejected_box_reexport_cost_usd_per_box` | 3000 | usd_per_box | ASSUMPTION | **PENDING** |
 | `freight_jea_nsa_usd_box_ref` | 600 | usd_per_20ft_box | ASSUMPTION | **PENDING** |
 | `freight_jea_nsa_ref_date` | 2022-03-04 | date_week_ending_friday | ASSUMPTION | N/A |
 | `freight_usec_west_india_usd_feu_reported` | step path, 5 points: 2022-08-30: 1450; 2022-09-30: 1434; 2022-11-29... | usd_per_40ft_box | DIRECT | VERIFIED |
@@ -803,6 +850,54 @@ Owner: P0 freight/logistics · 26 parameters · DIRECT 3, PROXY 1, ASSUMPTION 22
 - **Verify:** **PENDING** — retrieve 2022 Wayback copies of a carrier's India import detention slabs (USD/day by box size) and a CFS ground-rent tariff (INR/day)
 - **Justification:** Blended 20ft/40ft first-slab figure; carriers escalate slabs after 5-10 days, so long delays cost more per day. Range 15-75 USD/box/day. Used by P3 attribution factor (f) and the 'BIS-QCO + demurrage' stress.
 
+### `demurrage_slab1_days`  — **PENDING**
+
+- **Value:** 5
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk assumption: Indian import detention tariffs are slabbed, and the first slab typically runs 5 days (some carriers 7-10) beyond free time before the rate steps up
+- **Verify:** **PENDING** — same evidence gap as demurrage_usd_per_box_day: retrieve a 2022 Wayback copy of a carrier's India import detention slab table (Maersk/MSC/CMA India local charges)
+- **Justification:** Length of the first chargeable slab, counted from the end of detention_free_days. Added in the Phase 1-3 review: the book previously charged every chargeable day at the first-slab rate, which under-states a long delay — exactly the case the July-2022 congestion creates (T07 L2 runs 8 chargeable days).
+
+### `demurrage_slab2_days`  — **PENDING**
+
+- **Value:** 5
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk assumption: the second detention slab typically runs a further 5 days before the highest slab applies
+- **Verify:** **PENDING** — as demurrage_slab1_days
+- **Justification:** Length of the second chargeable slab. Days beyond slab 1 + slab 2 are charged at demurrage_usd_per_box_day_slab3.
+
+### `demurrage_usd_per_box_day_slab2`  — **PENDING**
+
+- **Value:** 70
+- **Unit:** usd_per_box_per_day · **Flag:** ASSUMPTION
+- **Source:** Desk assumption: carriers roughly double the per-day rate on the second detention slab (the 2x step is the common shape of published India import detention tariffs)
+- **Verify:** **PENDING** — as demurrage_slab1_days
+- **Justification:** 2x demurrage_usd_per_box_day. Range 30-150 USD/box/day. The multiple, not the level, is the assumption being made here; the level inherits the first slab's evidence gap.
+
+### `demurrage_usd_per_box_day_slab3`  — **PENDING**
+
+- **Value:** 105
+- **Unit:** usd_per_box_per_day · **Flag:** ASSUMPTION
+- **Source:** Desk assumption: the top detention slab runs at roughly 3x the first-slab rate
+- **Verify:** **PENDING** — as demurrage_slab1_days
+- **Justification:** 3x demurrage_usd_per_box_day, applied to every chargeable day beyond slab 1 + slab 2. Range 45-225. desk.book.validate.demurrage_usd() implements the schedule for Phase 2 and desk.mtm.lifecycle.detention_usd() for Phase 3; tests/test_mtm_engine.py asserts the two agree. All four demurrage keys price the COMBINED carrier detention + CFS ground rent beyond detention_free_days (the port_cf_charges_* build-up already carries ground rent inside the free period); the two are not split into separate tariffs, and the flat single-tier rate the first build used was a floor on the real cost, not an estimate of it.
+
+### `rejected_box_hold_days`  — **PENDING**
+
+- **Value:** 45
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk assumption: calendar days from vessel arrival until a container rejected at the port (radiation-portal alarm or gross non-conformity) has been segregated, surveyed under Customs/AERB supervision, granted re-export permission and shipped out
+- **Verify:** **PENDING** — no 2022 case record or CBIC/AERB published timeline in the cached sources; the 30-60 day cycle is desk judgement for a referral that involves a second regulator
+- **Justification:** Added in the Phase 1-3 review, when the radiation-portal rejection on T08 was found to cost nothing. Range 30-60. The rejected box accrues slabbed detention (demurrage_usd_per_box_day[_slab2/3]) for every day of the hold beyond detention_free_days, on top of rejected_box_reexport_cost_usd_per_box. The rest of the consignment's hold (its Bill of Entry is held while the referral runs) is a separate, ticketed SIM dwell event.
+
+### `rejected_box_reexport_cost_usd_per_box`  — **PENDING**
+
+- **Value:** 3000
+- **Unit:** usd_per_box · **Flag:** ASSUMPTION
+- **Source:** Desk build-up per rejected box, no 2022 tariff retrieved: return ocean freight of the order of the book's own USEC_MUN box rate in mid-2022 (1,500-2,300 USD/FEU on freight_weekly.csv levels, itself ASSUMPTION), both-end THC and yard handling, a radiological survey and supervised segregation, and customs/DGFT re-export documentation and CHA
+- **Verify:** **PENDING** — retrieve a 2022 carrier export THC tariff at Mundra and any published AERB/Customs re-export procedure cost; the component magnitudes are desk estimates, not quotes
+- **Justification:** Range 2,000-6,000 USD per box. Paid by the importer first (the box cannot leave without a consignee paying the line) and claimed back from the seller under the SPA's radioactivity clause at the quality event's claim_recovery_frac. Decontamination or disposal of a genuinely contaminated box — which can cost far more — is NOT modelled: the book assumes the alarm is a re-exportable source, the common case.
+
 ### `freight_jea_nsa_usd_box_ref`  — **PENDING**
 
 - **Value:** 600
@@ -868,6 +963,148 @@ Owner: P0 market-data · 1 parameters · DIRECT 0, PROXY 1, ASSUMPTION 0.
 - **Source:** Calibrated in-repo against observed MCX Aluminium nearest-contract closes from a third-party mirror (https://commoditieschart.net/metals/aluminium/mcx-aluminium-futures-prices, retrieved 2026-09-16, cached in data/raw/mcx_thirdparty/commoditieschart_mcx_aluminium_nearest_raw.html via desk.data.fetch_mcx_mirror): implied premium = observed M1 / carry − duty-paid LME cash parity (BCD 7.5% × (1 + SWS 10%)), Mar–Aug 2022, n = 125 common days: mean −0.33, median +1.46, std 6.27 ₹/kg (full 2018–2022: mean −1.03, median −0.02, std 7.71).
 - **Verify:** **PARTIAL** — mirror data could not be checked against MCX's own bhavcopy (mcxindia.com returned Akamai HTTP 403 to every request on 2026-09-16). Next step: download MCX bhavcopy for 5 window dates (e.g. 07-Mar, 13-Apr, 16-Jun, 14-Jul, 31-Aug-2022) from a browser, compare ALUMINIUM near-month closes with the mirror, then recompute.
 - **Justification:** Set to 0.0 rather than the −0.33 window mean because the mean is small relative to its dispersion, the median has the opposite sign and monthly means swing from −9.9 (Mar 2022, MCX's 23:30 IST close lagging the LME official spike) to +3.5 (Jun 2022). Economically: MCX Aluminium is delivered duty-paid in India, so it should sit at LME × USDINR × (1 + BCD × (1 + SWS)) with no systematic extra premium. The calibration depends on bcd_primary_al_hs7601 and sws_rate_on_bcd (regulatory.yaml); recompute if those change. REGIME BIAS (review): unbiased over the window but not within it — Friday proxy M1 minus mirror M1 is +5 to +11 INR/kg on every March-2022 Friday (proxy too high in the LME spike; MCX's evening close lagged the LME official) and mostly −1 to −8 INR/kg on May–July Fridays (−7.52 on 13-May; proxy too low in the trough). Because the parity anchor is built on this proxy, it widens the open/closed swing between the spike and the trough. P1 should run the anchor on the mirror M1 as a sensitivity (still PROXY: third-party, unverified provenance) until MCX bhavcopy closes for 5 window dates are obtained.
+
+## `config/params/parity.yaml`
+
+Owner: P1 parity · 15 parameters · DIRECT 0, PROXY 0, ASSUMPTION 15.
+
+| Key | Value | Unit | Flag | Verify |
+|---|---|---|---|---|
+| `parity_goods_fx_basis` | usdinr_fwd_1m | panel_column_name | ASSUMPTION | N/A |
+| `customs_fx_notification_validity_days` | 14 | calendar_days | ASSUMPTION | N/A |
+| `grade_factor_diff_quartiles_zorba` | [-0.0442, 0.0066] | signed_diff_of_lme_3m_frac_cfr_india | ASSUMPTION | N/A |
+| `grade_factor_diff_quartiles_taint_tabor` | [-0.0583, -0.0093] | signed_diff_of_lme_3m_frac_cfr_india | ASSUMPTION | N/A |
+| `grade_factor_diff_quartiles_tense` | [-0.0823, -0.0236] | signed_diff_of_lme_3m_frac_cfr_india | ASSUMPTION | N/A |
+| `grade_factor_taint_tabor_spec_uplift` | 0.1 | frac_of_lme_3m | ASSUMPTION | N/A |
+| `metal_yield_sensitivity_frac_zorba` | [0.92, 0.94] | frac_of_aluminium_to_ingot | ASSUMPTION | N/A |
+| `metal_yield_sensitivity_frac_taint_tabor` | [0.9, 0.94] | frac_of_clean_metal_to_ingot | ASSUMPTION | N/A |
+| `metal_yield_sensitivity_frac_tense` | [0.92, 0.95] | frac_of_clean_metal_to_ingot | ASSUMPTION | N/A |
+| `heavies_net_value_sensitivity_frac` | [0.4, 1.5] | frac_of_lme_3m_usd_t_per_mt_of_heavies | ASSUMPTION | N/A |
+| `spa_moisture_deduction_ratio` | 1.0 | mt_deducted_per_mt_of_excess_moisture | ASSUMPTION | N/A |
+| `spa_contamination_discount_multiple` | 1.5 | frac_price_discount_per_frac_of_excess | ASSUMPTION | N/A |
+| `spa_contamination_rejection_excess_frac` | 0.03 | frac_of_dry_weight_above_limit | ASSUMPTION | N/A |
+| `lme_cash_prompt_bdays` | 2 | business_days_after_trade_date | ASSUMPTION | **PENDING** |
+| `mplus1_bl_month_offset_months` | 0 | months_after_parity_week_month | ASSUMPTION | N/A |
+
+### `parity_goods_fx_basis`
+
+- **Value:** usdinr_fwd_1m
+- **Unit:** panel_column_name · **Flag:** ASSUMPTION
+- **Source:** CONTRACTS §5 goods_inr_t: 'market spot (P1 may use usdinr_fwd_* matched to the LC payment date instead, and must say which)'. Column from data/processed/market_daily.csv (PROXY, covered-interest-parity forward).
+- **Verify:** **N/A** — modelling choice; the spot alternative is published as sensitivity case goods_fx_spot
+- **Justification:** Goods are paid under a sight LC on document presentation, ~7 days after the B/L (logistics.yaml finance_days_* notes), and the B/L falls inside the 15-day shipment window (typical_laycan_days) after the parity week — so the USD payment is roughly one month after the decision on both lanes. An importer that fixes the rupee cost on the decision date buys USD one month forward; the domestic anchor is also a forward price (the MCX contract matched to the sale date), so both legs are valued at prices lockable on the same day. Pricing goods at spot would book the ~1-month forward premium (≈ INR 340–610/t of scrap in the Mar–Aug 2022 weeks) as margin. finance_inr_t then covers payment → buyer receipt only, so no time period is financed twice.
+
+### `customs_fx_notification_validity_days`
+
+- **Value:** 14
+- **Unit:** calendar_days · **Flag:** ASSUMPTION
+- **Source:** CBIC fortnightly exchange-rate notifications: consecutive USD-changing breakpoints in customs_usdinr_import (regulatory.yaml) are 14–21 days apart
+- **Verify:** **N/A** — coverage rule for dates outside the registered notifications
+- **Justification:** The registered notification path runs 18-Feb-2022 → 16-Sep-2022. A parity week whose value date is before the first notification, or more than this many days after the last one, uses customs_fx_markup_frac × market USD/INR (the register's documented fallback) instead of clamping a stale notified rate; parity_weekly.csv labels each row in customs_fx_src. Only out-of-window context weeks (Jan–mid-Feb and October 2022) are affected.
+
+### `grade_factor_diff_quartiles_zorba`
+
+- **Value:** [-0.0442, 0.0066]
+- **Unit:** signed_diff_of_lme_3m_frac_cfr_india · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml grade_factor_diff_zorba source ('IQR −0.044 … +0.007, n=15'); 4-dp values from data/interim/price_evidence/grade_differentials.csv (p25_diff_clean, p75_diff_clean)
+- **Verify:** **N/A** — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table
+- **Justification:** Applied to 2022 exactly like the median differential (hence ASSUMPTION). Cases grade_diff_q25/q75 put the differential at each quartile; grade_diff_minus_iqr/plus_iqr move the registered median by one full IQR width.
+
+### `grade_factor_diff_quartiles_taint_tabor`
+
+- **Value:** [-0.0583, -0.0093]
+- **Unit:** signed_diff_of_lme_3m_frac_cfr_india · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml grade_factor_diff_taint_tabor source ('IQR −0.058 … −0.009, n=8'); data/interim/price_evidence/grade_differentials.csv
+- **Verify:** **N/A** — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table
+- **Justification:** n=8: the widest relative uncertainty of the three grades.
+
+### `grade_factor_diff_quartiles_tense`
+
+- **Value:** [-0.0823, -0.0236]
+- **Unit:** signed_diff_of_lme_3m_frac_cfr_india · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml grade_factor_diff_tense source ('IQR −0.082 … −0.024, n=28'); data/interim/price_evidence/grade_differentials.csv
+- **Verify:** **N/A** — sensitivity range; tests/test_parity.py asserts equality with the Phase 0 evidence table
+- **Justification:** Asymmetric around the −0.07 median: the upper quartile is 4.6 points above it, so the high case raises Tense CFR cost by ~USD 130/t.
+
+### `grade_factor_taint_tabor_spec_uplift`
+
+- **Value:** 0.1
+- **Unit:** frac_of_lme_3m · **Flag:** ASSUMPTION
+- **Source:** MASTER_SPEC_V3 Table 3 row 1.2 guide 'Taint-Tabor ~88–92%' vs the registered clean-TT CFR factor (Mar–Aug mean 0.786); scrap_grades.yaml grade_factor_taint_tabor note ('run a +0.10 sensitivity')
+- **Verify:** **N/A** — informational sensitivity; no retrieved evidence supports the spec guide
+- **Justification:** Tests the spec's view only; it is not part of the required §5 band or the §5a rule.
+
+### `metal_yield_sensitivity_frac_zorba`
+
+- **Value:** [0.92, 0.94]
+- **Unit:** frac_of_aluminium_to_ingot · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml metal_yield_frac_zorba source/note ('0.92–0.94'; 'P1 recovery sensitivity: 0.92–0.94')
+- **Verify:** **N/A** — sensitivity range from the Phase 0 note
+- **Justification:** The note's range brackets the 0.93 melt yield (not the 0.866 recovery), so it is applied to metal_yield_frac_zorba.
+
+### `metal_yield_sensitivity_frac_taint_tabor`
+
+- **Value:** [0.9, 0.94]
+- **Unit:** frac_of_clean_metal_to_ingot · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml metal_yield_frac_taint_tabor note ('P1 recovery sensitivity: 0.90–0.94')
+- **Verify:** **N/A** — sensitivity range from the Phase 0 note
+- **Justification:** Brackets the 0.92 melt yield.
+
+### `metal_yield_sensitivity_frac_tense`
+
+- **Value:** [0.92, 0.95]
+- **Unit:** frac_of_clean_metal_to_ingot · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml metal_yield_frac_tense note ('P1 recovery sensitivity: 0.92–0.95')
+- **Verify:** **N/A** — sensitivity range from the Phase 0 note
+- **Justification:** Brackets the 0.94 melt yield.
+
+### `heavies_net_value_sensitivity_frac`
+
+- **Value:** [0.4, 1.5]
+- **Unit:** frac_of_lme_3m_usd_t_per_mt_of_heavies · **Flag:** ASSUMPTION
+- **Source:** scrap_grades.yaml heavies_net_value_frac_of_lme_al note ('P1 sensitivity: 0.4–1.5')
+- **Verify:** **N/A** — sensitivity range from the Phase 0 note
+- **Justification:** Only Zorba 95/5 carries a heavies fraction, so only Zorba rows move.
+
+### `spa_moisture_deduction_ratio`
+
+- **Value:** 1.0
+- **Unit:** mt_deducted_per_mt_of_excess_moisture · **Flag:** ASSUMPTION
+- **Source:** commercial.yaml rejection_penalty_schedule row 'moisture above franchise' → 'weight deduction 1:1 for the excess'; franchise = standard_moisture_franchise_frac
+- **Verify:** **N/A** — contract-design assumption; tests/test_parity.py checks the schedule text still says 1:1
+- **Justification:** Payable weight = contracted weight × (1 − ratio × max(0, moisture − franchise)).
+
+### `spa_contamination_discount_multiple`
+
+- **Value:** 1.5
+- **Unit:** frac_price_discount_per_frac_of_excess · **Flag:** ASSUMPTION
+- **Source:** commercial.yaml rejection_penalty_schedule row 'non-metallics / attachments above ISRI grade limit by up to 3 percentage points' → 'price discount of 1.5 × excess % on the whole lot'
+- **Verify:** **N/A** — contract-design assumption; tests/test_parity.py checks the schedule text
+- **Justification:** Intentionally punitive (commercial.yaml note). The contracted limit is the grade's registered contamination_frac_<grade> — the composition the grade factor and recovery already price — which sits inside the ISRI limits quoted in scrap_grades.yaml.
+
+### `spa_contamination_rejection_excess_frac`
+
+- **Value:** 0.03
+- **Unit:** frac_of_dry_weight_above_limit · **Flag:** ASSUMPTION
+- **Source:** commercial.yaml rejection_penalty_schedule row 'non-metallics above limit by more than 3 points, or wrong grade' → 'buyer may reject the lot or renegotiate'
+- **Verify:** **N/A** — contract-design assumption; tests/test_parity.py checks the schedule text
+- **Justification:** Above this excess the lot is rejectable: re-export or storage costs are for the seller, the desk loses the margin, not the cash.
+
+### `lme_cash_prompt_bdays`  — **PENDING**
+
+- **Value:** 2
+- **Unit:** business_days_after_trade_date · **Flag:** ASSUMPTION
+- **Source:** LME market convention: the cash prompt settles two business days after the trade date (T+2); the 3-months prompt is three calendar months after the trade date
+- **Verify:** **PENDING** — stated from the standard LME convention, not re-read from the LME contract specification in Phase 1. Next step: LME Aluminium contract specification page (prompt date structure).
+- **Justification:** Used only to place the cash price on the day axis when term_structure.py interpolates the forward curve between cash and 3M; a ±2-day error moves the implied M+1 average by < USD 1/t in the window.
+
+### `mplus1_bl_month_offset_months`
+
+- **Value:** 0
+- **Unit:** months_after_parity_week_month · **Flag:** ASSUMPTION
+- **Source:** Desk convention for Table 1.7(a): a cargo contracted in the parity week loads within the 15-day shipment window (typical_laycan_days), so its B/L month is taken as the parity week's month; the M+1 quotational period is the next calendar month (exchange.yaml lme_m1_pricing_rule)
+- **Verify:** **N/A** — convention
+- **Justification:** A contract fixed in the last week of a month would often B/L the following month; the term-structure effect then shifts one month later, not in sign.
 
 ## `config/params/rates.yaml`
 
@@ -1148,6 +1385,686 @@ Owner: P0 regulatory/contract research · 22 parameters · DIRECT 14, PROXY 2, A
 - **Source:** Desk scenario design
 - **Verify:** **N/A** — scenario assumption
 - **Justification:** Loss on each rejected tonne as a fraction of its CIF value: return/onward freight, re-export documentation, distressed resale discount to a third-country buyer. Combined with rejection 10% this is ~1.5% of cargo value before demurrage — deliberately smaller than the delay/demurrage leg, which is where 2023–2025 QCO frictions actually bit importers.
+
+## `config/params/risk.yaml`
+
+Owner: P4/P5 risk · 53 parameters · DIRECT 0, PROXY 0, ASSUMPTION 53.
+
+| Key | Value | Unit | Flag | Verify |
+|---|---|---|---|---|
+| `var_garch_refit_frequency` | W-FRI | pandas_period_alias | ASSUMPTION | N/A |
+| `var_garch_min_estimation_obs` | 250 | trading_days | ASSUMPTION | N/A |
+| `var_hist_window_base_days` | 250 | trading_days | ASSUMPTION | N/A |
+| `var_hist_window_fast_days` | 60 | trading_days | ASSUMPTION | N/A |
+| `var_corr_window_days` | 250 | trading_days | ASSUMPTION | N/A |
+| `var_vol_alert_percentiles` | [0.75, 0.9, 0.95] | frac_percentile | ASSUMPTION | N/A |
+| `var_vol_alert_reference_period` | ["2019-01-02", "2021-12-31"] | date_range_inclusive | ASSUMPTION | N/A |
+| `var_lead_episodes` | [["LME_MARCH_SPIKE", "2022-01-03", "2022-03-31"], ["LME_MAY_JULY_CR... | name_start_end | ASSUMPTION | N/A |
+| `var_unit_backtest_start` | 2019-01-02 | date | ASSUMPTION | N/A |
+| `var_unit_lme_mt` | 1000.0 | mt | ASSUMPTION | N/A |
+| `var_unit_fx_usd` | 1000000.0 | usd | ASSUMPTION | N/A |
+| `mc_horizon_bdays` | 10 | business_days | ASSUMPTION | N/A |
+| `mc_pit_lookback_days` | 126 | trading_days | ASSUMPTION | N/A |
+| `mc_student_t_dof` | 5 | degrees_of_freedom | ASSUMPTION | N/A |
+| `mc_snapshot_rules` | [["ATH_PLUS_1", "first LME panel day after the window's highest LME... | id_rule | ASSUMPTION | N/A |
+| `mc_stress_lme_move_frac` | -0.15 | frac_of_lme_cash | ASSUMPTION | N/A |
+| `mc_stress_usdinr_move_frac` | 0.05 | frac_of_usdinr | ASSUMPTION | N/A |
+| `mc_buyer_default_buyer_id` | BUY_RJK_01 | counterparty_id | ASSUMPTION | N/A |
+| `mc_buyer_default_recovery_frac` | 0.25 | frac_of_receivable | ASSUMPTION | **PENDING** |
+| `mc_buyer_default_recovery_sensitivity_frac` | [0.0, 0.5] | frac_of_receivable | ASSUMPTION | N/A |
+| `mc_buyer_default_resale_discount_frac` | 0.05 | frac_of_replacement_value | ASSUMPTION | N/A |
+| `mc_qco_uncleared_only` | True | bool | ASSUMPTION | N/A |
+| `liq_plan_parity_week_end` | 2022-02-25 | date | ASSUMPTION | N/A |
+| `liq_plan_throughput_mt_pa` | 30000.0 | mt_per_year | ASSUMPTION | N/A |
+| `liq_plan_lc_tenor_days` | 60 | days | ASSUMPTION | N/A |
+| `liq_facility_rounding_inr` | 250000000.0 | inr | ASSUMPTION | N/A |
+| `liq_fb_wc_limit_inr` | 1000000000.0 | inr | ASSUMPTION | **PENDING** |
+| `liq_nfb_lc_limit_inr` | 1000000000.0 | inr | ASSUMPTION | **PENDING** |
+| `liq_min_cash_buffer_frac_of_fb_limit` | 0.15 | frac_of_fund_based_limit | ASSUMPTION | N/A |
+| `liq_stress_confidence_frac` | 0.99 | frac_percentile | ASSUMPTION | N/A |
+| `liq_stress_horizon_days` | 10 | trading_days | ASSUMPTION | N/A |
+| `policy_memo_date` | 2022-11-07 | date | ASSUMPTION | N/A |
+| `policy_max_physical_open_mt` | 5000.0 | mt_lme_equivalent | ASSUMPTION | N/A |
+| `policy_max_physical_open_usd` | 15000000.0 | usd | ASSUMPTION | N/A |
+| `policy_max_net_unhedged_mt` | 1000.0 | mt_lme_equivalent | ASSUMPTION | N/A |
+| `policy_max_net_unhedged_usd` | 3000000.0 | usd | ASSUMPTION | N/A |
+| `policy_max_unhedged_frac` | 0.25 | frac_of_physical_lme_exposure | ASSUMPTION | N/A |
+| `policy_unhedged_frac_min_physical_mt` | 1000.0 | mt_lme_equivalent | ASSUMPTION | N/A |
+| `policy_mcx_hedge_ratio_band_frac` | [0.8, 1.1] | frac_of_lme_equivalent_physical_at_decision | ASSUMPTION | N/A |
+| `policy_fx_forward_cover_min_frac` | 0.9 | frac_of_fixed_usd_payable | ASSUMPTION | N/A |
+| `policy_stop_ticket_review_inr` | 10000000.0 | inr_drawdown_from_ticket_peak | ASSUMPTION | N/A |
+| `policy_stop_ticket_hard_inr` | 20000000.0 | inr_drawdown_from_ticket_peak | ASSUMPTION | N/A |
+| `policy_stop_book_drawdown_inr` | 40000000.0 | inr_drawdown_from_book_peak | ASSUMPTION | N/A |
+| `policy_var_limit_inr` | 10000000.0 | inr_one_day_95pct_var | ASSUMPTION | N/A |
+| `policy_freight_fix_within_bdays` | 10 | trading_days_after_purchase | ASSUMPTION | N/A |
+| `policy_freight_stop_max_frac_over_fixture` | 0.2 | frac_above_fixture_rate | ASSUMPTION | N/A |
+| `sent_vader_pos_threshold` | 0.05 | vader_compound_score | ASSUMPTION | N/A |
+| `sent_vader_neg_threshold` | -0.05 | vader_compound_score | ASSUMPTION | N/A |
+| `sent_zscore_min_past_weeks` | 4 | weeks | ASSUMPTION | N/A |
+| `sent_signal_z_abs` | 1.0 | z_score_abs | ASSUMPTION | N/A |
+| `sent_bootstrap_block_weeks` | 3 | weeks | ASSUMPTION | N/A |
+| `sent_domain_valence_abs` | 1.5 | vader_valence_points | ASSUMPTION | N/A |
+| `sent_domain_lexicon` | {"up": ["surge", "surges", "surged", "surging", "soar", "soars", "s... | word_lists_price_direction | ASSUMPTION | N/A |
+
+### `var_garch_refit_frequency`
+
+- **Value:** W-FRI
+- **Unit:** pandas_period_alias · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/40_var_garch.md §2.2)
+- **Verify:** **N/A** — modelling choice, nothing external to verify against
+- **Justification:** GARCH(1,1) parameters are re-estimated once per week (weeks ending Friday, the project calendar convention in CONTRACTS §3) on an expanding sample of every return dated strictly before the first panel day of that week. Inside the week the parameters are held and the variance recursion is filtered daily, so the forecast for day t always uses returns dated t-1 or earlier. Weekly rather than daily refits keep the run light on this 8 GB machine; with 250+ observations one extra week moves the estimates very little, whereas the daily filter carries the information that matters (yesterday's squared return).
+
+### `var_garch_min_estimation_obs`
+
+- **Value:** 250
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice; roughly one year of LME trading days (docs/40_var_garch.md §2.2)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** No GARCH forecast is produced until the expanding sample holds at least this many daily returns. With the lookback starting at HISTORY_START (2018-01-02) the first forecast falls on the last days of December 2018, so the 2019-2022 unit-exposure backtest starts with every method available. One year is the smallest sample on which a three-parameter GARCH is usually identified; the 2018-only USD/INR fit still hits the alpha = 0 / beta = 1 boundary, which var_garch_params.csv flags on every affected refit.
+
+### `var_hist_window_base_days`
+
+- **Value:** 250
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** Basel market-risk convention of an (at least) one-year observation period for VaR; desk modelling choice
+- **Verify:** **N/A** — declared before any Phase 4 result was computed (2026-09-16)
+- **Justification:** The BASE 'simple historical volatility' against which GARCH is compared: the root-mean-square of the last 250 daily returns ending the day before the forecast date (zero mean, like the GARCH). Chosen ex ante as the one-year window a desk or regulator would use, NOT because it lags; var_hist_window_fast_days is published beside it in every table so a reader can see GARCH against a fast window too. Also the window for the freight and LME cash-3M spread volatilities, which are historical in both methods.
+
+### `var_hist_window_fast_days`
+
+- **Value:** 60
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (about one quarter of trading days)
+- **Verify:** **N/A** — declared before any Phase 4 result was computed (2026-09-16)
+- **Justification:** The fast historical window reported next to the base in every table, chart and Kupiec row. It is the honest counterpart to the base: a 60-day window reacts much faster than 250 days, so any GARCH lead measured against it is the conservative reading.
+
+### `var_corr_window_days`
+
+- **Value:** 250
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/40_var_garch.md §2.4)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Rolling Pearson correlation of daily factor changes (LME cash log return, USD/INR log return, USEC freight log return, LME cash-3M spread change) over the 250 panel days ending the day before the VaR date. The SAME correlation matrix is used by both vol methods, so the GARCH-vs-historical comparison isolates the volatility forecast. Freight is assessed weekly and carried forward (CONTRACTS §3), so its daily correlations are attenuated; freight is immaterial to this book's VaR (docs/40 §4.2).
+
+### `var_vol_alert_percentiles`
+
+- **Value:** [0.75, 0.9, 0.95]
+- **Unit:** frac_percentile · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice for the lead/lag reading (docs/40_var_garch.md §5)
+- **Verify:** **N/A** — modelling choice; 0.90 is the base, the others are robustness rows
+- **Justification:** A method 'flags rising risk' on the first day its volatility forecast rises above the given percentile of ITS OWN forecasts over var_vol_alert_reference_period (a pre-2022 period, so the thresholds contain no 2022 data). Each method is measured against its own distribution because a 250-day window is smoother than GARCH and would otherwise be judged against a bar it can never reach. 0.90 is the base threshold quoted in the finding.
+
+### `var_vol_alert_reference_period`
+
+- **Value:** ["2019-01-02", "2021-12-31"]
+- **Unit:** date_range_inclusive · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/40_var_garch.md §5)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** The three calendar years of forecasts that define each method's alert thresholds. Ends before 2022 so no threshold is informed by the February-March 2022 spike, the 7-March-2022 all-time high or the crash it is used to date.
+
+### `var_lead_episodes`
+
+- **Value:** [["LME_MARCH_SPIKE", "2022-01-03", "2022-03-31"], ["LME_MAY_JULY_CRASH", "2022-04-01", "2022-07-15"]]
+- **Unit:** name_start_end · **Flag:** ASSUMPTION
+- **Source:** Reporting-only search windows around the dated events in outputs/tables/adverse_event_windows.csv
+- **Verify:** **N/A** — reporting convention; no VaR or backtest number depends on these windows
+- **Justification:** Where the lead/lag table looks for each method's first alert. Episode 1 runs up to and through the 7-Mar-2022 all-time high; episode 2 runs from the start of April to the E1 trough (2022-07-15), which contains the E1 crash fortnight 2022-04-22 -> 2022-05-09. Like the P3 event windows these are drawn after the fact and are REPORTING-ONLY: they select which dates to describe, never an input to a forecast. If a method is already above its threshold when a window opens, the table reports the day that spell began instead of inventing a crossing.
+
+### `var_unit_backtest_start`
+
+- **Value:** 2019-01-02
+- **Unit:** date · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (spec Table 6 row 4.1 asks for a Kupiec test; ~120 book days have low power)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** First forecast date of the constant-exposure backtests, which run to PANEL_END (2022-12-30). These exist because 120 book days cannot tell a good VaR from a bad one (Kupiec does not reject anything from 2 to 11 exceptions at n = 120); roughly 1,000 days of a fixed exposure narrow that band to 38-64 exceptions against 50.5 expected.
+
+### `var_unit_lme_mt`
+
+- **Value:** 1000.0
+- **Unit:** mt · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice: a round long LME position, not a trade
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Constant long LME aluminium cash position for the unit backtest. P&L on day t = qty x (cash_t - cash_t-1) x usdinr_t (the USD move converted at the day's rate); VaR = 1.645 x sigma_t x qty x cash_t-1 x usdinr_t-1. The size is irrelevant to exception counts; it only sets the rupee scale of the chart.
+
+### `var_unit_fx_usd`
+
+- **Value:** 1000000.0
+- **Unit:** usd · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice: a round long-USD position, not a trade
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Constant long USD position against INR for the USD/INR unit backtest (the second GARCH series used in the book VaR). P&L = notional x (usdinr_t - usdinr_t-1); VaR = 1.645 x sigma_t x notional x usdinr_t-1.
+
+### `mc_horizon_bdays`
+
+- **Value:** 10
+- **Unit:** business_days · **Flag:** ASSUMPTION
+- **Source:** Basel market-risk convention of a 10-business-day holding period; desk modelling choice (docs/41_monte_carlo.md §2.3)
+- **Verify:** **N/A** — declared before any Phase 4.2 result was computed (2026-09-16)
+- **Justification:** The base risk horizon: the covariance of daily factor changes is scaled by 10 (square root of time, no autocorrelation) and the book is re-marked instantaneously at the snapshot close with the clock, contracts and events held. Ten business days is roughly the time a physical desk needs to re-hedge or re-sell a cargo-sized position (an MCX hedge can be lifted in a day; a sale to a new smelter takes one to two weeks). A static-position "to settlement" horizon is also published, as a memo only, because the desk did not hold any snapshot position unchanged to settlement.
+
+### `mc_pit_lookback_days`
+
+- **Value:** 126
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice: the number of daily returns in the spec's estimation window (2022-03-01..2022-08-31 has 126 LME days)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Length of the POINT-IN-TIME covariance sensitivity: the 126 daily changes dated on or before each snapshot date (and the complete W-FRI weeks inside that span for freight and the MCX basis). The spec's window covariance uses returns after an early snapshot (hindsight); this variant uses only what the desk knew at that close. Same length as the window so the two differ only in dating.
+
+### `mc_student_t_dof`
+
+- **Value:** 5
+- **Unit:** degrees_of_freedom · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/41_monte_carlo.md §2.4); common choice for commodity-return tails
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Degrees of freedom of the multivariate Student-t sensitivity, scaled to the SAME covariance as the base normal (x = L z sqrt((nu-2)/chi2)). One chi-square per path scales all factors together: a normal whose variance is uncertain over the horizon. At equal variance nu = 5 puts the one-factor 95 % quantile 5 % BELOW the normal's, the 99 % quantile 12 % above it and the 99.9 % quantile 48 % above it.
+
+### `mc_snapshot_rules`
+
+- **Value:** [["ATH_PLUS_1", "first LME panel day after the window's highest LME cash close (the 7-Mar-2022 all-time high)"], ["PEAK_GROSS_LME", "window day with the largest BOOK lme_delta_physical_mt in book_exposures_daily.csv"], ["PEAK_BUYER_CONTRACTED", "first window day on which mc_buyer_default_buyer_id's contracted exposure (receivable + presettlement, buyer_credit_exposure_by_trade_daily.csv) is at its window maximum"]]
+- **Unit:** id_rule · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice, declared before any Phase 4.2 result was computed (2026-09-16); docs/41_monte_carlo.md §2.2
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Three dates on which the book is revalued. Any date a rule selects that is an MCX exit or roll-out day (mcx_variation_margin.csv action exit|roll_out) moves to the next panel day that is not one, because the valuation at such a close still carries the exiting contract (docs/40_var_garch.md open issue 1). ATH_PLUS_1 is the spec's crash narrative (and the book's first day: T01 long, not yet hedged); PEAK_GROSS_LME is the most metal the desk ever carried, where hedge slippage matters most; PEAK_BUYER_CONTRACTED is the day the buyer-default stress has the most to bite on. The rules select dates from exposures and credit tables only, never from P&L.
+
+### `mc_stress_lme_move_frac`
+
+- **Value:** -0.15
+- **Unit:** frac_of_lme_cash · **Flag:** ASSUMPTION
+- **Source:** MASTER_SPEC_V3 Table 6 row 4.2 stress scenario 'LME -15%'
+- **Verify:** **N/A** — spec-defined scenario
+- **Justification:** Instantaneous LME cash x 0.85 (log shock ln 0.85), with MCX recomputed from the shocked cash at the held basis (unit beta, docs/30 §5.1). For scale: LME cash fell 12.95 % on 8-Mar-2022 alone.
+
+### `mc_stress_usdinr_move_frac`
+
+- **Value:** 0.05
+- **Unit:** frac_of_usdinr · **Flag:** ASSUMPTION
+- **Source:** MASTER_SPEC_V3 Table 6 row 4.2 stress scenario 'INR -5%'
+- **Verify:** **N/A** — spec-defined scenario
+- **Justification:** Convention: 'INR -5 %' is read as the quoted USD/INR rate rising 5 % (rupee depreciation; log shock ln 1.05) — the way an Indian desk quotes the move. Measured as the rupee's own USD value it is a 4.76 % fall; a 5 % fall in that measure would be USD/INR +5.26 %. The CBIC customs rate moves with the market rate (valuation.shock_state).
+
+### `mc_buyer_default_buyer_id`
+
+- **Value:** BUY_RJK_01
+- **Unit:** counterparty_id · **Flag:** ASSUMPTION
+- **Source:** Phase 1-3 fix log open item 1 (docs/reviews/phase1-3_fix_log.md §3): advance reliance 1.26x/1.53x/1.83x of a ₹120 m limit; contracted exposure peaks at 2.57x
+- **Verify:** **N/A** — scenario design
+- **Justification:** The buyer defaulted in the Table 6 'buyer default' stress. Chosen for performance exposure relative to its limit (the desk relies on its advances), not for the largest rupee exposure: BUY_MUN_01's contracted exposure peaks higher in rupees (₹750 m on a ₹650 m limit). The stress is run on every snapshot; where this buyer has no open flow the scenario is zero and says so.
+
+### `mc_buyer_default_recovery_frac`  — **PENDING**
+
+- **Value:** 0.25
+- **Unit:** frac_of_receivable · **Flag:** ASSUMPTION
+- **Source:** Desk judgement: unsecured operational creditor of a defaulted small foundry (SIM)
+- **Verify:** **PENDING** — compare with published realisation rates for operational creditors in Indian insolvency resolutions (IBBI quarterly newsletter)
+- **Justification:** Recovery on cargo already RELEASED to the buyer when it defaults (an unsecured trade receivable, no retention of title assumed). Operational creditors rank behind secured lenders and typically recover a small fraction, late; 0.25 is a judgement, so mc_buyer_default_recovery_sensitivity_frac publishes the 0 and 0.5 cases beside it.
+
+### `mc_buyer_default_recovery_sensitivity_frac`
+
+- **Value:** [0.0, 0.5]
+- **Unit:** frac_of_receivable · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice
+- **Verify:** **N/A** — sensitivity grid
+- **Justification:** Memo rows of the buyer-default scenario at these recoveries on released cargo (retained cargo is unaffected).
+
+### `mc_buyer_default_resale_discount_frac`
+
+- **Value:** 0.05
+- **Unit:** frac_of_replacement_value · **Flag:** ASSUMPTION
+- **Source:** Desk judgement: distressed resale of an imported scrap lot to another Gujarat smelter within weeks
+- **Verify:** **N/A** — scenario assumption (no public quote for distressed domestic scrap resales)
+- **Justification:** Cargo NOT yet released when the buyer defaults stays with the desk and is resold at the unsold-cargo mark (import replacement value, CONTRACTS §7a.1.3) less this discount. The loss is the lost contract receipts minus those resale proceeds, floored at zero (no windfall from a default). Extra storage while re-selling is not modelled.
+
+### `mc_qco_uncleared_only`
+
+- **Value:** True
+- **Unit:** bool · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice; a clearance-stage BIS-QCO bites at the Bill of Entry (regulatory.yaml qco_stress_delay_days note)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Apply StressEvent('qco_hold') only to tickets on the book with at least one lot not yet released at the snapshot. The API charges extra dwell on every box of a ticket and writes off the rejected fraction of its unsold (or, if all sold, whole) tonnage regardless of lot status; applied to already-cleared tickets that overstates the policy stress, so the all-tickets figure is published only as a memo row.
+
+### `liq_plan_parity_week_end`
+
+- **Value:** 2022-02-25
+- **Unit:** date · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice: the last Phase 1 parity week before WINDOW_START (outputs/tables/parity_weekly.csv)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** The facilities are sized as a bank would size them at sanction — before the window opened, on the prices and cash-cycle economics visible then: the six grade x lane cases of the parity week ending 2022-02-25. Nothing dated after that week enters the sizing. Carried caveat: that week's grade factor and freight level are Phase 1 hindsight reconstructions (CONTRACTS §4.3), so the plan cost per tonne is itself partly reconstructed; margin_liquidity_limit_grid.csv shows the result at other facility sizes.
+
+### `liq_plan_throughput_mt_pa`
+
+- **Value:** 30000.0
+- **Unit:** mt_per_year · **Flag:** ASSUMPTION
+- **Source:** Desk plan read from MASTER_SPEC_V3 Table 4 (8-10 trades of 1,000-5,000 MT over the six-month window)
+- **Verify:** **N/A** — business-plan assumption
+- **Justification:** A first-year desk planning at the lower middle of the spec's range (about 9 parcels of ~1,700 MT a half-year) budgets ~15,000 MT per half-year, i.e. 30,000 MT a year (2,500 MT a month). Taken from the spec range, not from the book: the realised book (14,350 MT contracted Mar-Aug, ~2,390 MT a month) came in about 4 % under it, so the facility test is about the book's cash TIMING (usance maturities, IGST, buyer credit bunching), not its volume.
+
+### `liq_plan_lc_tenor_days`
+
+- **Value:** 60
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk construction from lc_open_days_before_laycan_min (commercial.yaml), sight payment ~7 days after B/L, and 60-90 day usance
+- **Verify:** **N/A** — plan assumption
+- **Justification:** Average days one parcel's import LC sits on the non-fund limit in the plan. A sight LC is outstanding from opening (at least 10 days before the laycan) to document payment about 7 days after the B/L, roughly 25-30 days; a usance LC adds its 60-90 days. A plan that puts about a third of parcels on 90-day usance averages ~60 days. The book used usance on 3 of 9 parcels (T02 90 d, T05 60 d, T09 60 d).
+
+### `liq_facility_rounding_inr`
+
+- **Value:** 250000000.0
+- **Unit:** inr · **Flag:** ASSUMPTION
+- **Source:** Desk convention: sanctioned limits are round numbers
+- **Verify:** **N/A** — convention
+- **Justification:** Each plan requirement is rounded UP to the next ₹25 crore (₹250 m) to give the sanctioned limit. Rounding can only add headroom: on the 2022-02-25 plan it adds ₹30.2 m to the fund-based line and ₹126.8 m to the LC line.
+
+### `liq_fb_wc_limit_inr`  — **PENDING**
+
+- **Value:** 1000000000.0
+- **Unit:** inr · **Flag:** ASSUMPTION
+- **Source:** Desk construction: liq_plan_throughput_mt_pa x mean over the plan week's six parity cases of (finance_inr_t + igst_finance_inr_t) / wc_rate_inr_pa, rounded up by liq_facility_rounding_inr
+- **Verify:** **PENDING** — no 2022 sanction letter for a comparable importer was retrieved. Next step: a listed Indian non-ferrous metals trader's FY2022-23 annual report (sanctioned fund-based working-capital limits against turnover).
+- **Justification:** Sanctioned fund-based working-capital limit (cash credit / WCDL / import loans on one line) — the line Phase 3's funding accrual already assumes (CONTRACTS §7a.5) but never capped. Rule: 30,000 MT/yr x ₹32,326 of funded rupee-years per tonne (Phase 1's own finance_inr_t + igst_finance_inr_t at the 9.50 % plan rate) = ₹969.8 m average funded balance, rounded up to ₹1,000 m (₹100 crore); margin_liquidity_facility.csv recomputes it and a test asserts the registered value equals the rule. It is a sanction on the plan's AVERAGE balance, as a holding-period assessment would give; a parcel business is lumpy, and the buffer below plus an ad-hoc limit are what a bank expects to carry peaks. It was not set from the book's realised peak funding need.
+
+### `liq_nfb_lc_limit_inr`  — **PENDING**
+
+- **Value:** 1000000000.0
+- **Unit:** inr · **Flag:** ASSUMPTION
+- **Source:** Desk construction: liq_plan_throughput_mt_pa x mean plan-week CIF value per tonne (cif_usd_t x usdinr) x liq_plan_lc_tenor_days / 365, rounded up by liq_facility_rounding_inr
+- **Verify:** **PENDING** — as liq_fb_wc_limit_inr
+- **Justification:** Non-fund import LC limit (sight and usance credits outstanding). Rule: 30,000 MT/yr x ₹177,064 CIF per tonne x 60/365 = ₹873.2 m average LC outstanding, rounded up to ₹1,000 m. The book's LC outstanding is valued at the trade-date planned purchase value x (1 + the ticket's LC tolerance), converted at each day's USD/INR (PROXY).
+
+### `liq_min_cash_buffer_frac_of_fb_limit`
+
+- **Value:** 0.15
+- **Unit:** frac_of_fund_based_limit · **Flag:** ASSUMPTION
+- **Source:** Treasury convention: keep 10-20 % of committed working-capital lines undrawn for margin calls and payment slippage; midpoint
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Minimum undrawn liquidity reserved at all times: headroom = limit − buffer − funding need, so a buffer you can spend is not counted as headroom. ₹150 m on the ₹1,000 m line. Anchor at plan prices: initial margin at mcx_al_margin_used_frac (10 %) on two months of plan throughput (5,000 MT) hedged 1:1 at the 25-Feb-2022 MCX M1 proxy (₹273.24/kg) is ₹136.6 m. The analysis tests this against a daily 99 % margin-at-risk; the memo's buffer rule is set from that test, not from this convention.
+
+### `liq_stress_confidence_frac`
+
+- **Value:** 0.99
+- **Unit:** frac_percentile · **Flag:** ASSUMPTION
+- **Source:** MASTER_SPEC_V3 Table 6 row 4.2 (the Monte Carlo reports 95 %/99 % losses); desk modelling choice
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Confidence of the adverse LME move used for margin-at-risk and the crash-fortnight stress. A liquidity buffer is sized for the tail, so 99 % rather than the 95 % of the daily VaR.
+
+### `liq_stress_horizon_days`
+
+- **Value:** 10
+- **Unit:** trading_days · **Flag:** ASSUMPTION
+- **Source:** CONTRACTS §7a.3 fortnight convention (10 trading-day returns); equals mc_horizon_bdays of the Phase 4.2 Monte Carlo
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Horizon of the 99 % move: one crash fortnight. Normal readings scale a one-day volatility forecast by sqrt(10) (no mean reversion, no autocorrelation); the empirical reading uses overlapping 10-day LME cash log returns from HISTORY_START to the stress date, so it needs no scaling.
+
+### `policy_memo_date`
+
+- **Value:** 2022-11-07
+- **Unit:** date · **Flag:** ASSUMPTION
+- **Source:** Desk convention: the first Monday after HORIZON_END (2022-10-31), when every figure the memo quotes is known
+- **Verify:** **N/A** — convention
+- **Justification:** The memo proposes policy looking back over the whole book (its cash path runs to 31-Oct and the credit scores to 31-Aug), so it is dated after the last input it uses: no figure in it was unknowable on its date.
+
+### `policy_max_physical_open_mt`
+
+- **Value:** 5000.0
+- **Unit:** mt_lme_equivalent · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence book_exposures_daily.csv (BOOK lme_delta_physical_mt, unsold_mt)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Gross physical LME exposure (priced-or-unpriced metal the desk is long before hedges). Set at the spec's maximum parcel (5,000 MT), which is also just above what the book ran (peak 4,450 MT LME-equivalent on 21-Apr; unsold cargo peaked at 4,980 MT on 6-Apr). Not raised above that level because the liquidity analysis shows this level already used the whole working-capital line. Disclosure: the level was chosen with the book's peak in view, so the memo's "within" verdict is true by construction and is not evidence that the limit is right.
+
+### `policy_max_physical_open_usd`
+
+- **Value:** 15000000.0
+- **Unit:** usd · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence BOOK lme_delta_physical_mt x lme_cash_usd_t
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** The same limit in dollars, so a price rally cannot grow exposure inside a tonnage limit. Book peak USD 14.5 m on 21-Apr-2022 (4,450 MT x LME cash 3,262). Set just above that peak with the book in view (see the MT twin).
+
+### `policy_max_net_unhedged_mt`
+
+- **Value:** 1000.0
+- **Unit:** mt_lme_equivalent · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence BOOK lme_delta_mt (net of MCX), excluding the 16 MCX exit/roll position dates flagged in var_daily.csv
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Absolute net LME delta after hedges, long or short. At window LME cash prices (USD 2,320-3,985/t) 1,000 MT is USD 2.3-4.0 m. The book's absolute net had a 95th percentile of 967 MT on clean position days; it exceeded 1,000 MT on 5 of them, the largest the 1,817 MT naked session on 8-Mar before T01's hedge (MCX proxy at its daily limit).
+
+### `policy_max_net_unhedged_usd`
+
+- **Value:** 3000000.0
+- **Unit:** usd · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence BOOK lme_delta_usd
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Dollar twin of policy_max_net_unhedged_mt (about 1,000 MT at USD 3,000/t). Book: above USD 3 m on 2 clean days (8-Mar USD 6.36 m; 14-Apr).
+
+### `policy_max_unhedged_frac`
+
+- **Value:** 0.25
+- **Unit:** frac_of_physical_lme_exposure · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence BOOK lme_delta_mt / lme_delta_physical_mt
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** |net| / gross physical, checked daily when gross physical is at least policy_unhedged_frac_min_physical_mt. Symmetric: over-hedging (net short) counts. The book's median hedge ratio was 0.903, but ratios drift between re-sizing decisions, so the book was outside 25 % on 26 of 99 qualifying clean days. The remedy is a rebalancing rule, not a looser band.
+
+### `policy_unhedged_frac_min_physical_mt`
+
+- **Value:** 1000.0
+- **Unit:** mt_lme_equivalent · **Flag:** ASSUMPTION
+- **Source:** Desk policy
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Below this gross physical exposure the percentage test is not applied (a 20 % miss on 300 MT is noise; the absolute net limit still binds).
+
+### `policy_mcx_hedge_ratio_band_frac`
+
+- **Value:** [0.8, 1.1]
+- **Unit:** frac_of_lme_equivalent_physical_at_decision · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence trade_hedges.csv hedge_ratio_target / hedge_ratio_actual per ticket
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Hedge ratio each ticket must be sized to at every MCX decision (entry, roll, tranche). Eight tickets targeted 0.9 or 1.0 and filled within 0.899-1.002; T04's deliberate 0.50 is outside and would need prior committee approval. The upper bound allows for the MCX lot rounding and the 5.4-5.5 MT LME-equivalent per 5 MT lot.
+
+### `policy_fx_forward_cover_min_frac`
+
+- **Value:** 0.9
+- **Unit:** frac_of_fixed_usd_payable · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence trade_book.csv fx_hedge_frac_target, fx_cover_frac_of_fixed_purchase
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Minimum forward cover of each fixed USD payable from the day it is fixed, measured on physical + forwards only (the MCX short's embedded USD must not be netted in: docs/40 §4.2, fix log open item 3). Eight tickets covered 100 %; T06 covered 60 %.
+
+### `policy_stop_ticket_review_inr`
+
+- **Value:** 10000000.0
+- **Unit:** inr_drawdown_from_ticket_peak · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence attribution_daily.csv per-ticket cum_pnl_inr drawdowns
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** A ticket whose cumulative P&L falls ₹10 m below its own peak goes to a same-day review with the head of desk (about 2.3x the book's mean daily GARCH VaR, ₹4.27 m). Four of nine tickets would have triggered it (T04, T05, T07, T08). Chosen after the drawdowns were known: which tickets trip is illustration, not a test of the level.
+
+### `policy_stop_ticket_hard_inr`
+
+- **Value:** 20000000.0
+- **Unit:** inr_drawdown_from_ticket_peak · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence attribution_daily.csv per-ticket drawdowns
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** At ₹20 m below peak the ticket is hedged to 1.0 on MCX and forwards and no new exposure in the same grade is added until it closes. Only T08 reached it (−₹22.8 m on 1-Aug, worst −₹26.1 m on 8-Aug, mostly grade spread), and the desk bought T09 in the same grade on 3-Aug. Disclosure: the level sits where only the worst ticket trips, and it was set with the book's drawdowns in view.
+
+### `policy_stop_book_drawdown_inr`
+
+- **Value:** 40000000.0
+- **Unit:** inr_drawdown_from_book_peak · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence attribution_daily.csv BOOK cum_pnl_inr
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** At ₹40 m below the book's peak (about ten times the mean daily GARCH VaR) no new purchase is contracted until the committee has reviewed the book. The book drew down ₹49.9 m from its 9-Jun peak to 8-Aug, crossing ₹40 m on 1-Aug; T09 was contracted on 3-Aug. Set with that drawdown in view (a disclosure, not a validation).
+
+### `policy_var_limit_inr`
+
+- **Value:** 10000000.0
+- **Unit:** inr_one_day_95pct_var · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence var_daily.csv (docs/40_var_garch.md)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** One-day 95 % VaR limit applied to the larger of the GARCH(1,1) VaR and the 250-day historical VaR (the historical number is the floor, because GARCH decayed below both rolling windows into the April-May crash). ₹10 m is 2.3x the mean GARCH VaR (₹4.27 m). On clean position days the book breached it once: ₹43.5 m on 9-Mar, the naked session. Scope: the VaR covers LME, USD/INR and freight only. Grade-spread P&L (daily std ₹2.2 m over the window, not a VaR factor) and the LME cash-3M spread (memo VaR +18 %) sit outside the limit (docs/40 §4.2, §6.1).
+
+### `policy_freight_fix_within_bdays`
+
+- **Value:** 10
+- **Unit:** trading_days_after_purchase · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence trade_book.csv trade_date vs freight_fixture_date on the three FOB tickets
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** FOB purchases fix freight within 10 trading days of the purchase. T01 fixed after 8, T04 after 6, T07 after 2.
+
+### `policy_freight_stop_max_frac_over_fixture`
+
+- **Value:** 0.2
+- **Unit:** frac_above_fixture_rate · **Flag:** ASSUMPTION
+- **Source:** Desk policy; evidence trade_book.csv freight_stop_loss_usd_box vs freight_rate_usd_box
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Unhedged freight carries a stated stop no more than 20 % above the fixture (the book's stops were 18.4 %, 12.7 % and 14.2 % above). No proxy hedge: no accessible instrument tracks the India lanes (Table 4 row 2.7(d) note), the two lanes are one factor (JEA_NSA = 0.2255 x USEC_MUN), freight VaR averaged ₹0.05 m, and the hypothetical +40 % spike costs T01 ₹8.55 m (docs/31 §3.5).
+
+### `sent_vader_pos_threshold`
+
+- **Value:** 0.05
+- **Unit:** vader_compound_score · **Flag:** ASSUMPTION
+- **Source:** vaderSentiment 3.3.2 README (Hutto & Gilbert, ICWSM 2014): the authors' recommended cut-off, compound >= 0.05 = positive
+- **Verify:** **N/A** — tool author's convention, adopted unchanged
+- **Justification:** A headline counts toward a week's pos_share when its VADER compound score is at least this value. Adopted from the tool's documentation rather than chosen, so the share cannot have been tuned to prices. Applied identically to the raw and the domain-adjusted score.
+
+### `sent_vader_neg_threshold`
+
+- **Value:** -0.05
+- **Unit:** vader_compound_score · **Flag:** ASSUMPTION
+- **Source:** vaderSentiment 3.3.2 README (Hutto & Gilbert, ICWSM 2014): compound <= -0.05 = negative
+- **Verify:** **N/A** — tool author's convention, adopted unchanged
+- **Justification:** A headline counts toward a week's neg_share when its compound score is at most this value; scores strictly between the two thresholds are neutral. Most commodity headlines contain no VADER lexicon word at all and score exactly 0, so the neutral share is large and is published alongside.
+
+### `sent_zscore_min_past_weeks`
+
+- **Value:** 4
+- **Unit:** weeks · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/70_sentiment_overlay.md §2.4)
+- **Verify:** **N/A** — modelling choice
+- **Justification:** A week's z-score compares its mean score with the mean and standard deviation of ALL EARLIER weeks only (expanding window, the week itself excluded from the reference), and is left blank until at least four earlier weeks exist. Four is the smallest reference that gives a standard deviation any stability while leaving 24 of the 28 weeks scored; it means no z-score exists for the weeks around the 7-Mar-2022 high, which the doc states rather than hides. No future week ever enters a z-score.
+
+### `sent_signal_z_abs`
+
+- **Value:** 1.0
+- **Unit:** z_score_abs · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice (docs/70_sentiment_overlay.md §2.6)
+- **Verify:** **N/A** — modelling choice, declared before any lead test was run
+- **Justification:** The episode lead test records SIGNAL FIRED for a price turn if, in one of the three W-FRI weeks ending on or before the last close before the move, the past-only z-score pointed in the direction of the coming move by at least one standard deviation. (Wording corrected after the first run to match the code, which was written before any result; the earlier wording, "the three complete weeks before the week of the turn", is published as verdict_alt_window in sentiment_episodes.csv and gives the same verdicts.) One sigma is deliberately loose (a lenient test gives sentiment every chance); the table therefore also publishes the base rate, i.e. how often the same condition fired in all other weeks, without which a single hit means nothing.
+
+### `sent_bootstrap_block_weeks`
+
+- **Value:** 3
+- **Unit:** weeks · **Flag:** ASSUMPTION
+- **Source:** Desk modelling choice; moving-block bootstrap (Kunsch 1989) because weekly sentiment and returns are autocorrelated
+- **Verify:** **N/A** — modelling choice
+- **Justification:** Block length of the moving-block bootstrap behind the lead/lag correlation intervals. Resampling single weeks would treat autocorrelated weekly scores as independent and give intervals that are too narrow; three weeks is roughly n^(1/3) for n = 28 (the usual rate for block length) and matches the +/-3-week lag range.
+
+### `sent_domain_valence_abs`
+
+- **Value:** 1.5
+- **Unit:** vader_valence_points · **Flag:** ASSUMPTION
+- **Source:** vaderSentiment 3.3.2 vader_lexicon.txt: mean absolute valence of its 7,506 entries is 1.54 (median 1.6)
+- **Verify:** **N/A** — computed from the installed lexicon file, rounded down
+- **Justification:** The single valence (+1.5 bullish, -1.5 bearish) given to every word in sent_domain_lexicon. One magnitude for all words, set at the lexicon's typical word strength, so no individual weight could be tuned; rounded DOWN so a domain word never outweighs a typical VADER word.
+
+### `sent_domain_lexicon`
+
+- **Value:** {"up": ["surge", "surges", "surged", "surging", "soar", "soars", "soared", "soaring", "jump", "jumps", "jumped", "rally", "rallies", "rallied", "rallying", "rise", "rises", "rose", "rising", "climb", "climbs", "climbed", "climbing", "rebound", "rebounds", "rebounded", "bullish", "deficit", "deficits", "shortage", "shortages", "tight", "tighter", "tightness"], "down": ["slump", "slumps", "slumped", "plunge", "plunges", "plunged", "plunging", "tumble", "tumbles", "tumbled", "fall", "falls", "fell", "slide", "slides", "slid", "decline", "declines", "declined", "declining", "sink", "sinks", "sank", "slip", "slips", "slipped", "dip", "dips", "dipped", "drops", "dropped", "crashes", "crashed", "plummet", "plummets", "plummeted", "bearish", "glut", "gluts", "surplus", "surpluses", "oversupply", "slowdown", "soften", "softens", "softened", "softer"], "neutral": ["demand"]}
+- **Unit:** word_lists_price_direction · **Flag:** ASSUMPTION
+- **Source:** Desk judgement from standard metals market-report vocabulary; declared 2026-09-16 before any correlation with LME was computed; per-word reasons in docs/70_sentiment_overlay.md §2.3
+- **Verify:** **N/A** — judgement; the doc publishes raw VADER next to the adjusted score so the adjustment can be ignored
+- **Justification:** A small PRICE-DIRECTION overlay on VADER, which is a general social-media lexicon: it has no entry for surge, soar, rally, rise, plunge, slump, tumble, fall, decline or glut, and scores deficit (-1.7) and shortage (-1.0) as bad news although in a metals headline they are bullish for price. Rules: (1) only words whose price direction is the same in nearly all market-report usage; (2) inflections listed explicitly because VADER does not stem; (3) add a word only if VADER lacks it, or overwrite it only if VADER gives it the wrong sign for price (deficit, shortage, shortages; deficits is simply absent) or a tone that is not a price direction (demand -0.5 -> 0); words VADER already signs the right way (gain, drop, crash, falling, low, lower, weak, strong) are left alone; (4) deliberately NOT added because their price direction is ambiguous: war, sanctions, crisis, cut(s), curbs, halt, closure, hike(s), ease, cool, recovery (also a recycling term), high, record, peak, tightening (monetary). The overlay assumes the subject of the verb is price, so "LME stocks fall" is mis-scored bearish; the doc counts such cases.
+
+## `config/params/risk_credit.yaml`
+
+Owner: unassigned · 21 parameters · DIRECT 0, PROXY 0, ASSUMPTION 21.
+
+| Key | Value | Unit | Flag | Verify |
+|---|---|---|---|---|
+| `credit_synth_base_default_rate_annual_frac` | 0.04 | frac_of_buyer_quarters_defaulting_within_12_months | ASSUMPTION | N/A |
+| `credit_dgp_odds_ratio_utilisation_per_10pp` | 1.25 | odds_ratio_per_0.10_of_peak_credit_utilisation_over_the_quarter | ASSUMPTION | N/A |
+| `credit_dgp_odds_ratio_dpd_per_10d` | 1.5 | odds_ratio_per_10_days_of_worst_days_past_due_over_trailing_12_months | ASSUMPTION | N/A |
+| `credit_dgp_odds_ratio_history_per_12m` | 0.8 | odds_ratio_per_12_months_of_payment_history_with_the_desk | ASSUMPTION | N/A |
+| `credit_dgp_odds_ratio_concentration_per_10pp` | 1.15 | odds_ratio_per_0.10_of_the_buyer's_annual_raw_material_spend_sourced_from_this_desk | ASSUMPTION | N/A |
+| `credit_synth_gen_utilisation` | {"mean": 0.5, "weakness_loading": 0.15, "noise_sd": 0.2, "floor": 0... | mapping: peak credit utilisation frac = clip(mean + weakness_loading*w + noise_sd*e, floor, cap); w ~ N(0,1) per buyer, e ~ N(0,1) per quarter | ASSUMPTION | N/A |
+| `credit_synth_gen_dpd` | {"p_late_logit_intercept": -0.3, "p_late_weakness_loading": 1.0, "l... | mapping: worst DPD days = 0 with prob 1-sigmoid(a+b*w), else ceil(Exponential(late_mean_days*exp(elasticity*w))) capped | ASSUMPTION | N/A |
+| `credit_synth_gen_history` | {"median_months": 30.0, "log_sd": 0.7, "weakness_loading_log": -0.2... | mapping: months of history = clip(exp(log(median)+weakness_loading_log*w+log_sd*e_buyer) + months_per_quarter*quarter_index, floor, cap) | ASSUMPTION | N/A |
+| `credit_synth_gen_concentration` | {"logit_intercept": -1.8, "weakness_loading": 0.5, "buyer_sd": 0.8,... | mapping: share of buyer raw-material spend from the desk = sigmoid(intercept + loading*w + buyer_sd*e_buyer + quarter_sd*e_quarter) | ASSUMPTION | N/A |
+| `credit_feature_lookback_utilisation_days` | 91 | calendar_days | ASSUMPTION | N/A |
+| `credit_feature_lookback_dpd_days` | 365 | calendar_days | ASSUMPTION | N/A |
+| `credit_feature_lookback_concentration_days` | 365 | calendar_days | ASSUMPTION | N/A |
+| `credit_band_pd_upper_frac` | {"A": 0.02, "B": 0.05, "C": 0.12} | annual_pd_frac_upper_bound_exclusive (D = everything at or above the C bound) | ASSUMPTION | N/A |
+| `credit_performance_overlay_notches` | 1 | bands_downgraded | ASSUMPTION | N/A |
+| `credit_soft_utilisation_frac` | 0.8 | frac_of_credit_limit_inr | ASSUMPTION | N/A |
+| `credit_band_max_credit_utilisation_frac` | {"A": 1.0, "B": 0.9, "C": 0.75, "D": 0.5} | frac_of_credit_limit_inr | ASSUMPTION | N/A |
+| `credit_band_max_advance_reliance_multiple` | {"A": 1.0, "B": 1.0, "C": 0.5, "D": 0.0} | multiple_of_credit_limit_inr | ASSUMPTION | N/A |
+| `credit_band_limit_multiplier` | {"A": 1.0, "B": 1.0, "C": 1.0, "D": 0.5} | multiple_of_current_credit_limit_inr | ASSUMPTION | N/A |
+| `credit_band_max_credit_days` | {"A": 45, "B": 30, "C": 30, "D": 0} | days | ASSUMPTION | N/A |
+| `credit_band_review_frequency_days` | {"A": 180, "B": 90, "C": 30, "D": 7} | days_between_credit_reviews | ASSUMPTION | N/A |
+| `credit_band_limit_action` | {"A": "MAINTAIN — eligible for a limit increase at the next review"... | text_by_band | ASSUMPTION | N/A |
+
+### `credit_synth_base_default_rate_annual_frac`
+
+- **Value:** 0.04
+- **Unit:** frac_of_buyer_quarters_defaulting_within_12_months · **Flag:** ASSUMPTION
+- **Source:** Judgement, bracketed by published Indian MSME bank-credit figures that are NOT the same measure: TransUnion CIBIL-SIDBI MSME Pulse (newsroom release 8-Aug-2022) reports an MSME NPA rate of 12.8 % in Mar-2022 (12.0 % Mar-2021), 20.8 % at public sector banks, 9.6 % at NBFCs and 5.6 % at private banks in FY22-Q4, and that ~70 % of 90+ DPD balances pertain to accounts originated up to Mar-2017 (https://newsroom.transunioncibil.com/msme-credit-disbursement-accelerates-while-credit-quality-stays-stable/).
+- **Verify:** **N/A** — calibration assumption. The bureau figures quoted in `source` were read on 2026-09-16; no published 2022 annual default (flow) rate for 30-day supplier trade credit to Indian foundries or secondary smelters was found.
+- **Justification:** Target mean 12-month default probability of the synthetic buyer-quarter population; the DGP intercept is solved so the population mean equals it. Chosen inside the 2-5 %/yr band the Phase 5 brief states, and deliberately well below the bureau NPA ratios because those are balance-weighted STOCK ratios on multi-year bank loans (dominated by pre-2017 vintages), whereas trade credit is 30-45 days, re-underwritten every parcel and cut off at the first missed payment, so its annual flow default rate should be lower. Bands are absolute PD cut-offs, so this number moves bands: the 2 % and 5 % variants are published in credit_scores_sensitivity.csv.
+
+### `credit_dgp_odds_ratio_utilisation_per_10pp`
+
+- **Value:** 1.25
+- **Unit:** odds_ratio_per_0.10_of_peak_credit_utilisation_over_the_quarter · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic DGP). Direction from standard behavioural-scorecard practice: drawn/limit is among the strongest delinquency predictors.
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** +10 percentage points of peak credit utilisation multiplies default odds by 1.25, so running a line at 90 % rather than 30 % multiplies odds by ~3.8. A buyer that lives near its limit has no headroom when its own customers pay late. Credit utilisation is the desk's own limit definition (config/counterparties.yaml header, docs/20 rule C1): receivable plus the part of contracted-not-invoiced sales an advance does not cover, over the credit limit. It deliberately EXCLUDES advances still owed (see docs/50_credit_scoring.md §3.2 for why advance reliance is an overlay, not part of this feature).
+
+### `credit_dgp_odds_ratio_dpd_per_10d`
+
+- **Value:** 1.5
+- **Unit:** odds_ratio_per_10_days_of_worst_days_past_due_over_trailing_12_months · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic DGP). Past delinquency is the most widely used behavioural default predictor in trade-credit and bureau scorecards.
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Each 10 days of worst delinquency in the last 12 months multiplies default odds by 1.5 (0 to 37 days: ~x4.5). Set as the strongest per-unit driver because a missed due date is the one feature that is an observed payment failure rather than a circumstance.
+
+### `credit_dgp_odds_ratio_history_per_12m`
+
+- **Value:** 0.8
+- **Unit:** odds_ratio_per_12_months_of_payment_history_with_the_desk · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic DGP). Thin-file / new-relationship names default more often in trade-credit portfolios.
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Each extra year of payment history with the desk multiplies default odds by 0.8 (12 to 48 months: ~x0.45). Deliberately the weakest effect: a long history is survivorship evidence, not a balance sheet.
+
+### `credit_dgp_odds_ratio_concentration_per_10pp`
+
+- **Value:** 1.15
+- **Unit:** odds_ratio_per_0.10_of_the_buyer's_annual_raw_material_spend_sourced_from_this_desk · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic DGP). A buyer sourcing most of its input from one supplier on credit is using that supplier as a financier and has fewer alternative lines.
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** +10 percentage points of the buyer's raw-material spend coming from the desk multiplies default odds by 1.15 (10 % to 60 %: ~x2.0). Buyer-side dependence, not the desk's own book share: the desk's concentration in one name is an exposure question and is handled by limits, not by the PD.
+
+### `credit_synth_gen_utilisation`
+
+- **Value:** {"mean": 0.5, "weakness_loading": 0.15, "noise_sd": 0.2, "floor": 0.0, "cap": 1.3}
+- **Unit:** mapping: peak credit utilisation frac = clip(mean + weakness_loading*w + noise_sd*e, floor, cap); w ~ N(0,1) per buyer, e ~ N(0,1) per quarter · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic feature generator)
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Utilisation spread wide enough (1st-99th pct roughly 0-1.03, occasional breaches to 1.3) to cover the SIM buyers' credit-utilisation peaks (0.74-0.89). Weaker buyers (higher latent w) run fuller lines, so features are correlated the way a real portfolio's are; w never enters the default probability directly, so a logistic model on the four features is correctly specified by construction (a real portfolio would not be).
+
+### `credit_synth_gen_dpd`
+
+- **Value:** {"p_late_logit_intercept": -0.3, "p_late_weakness_loading": 1.0, "late_mean_days": 12.0, "late_mean_weakness_elasticity": 0.35, "cap_days": 120}
+- **Unit:** mapping: worst DPD days = 0 with prob 1-sigmoid(a+b*w), else ceil(Exponential(late_mean_days*exp(elasticity*w))) capped · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic feature generator)
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Zero-inflated: about 45 % of buyer-quarters have some delinquency in the trailing year, mostly under three weeks, with a long tail for weak names (99th percentile ~55 days).
+
+### `credit_synth_gen_history`
+
+- **Value:** {"median_months": 30.0, "log_sd": 0.7, "weakness_loading_log": -0.2, "months_per_quarter": 3.0, "floor_months": 1.0, "cap_months": 180.0}
+- **Unit:** mapping: months of history = clip(exp(log(median)+weakness_loading_log*w+log_sd*e_buyer) + months_per_quarter*quarter_index, floor, cap) · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic feature generator)
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Relationship length is buyer-level (it grows 3 months per observed quarter) and only mildly related to weakness.
+
+### `credit_synth_gen_concentration`
+
+- **Value:** {"logit_intercept": -1.8, "weakness_loading": 0.5, "buyer_sd": 0.8, "quarter_sd": 0.3}
+- **Unit:** mapping: share of buyer raw-material spend from the desk = sigmoid(intercept + loading*w + buyer_sd*e_buyer + quarter_sd*e_quarter) · **Flag:** ASSUMPTION
+- **Source:** Judgement (synthetic feature generator)
+- **Verify:** **N/A** — synthetic data-generating process, nothing to verify against
+- **Justification:** Median ~14 %, 99th percentile ~60 %: most foundries multi-source, a tail of small names depend on one importer.
+
+### `credit_feature_lookback_utilisation_days`
+
+- **Value:** 91
+- **Unit:** calendar_days · **Flag:** ASSUMPTION
+- **Source:** Model design: matches the synthetic training grain (one observation = one buyer-quarter)
+- **Verify:** **N/A** — model design choice
+- **Justification:** Peak credit utilisation, and the peak advance-reliance multiple that triggers the performance overlay, are taken over panel days in (d-91, d] using only rows dated on or before the scoring date d.
+
+### `credit_feature_lookback_dpd_days`
+
+- **Value:** 365
+- **Unit:** calendar_days · **Flag:** ASSUMPTION
+- **Source:** Model design: worst delinquency over the trailing 12 months, a standard bureau/scorecard window
+- **Verify:** **N/A** — model design choice
+- **Justification:** The book's own days_past_due (P3) is combined with the SIM profile's prior_dpd_max_days from config/counterparties.yaml. ASSUMPTION: that prior worst delinquency is dated inside the 12 months before the book's first day, so it stays in the window through HORIZON_END (the profile carries no dates).
+
+### `credit_feature_lookback_concentration_days`
+
+- **Value:** 365
+- **Unit:** calendar_days · **Flag:** ASSUMPTION
+- **Source:** Model design: trailing 12 months of contracted desk sales against one year of the buyer's raw-material spend
+- **Verify:** **N/A** — model design choice
+- **Justification:** order_concentration_frac(d) = booking-time invoice value of desk sales to the buyer contracted in (d-365, d] divided by annual_turnover_inr x secondary_raw_material_cost_share. Pre-book invoices have no recorded values, so early-window concentration is a lower bound. The profile's group_concentration_frac is NOT used: it is undefined in the schema and matches the whole book's final sales, so using it before those sales were contracted would be look-ahead.
+
+### `credit_band_pd_upper_frac`
+
+- **Value:** {"A": 0.02, "B": 0.05, "C": 0.12}
+- **Unit:** annual_pd_frac_upper_bound_exclusive (D = everything at or above the C bound) · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement, expressed against the synthetic population base rate (credit_synth_base_default_rate_annual_frac = 4 %)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** A < half the population base rate; B up to 1.25x base; C up to 3x base; D above. Set before scoring. Four bands because a credit committee can act on four (grow, hold, secure, exit/advance-only) and cannot act on a decimal.
+
+### `credit_performance_overlay_notches`
+
+- **Value:** 1
+- **Unit:** bands_downgraded · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement, Phase 1-3 open item 1 (docs/reviews/phase1-3_fix_log.md §3): score advance failure as well as receivable default
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** If the buyer's advance-reliance multiple (advances contracted and not yet received / credit limit) exceeded buyer_advance_limit_multiple_of_credit_limit (commercial.yaml, 1.0x, rule P14) on any panel day in the utilisation lookback, the model band is downgraded this many notches (floor D). An overlay rather than a model feature: it changes what the desk loses if the name fails, and it lies far outside any support a utilisation feature could be trained on (docs/50_credit_scoring.md §3.2).
+
+### `credit_soft_utilisation_frac`
+
+- **Value:** 0.8
+- **Unit:** frac_of_credit_limit_inr · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement: early-warning line on the credit-utilisation measure
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Credit utilisation (receivable plus advance-uncovered contracted sales) at or above 80 % of the line raises a soft flag in the tracker: the next parcel to that name cannot go on open credit without a clearance first.
+
+### `credit_band_max_credit_utilisation_frac`
+
+- **Value:** {"A": 1.0, "B": 0.9, "C": 0.75, "D": 0.5}
+- **Unit:** frac_of_credit_limit_inr · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Maximum credit utilisation (the P04 measure: receivable plus advance-uncovered contracted sales, over the limit) a new sale may leave behind, by the buyer's final band at the previous close.
+
+### `credit_band_max_advance_reliance_multiple`
+
+- **Value:** {"A": 1.0, "B": 1.0, "C": 0.5, "D": 0.0}
+- **Unit:** multiple_of_credit_limit_inr · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy), tightening rule P14 for weaker bands
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Advance the desk may RELY ON before it arrives (cargo allocated, hedge lifted). A and B keep the P14 cap of 1.0x; C halves it; D relies on nothing — the hedge stays on and the cargo stays unallocated until the advance is in the bank.
+
+### `credit_band_limit_multiplier`
+
+- **Value:** {"A": 1.0, "B": 1.0, "C": 1.0, "D": 0.5}
+- **Unit:** multiple_of_current_credit_limit_inr · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** Recommended limit = current limit x multiplier. C is frozen at the current line (no increase); D is cut in half pending committee review.
+
+### `credit_band_max_credit_days`
+
+- **Value:** {"A": 45, "B": 30, "C": 30, "D": 0}
+- **Unit:** days · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy), capped by max_domestic_credit_days (commercial.yaml, 45)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** D-band names buy on advance or cash against documents only; C-band credit needs security (post-dated cheques or a bank guarantee) covering the credit balance.
+
+### `credit_band_review_frequency_days`
+
+- **Value:** {"A": 180, "B": 90, "C": 30, "D": 7}
+- **Unit:** days_between_credit_reviews · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** How often the name comes back to the credit committee.
+
+### `credit_band_limit_action`
+
+- **Value:** {"A": "MAINTAIN — eligible for a limit increase at the next review", "B": "MAINTAIN — watch utilisation; no increase without a clean review", "C": "FREEZE — no increase; security for any credit balance; advance reliance capped at 0.5x limit", "D": "REDUCE — cut the line to 50 %; advance or cash-against-documents only; do not lift the hedge before the advance arrives"}
+- **Unit:** text_by_band · **Flag:** ASSUMPTION
+- **Source:** Desk policy judgement (band -> limit policy)
+- **Verify:** **N/A** — desk policy assumption
+- **Justification:** The action text written into credit_scores.csv and credit_tracker.csv, quoted by the risk policy memo.
 
 ## `config/params/scrap_grades.yaml`
 

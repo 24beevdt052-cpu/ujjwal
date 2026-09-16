@@ -1,0 +1,219 @@
+week_end,score,side,rank,compound,vader_compound,adj_compound,published_utc,source,title,lexicon_hits,cites_later_date
+2022-02-25,vader_compound,most_negative,1,-0.3182,-0.3182,0.0516,2022-02-25T08:00:00Z,Aluminium International Today,"Aluminium price surges to new record high, driven by Ukrainian-Russian conflict",surges,False
+2022-02-25,vader_compound,most_negative,2,-0.2732,-0.2732,-0.2732,2022-02-24T08:00:00Z,Business Standard,"Vedanta Aluminium launches low carbon aluminium, unveils two product lines",,False
+2022-02-25,vader_compound,most_positive,1,0.5106,0.5106,0.5106,2022-02-24T08:00:00Z,Reuters,"Oil tops $105, gas, grains, metals spike as Russia invades Ukraine",,False
+2022-02-25,vader_compound,most_positive,2,0.296,0.296,0.296,2022-02-23T08:00:00Z,The Guardian,Prospect of sanctions hits Russian part-owner of Queensland alumina refinery,,False
+2022-03-04,vader_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-02-27T08:00:00Z,gizchina.com,Russia - Ukraine war pushes up the prices of nickel and aluminum,,False
+2022-03-04,vader_compound,most_negative,2,-0.3182,-0.3182,0.0516,2022-03-04T08:00:00Z,The Hindu,Steel prices jump as Russia-Ukraine conflict hits supply chains,jump,False
+2022-03-04,vader_compound,most_positive,1,0.7783,0.7783,0.7783,2022-02-28T08:00:00Z,HUB-4.COM,"Material handler instead of excavator in metal recycling: greater performance, efficiency and safety for metal recycler in Japan | Hub-4",,False
+2022-03-11,vader_compound,most_negative,1,-0.802,-0.802,-0.802,2022-03-09T08:00:00Z,WSJ,Nickel Market Crisis Sends London Metal Exchange Scrambling to Prevent Damage,,False
+2022-03-11,vader_compound,most_negative,2,-0.5994,-0.5994,-0.5994,2022-03-07T08:00:00Z,Treehugger,How Russia's War on Ukraine Affects 'Green' Aluminum,,False
+2022-03-11,vader_compound,most_positive,1,0.5859,0.5859,0.743,2022-03-09T08:00:00Z,barrons.com,"How Much Is a Nickel Coin Worth? More Than a Dime, Thanks to a Surge in Metals Prices.",surge,False
+2022-03-11,vader_compound,most_positive,2,0.4404,0.4404,0.4404,2022-03-07T08:00:00Z,Philstar.com,Philex Mining profits up in 2021 on higher metal prices,,False
+2022-03-18,vader_compound,most_negative,1,-0.7579,-0.7579,-0.7579,2022-03-16T07:00:00Z,afr.com,LME: The 18 minutes of trading chaos that broke the nickel market,,False
+2022-03-18,vader_compound,most_negative,2,-0.6249,-0.6249,-0.6249,2022-03-14T07:00:00Z,Reuters,COMMENTARY: Ukraine crisis rocks the London Metal Exchange,,False
+2022-03-18,vader_compound,most_positive,1,0.6808,0.6808,0.6808,2022-03-17T07:00:00Z,Recycling Product News,New research shows aluminum cans better support circular economy than PET and glass containers,,False
+2022-03-18,vader_compound,most_positive,2,0.5267,0.5267,0.2263,2022-03-15T07:00:00Z,The Indian Express,"Indices snap 5-day winning streak, Sensex tumbles 709 points weighed by metal and IT stocks",tumbles,False
+2022-03-25,vader_compound,most_negative,1,-0.7184,-0.7184,-0.7184,2022-03-21T07:00:00Z,Irish Examiner,Australia ban on alumina exports to Russia increases uncertainty for Aughinish in Limerick,,False
+2022-03-25,vader_compound,most_negative,2,-0.5574,-0.5574,-0.5574,2022-03-22T07:00:00Z,Reuters,COMMENTARY: Australian alumina ban will squeeze Rusal and aluminium,,False
+2022-03-25,vader_compound,most_positive,1,0.4588,0.4588,0.128,2022-03-25T07:00:00Z,Bloomberg.com,London Metal Exchange Sees Trader Exodus as Open Interest Slides,slides,False
+2022-03-25,vader_compound,most_positive,2,0.4404,0.4404,0.6597,2022-03-22T07:00:00Z,Reuters,Chalco's net profit hits 14-year high after surge in metals prices,surge,False
+2022-04-01,vader_compound,most_negative,1,-0.5499,-0.5499,-0.5499,2022-03-28T07:00:00Z,Reuters,COMMENTARY: LME nickel limps back but tensions are not going away,,False
+2022-04-01,vader_compound,most_negative,2,-0.0516,-0.0516,-0.0516,2022-03-29T07:00:00Z,investingnews.com,"GCM Mining Corp. Acquires 3,430,000 Common Shares in Denarius Metals Corp. and Files Early Warning Report",,False
+2022-04-01,vader_compound,most_positive,1,0.743,0.743,0.743,2022-03-28T07:00:00Z,news24.com,Hulamin sitting pretty as aluminium's popularity grows amid climate change concerns,,False
+2022-04-01,vader_compound,most_positive,2,0.4404,0.4404,0.4404,2022-03-29T07:00:00Z,The Witness | Your compass in the community,Profits up for Pietermaritzburg-based aluminium giant Hulamin,,False
+2022-04-08,vader_compound,most_negative,1,-0.7845,-0.7845,-0.7845,2022-04-08T07:00:00Z,standardmedia.co.ke,Scrap metal ban: Box prices spike as artisans transfer pain to parents,,False
+2022-04-08,vader_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-04-04T07:00:00Z,The Guardian,London Metal Exchange faces review over nickel trading chaos,,False
+2022-04-08,vader_compound,most_positive,1,0.3612,0.3612,0.3612,2022-04-05T07:00:00Z,Mining Weekly,Sovereign Metals discovers largest natural rutile deposit in Malawi,,False
+2022-04-08,vader_compound,most_positive,2,0.3182,0.3182,0.5859,2022-04-05T07:00:00Z,Business Standard,Rising raw material cost pushes steel prices to fresh record highs,rising,False
+2022-04-15,vader_compound,most_negative,1,-0.5859,-0.5859,-0.5859,2022-04-13T07:00:00Z,China Daily Global Edition,Steel sector to see limited impact from external woes,,False
+2022-04-15,vader_compound,most_negative,2,-0.3612,-0.3612,-0.3612,2022-04-13T07:00:00Z,Reuters,COMMENTARY: Vanishing LME shadow stocks add to metals market turmoil,,False
+2022-04-15,vader_compound,most_positive,1,0.7964,0.7964,0.7964,2022-04-12T10:36:53Z,UNSW Sydney,Best hope yet for aluminium-ion batteries,,False
+2022-04-15,vader_compound,most_positive,2,0.6249,0.6249,0.6249,2022-04-13T07:00:00Z,The Drive,This NASA Crew Transport Vehicle Concept Was a Masterpiece in Aluminium,,False
+2022-04-22,vader_compound,most_negative,1,-0.34,-0.34,-0.34,2022-04-21T07:00:00Z,Recycling Today,Fire rocks Ohio secondary aluminum producer,,False
+2022-04-22,vader_compound,most_negative,2,-0.3182,-0.3182,-0.5106,2022-04-18T07:00:00Z,thefabricator.com,Steel prices stall as demand from manufacturers begins to soften again,demand;soften,False
+2022-04-22,vader_compound,most_positive,1,0.6597,0.6597,0.6597,2022-04-22T07:00:00Z,PR Newswire,"Aluminum Market: 74% of Growth to Originate from APAC | By End-user (transportation, construction, packaging, electrical engineering, and others), Production Process, and Geography | Global Opportunity Analysis and Industry Forecast, 2020-2024",,False
+2022-04-22,vader_compound,most_positive,2,0.5423,0.5423,0.5423,2022-04-20T07:00:00Z,Reuters,"COMMENTARY: China steel market walks high wire between cutting output, boosting growth",,False
+2022-04-29,vader_compound,most_negative,1,-0.5719,-0.5719,-0.5719,2022-04-27T07:00:00Z,Bloomberg.com,LME CEO Backtracks on Exit Plan After Nickel Market Chaos,,False
+2022-04-29,vader_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-04-27T07:00:00Z,South China Morning Post,LME CEO to stay as bourse recovers from nickel chaos,,False
+2022-04-29,vader_compound,most_positive,1,0.6369,0.6369,0.6369,2022-04-27T07:00:00Z,Architecture & Design,Aluminium Cladding: 5 Best Aluminium Façade Systems Available in Australia,,False
+2022-04-29,vader_compound,most_positive,2,0.5719,0.5719,0.5719,2022-04-27T07:00:00Z,CNBC,"Invesco launches ETF focused on metals required for electric vehicles, energy transition",,False
+2022-05-06,vader_compound,most_negative,1,-0.7579,-0.7579,-0.7184,2022-05-05T07:00:00Z,Luxembourg Times,ArcelorMittal sees global steel demand drop on Ukraine war,demand,False
+2022-05-06,vader_compound,most_negative,2,-0.5994,-0.5994,-0.5994,2022-05-05T07:00:00Z,Construction News,Steel and timber prices ratchet up as Ukraine war takes hold,,False
+2022-05-06,vader_compound,most_positive,1,0.7964,0.7964,0.7964,2022-05-06T07:00:00Z,AsiaOne,"Best aluminium-free deodorants that are safe for pregnancy, Lifestyle News",,False
+2022-05-06,vader_compound,most_positive,2,0.4927,0.4927,0.4927,2022-05-04T07:00:00Z,Fortune India,Tata Steel overtakes TCS as most profitable Tata Group company,,False
+2022-05-13,vader_compound,most_negative,1,-0.5719,-0.5719,-0.5719,2022-05-08T07:00:00Z,Reuters,CME explores nickel contract after LME trade chaos,,False
+2022-05-13,vader_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-05-13T07:00:00Z,South China Morning Post,LME seeks to require OTC position reporting after March nickel chaos,,False
+2022-05-13,vader_compound,most_positive,1,0.296,0.296,0.296,2022-05-11T07:00:00Z,Crux Investor,Transition Metals (XTM) - Sustainable Prospect Generator,,False
+2022-05-13,vader_compound,most_positive,2,0.2023,0.2023,0.2023,2022-05-09T07:00:00Z,AL Circle,Top ten countries with the highest bauxite production in 2021,,False
+2022-05-20,vader_compound,most_negative,1,-0.807,-0.807,-0.807,2022-05-19T07:00:00Z,World Socialist Web Site,Outraged Arconic aluminum workers speak out against USW’s contract proposal: “It’s a bad deal!”,,False
+2022-05-20,vader_compound,most_negative,2,-0.5994,-0.5994,-0.34,2022-05-17T07:00:00Z,building.co.uk,Steel materials prices surge as impact of Ukraine war bites,surge,False
+2022-05-27,vader_compound,most_negative,1,-0.2732,-0.2732,-0.2732,2022-05-23T07:00:00Z,Reuters,"India's top mining, steel groups warn of adverse impact from export duty hikes",,False
+2022-05-27,vader_compound,most_negative,2,-0.128,-0.128,0,2022-05-25T07:00:00Z,cdrecycler.com,Demand for aluminum grows,demand,False
+2022-05-27,vader_compound,most_positive,1,0.7841,0.7841,0.7841,2022-05-21T07:00:00Z,The Economic Times,"​Tata Steel | Profit: Rs 41,100.16 crore - FY22 earnings report card: Here are top 10 most profitable companies in India",,False
+2022-05-27,vader_compound,most_positive,2,0.5106,0.5106,0.5106,2022-05-24T07:00:00Z,"County of Union, New Jersey","Free Scrap Metal Recycling for Union County Residents, June 2 and 18",,True
+2022-06-03,vader_compound,most_negative,1,-0.4939,-0.4939,-0.4019,2022-06-01T07:00:00Z,World Bank Blogs,Global metal markets: Weakening demand amid constrained supply?,demand,False
+2022-06-03,vader_compound,most_negative,2,-0.128,-0.128,-0.128,2022-05-31T07:00:00Z,tour-magazin.de,4 aluminium gravel bikes from 1699 euros on test,,False
+2022-06-03,vader_compound,most_positive,1,0.5927,0.5927,0.5927,2022-05-29T07:00:00Z,Free Malaysia Today,Sun sets on 120-year-old smelting plant but tin’s future looks bright,,False
+2022-06-03,vader_compound,most_positive,2,0.5719,0.5719,0.5719,2022-05-31T07:00:00Z,Recycling Product News,Davis Index sets up scrap metal recyclers for success,,False
+2022-06-10,vader_compound,most_negative,1,-0.7096,-0.7096,-0.7096,2022-06-06T07:00:00Z,MetalMiner,"Nickel Prices: LME Nickel Contract Continues to Lack Liquidity, Harming Price Discovery",,False
+2022-06-10,vader_compound,most_negative,2,-0.6486,-0.6486,-0.6486,2022-06-07T07:00:00Z,CNBC,London Metal Exchange hit with two U.S. lawsuits over nickel trading chaos,,False
+2022-06-10,vader_compound,most_positive,1,0.6369,0.6369,0.6369,2022-06-06T07:00:00Z,Plano Magazine,Metal artist Leif Price sculpts his future from a life-long love of motorcycles,,False
+2022-06-10,vader_compound,most_positive,2,0.5859,0.5859,0.5859,2022-06-07T07:00:00Z,washingtonpost.com,A factory wants to reopen making ‘green’ aluminum. Now it just needs clean energy.,,False
+2022-06-17,vader_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-06-15T07:00:00Z,thefabricator.com,Steel prices tumbling back to levels before the war in Ukraine,,False
+2022-06-17,vader_compound,most_negative,2,-0.5859,-0.5859,-0.5859,2022-06-14T07:00:00Z,Global Trade Review (GTR),China aluminium fraud allegations suggest lessons not learned from Qingdao,,False
+2022-06-17,vader_compound,most_positive,1,0.5994,0.5994,0.5994,2022-06-14T07:00:00Z,Fortune India,"Global rout to hit Sensex, Nifty; Delta Corp, Torrent Power, Tata Steel, Embassy REIT shares eyed",,False
+2022-06-17,vader_compound,most_positive,2,0.5719,0.5719,0.5719,2022-06-15T07:00:00Z,CME Group,Case Study: How one auto maker protected profits and cut aluminum storage costs,,False
+2022-06-24,vader_compound,most_negative,1,-0.6486,-0.6486,-0.6486,2022-06-20T07:00:00Z,Eastern Daily Press,Revealed: Every Norfolk village where metal thieves have struck,,False
+2022-06-24,vader_compound,most_negative,2,-0.3182,-0.3182,-0.3182,2022-06-21T07:00:00Z,investingnews.com,Fireweed to Rebrand as 'Fireweed Metals Corp.' to Reflect Its Emergence as a Leading Critical Minerals Company,,False
+2022-06-24,vader_compound,most_positive,1,0.5859,0.5859,0.5859,2022-06-22T07:00:00Z,spglobal.com,Direct-reduced iron becomes steel decarbonization winner,,False
+2022-06-24,vader_compound,most_positive,2,0.296,0.296,0.296,2022-06-23T07:00:00Z,Business Recorder,Steel sector: Amended finance bill may restore turnover tax adjustment,,False
+2022-07-01,vader_compound,most_negative,1,-0.3818,-0.3818,-0.5574,2022-06-28T07:00:00Z,financialexpress.com,Domestic steel majors cut production as demand falls,demand;falls,False
+2022-07-01,vader_compound,most_negative,2,-0.3612,-0.3612,-0.3612,2022-06-28T07:00:00Z,Moneycontrol.com,"Tata Steel to pare debt by $1 billion a year, expansion to be India centric",,False
+2022-07-01,vader_compound,most_positive,1,0.8807,0.8807,0.8807,2022-06-29T07:00:00Z,AL Circle,Vedanta Lanjigarh alumina unit bags Kalinga Environment Excellence Award 2021 for unwavering commitment to environmental sustainability,,False
+2022-07-01,vader_compound,most_positive,2,0.5574,0.5574,0.5574,2022-06-27T07:00:00Z,Moneycontrol.com,"Taking Stock | Market ends higher for third day; positive global cues, IT and metal stocks lift sentiment",,False
+2022-07-08,vader_compound,most_negative,1,-0.8481,-0.8481,-0.8481,2022-07-04T07:00:00Z,Mining.com,Metals melt down as recession fears overwhelm supply woes,,False
+2022-07-08,vader_compound,most_negative,2,-0.8481,-0.8481,-0.8481,2022-07-05T07:00:00Z,Reuters,COMMENTARY: Metals melt down as recession fears overwhelm supply woes,,False
+2022-07-08,vader_compound,most_positive,1,0.6486,0.6486,0.7003,2022-07-05T07:00:00Z,auto.economictimes.indiatimes.com,Improved economic activity to support demand for steel in India: Fitch,demand,False
+2022-07-08,vader_compound,most_positive,2,0.6369,0.6369,0.6369,2022-07-07T07:00:00Z,Business Insider,Bill Gates just poured more money into a car-metal-recycling startup. Here's an exclusive look at the 12-slide pitch deck that won over him and investors at Assembly Ventures.,,False
+2022-07-15,vader_compound,most_negative,1,-0.6808,-0.6808,-0.6249,2022-07-12T07:00:00Z,The Northern Miner,"Weak steel demand puts pressure on iron ore prices, BofA says",demand,False
+2022-07-15,vader_compound,most_negative,2,-0.6249,-0.6249,-0.6249,2022-07-13T07:00:00Z,AL Circle,Bangladesh's aluminium utensil industry in the Talora port region might face extinction due to gas crisis and higher fuel costs,,False
+2022-07-15,vader_compound,most_positive,1,0.5766,0.5766,0.5766,2022-07-11T07:00:00Z,letsrecycle.com,Ward acquires York scrap metal firm L Clancey & Sons,,False
+2022-07-15,vader_compound,most_positive,2,0.4767,0.4767,0.4767,2022-07-13T07:00:00Z,The Economic Times,Bankruptcy court okays Orissa Metaliks’ revival plan for MSP Metallics,,False
+2022-07-22,vader_compound,most_negative,1,-0.7351,-0.7351,-0.7351,2022-07-22T07:00:00Z,mining.com,Europe’s energy crisis risks slashing aluminum production further,,False
+2022-07-22,vader_compound,most_negative,2,-0.2732,-0.2732,-0.1531,2022-07-19T07:00:00Z,GMK Center,Steelmakers around the world are shutting down capacity due to falling demand,demand,False
+2022-07-22,vader_compound,most_positive,1,0.5423,0.5423,0.5423,2022-07-18T07:00:00Z,Vedanta Aluminium Metal Limited,Growing Usage of Aluminium in the Auto Industry bolsters Sustainability & Safety.,,False
+2022-07-22,vader_compound,most_positive,2,0.5106,0.5106,0.5106,2022-07-21T07:00:00Z,"County of Union, New Jersey",Free Scrap Metal Recycling for Union County Residents,,False
+2022-07-29,vader_compound,most_negative,1,-0.5267,-0.5267,-0.5267,2022-07-23T07:00:00Z,The i Paper,Threat to Port Talbot steel jobs decried as ‘eco-blackmail’ as Tata seeks £1.5bn in subsidies,,False
+2022-07-29,vader_compound,most_negative,2,-0.2263,-0.2263,-0.2263,2022-07-25T07:00:00Z,Monochrome Watches,Hands-On Bulgari Aluminium GMT Amerigo Vespucci Limited Edition,,False
+2022-07-29,vader_compound,most_positive,1,0.6249,0.6249,0.6249,2022-07-27T07:00:00Z,BusinessToday Malaysia,Press Metal’s Prospect Remains Bright in the Age of Decarbonisation: RHB Research,,False
+2022-07-29,vader_compound,most_positive,2,0.5719,0.5719,0.7351,2022-07-25T23:30:54Z,fuelcarmagazine,Box Logo Supreme Retail Prices Supreme Drop Price List KRSEC Aluminum Alloy Bike Frame Racing Dirt Jump Set,jump,False
+2022-08-05,vader_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-08-01T07:00:00Z,GMK Center,The rolled metal market during the war and in post-war recovery,,False
+2022-08-05,vader_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-08-04T07:00:00Z,eskom.co.za,Three convicted for stealing more than 564 kg of Eskom’s aluminium overhead conductor,,False
+2022-08-05,vader_compound,most_positive,1,0.7845,0.7845,0.7845,2022-08-02T07:00:00Z,Vedanta Aluminium Metal Limited,"World Breastfeeding Week: Vedanta Aluminium steps up to protect, promote and support breastfeeding in Odisha",,False
+2022-08-05,vader_compound,most_positive,2,0.6369,0.6369,0.6369,2022-08-01T07:00:00Z,Cosmopolitan,The 16 Best Aluminum-Free Deodorants That Actually Work,,False
+2022-08-12,vader_compound,most_negative,1,-0.3182,-0.3182,-0.3182,2022-08-09T07:00:00Z,Scottish Daily Express,More concerns raised about future of Sanjeev Gupta's Lochaber smelter as owners post £4m loss,,False
+2022-08-12,vader_compound,most_negative,2,-0.2263,-0.2263,-0.2263,2022-08-10T07:00:00Z,UrbanBike.News,Limited Edition: the VanMoof S3 Aluminum,,False
+2022-08-12,vader_compound,most_positive,1,0.8176,0.8176,0.8176,2022-08-11T07:00:00Z,autoevolution,VanMoof Introduces Limited-Edition S3 Aluminum e-Bike: Celebrate Beauty in Simplicity,,False
+2022-08-12,vader_compound,most_positive,2,0.5562,0.5562,0.5562,2022-08-09T07:00:00Z,tradebrains.in,"Tata Steel Vs SAIL - Profitability, Future Prospects & More!",,False
+2022-08-19,vader_compound,most_negative,1,-0.4404,-0.4404,-0.4404,2022-08-14T07:00:00Z,AL Circle,Mahindra to launch Scorpio Classic with all-aluminium engine block sheds 55 kg,,False
+2022-08-19,vader_compound,most_negative,2,-0.4404,-0.4404,-0.4404,2022-08-17T07:00:00Z,Business Standard,Norsk Hydro shuts aluminum plant in Slovakia as Europe's power woes deepen,,False
+2022-08-19,vader_compound,most_positive,1,0.6705,0.6705,0.6705,2022-08-16T07:00:00Z,Trinidad and Tobago Newsday,Gopee-Scoon: Clear need to improve scrap-iron law,,False
+2022-08-19,vader_compound,most_positive,2,0.5106,0.5106,0.5106,2022-08-19T07:00:00Z,Inquirer.net,Strong world market prices sustain PH metal production,,False
+2022-08-26,vader_compound,most_negative,1,-0.802,-0.802,-0.802,2022-08-23T07:00:00Z,Engineering News,Scrap metal export ban to buy time for SA to build systems to tackle illegal activity,,False
+2022-08-26,vader_compound,most_negative,2,-0.5994,-0.5994,-0.5994,2022-08-25T07:00:00Z,EUROMETAL,Six months of war: How has it changed the global steel market?,,False
+2022-08-26,vader_compound,most_positive,1,0.6808,0.6808,0.6808,2022-08-26T07:00:00Z,AL Circle,Nalco's Panchpatmali bauxite mine took home the prestigious 'Greentech Quality and Innovation Awards 2022',,False
+2022-08-26,vader_compound,most_positive,2,0.4449,0.4449,0.4449,2022-08-23T07:00:00Z,news24.com,"Govt will make it harder to sell scrap metal, not ban trade outright - Patel",,False
+2022-09-02,vader_compound,most_negative,1,-0.6369,-0.6369,-0.6369,2022-08-30T07:00:00Z,GMK Center,Italian long steel companies to stop production due to the energy crisis,,False
+2022-09-02,vader_compound,most_negative,2,-0.4404,-0.4404,-0.4404,2022-09-01T07:00:00Z,New Atlas,Aluminum-gallium powder bubbles hydrogen out of dirty water,,False
+2022-09-02,vader_compound,most_positive,1,0.5719,0.5719,0.296,2022-09-01T07:00:00Z,news24.com,Implats profits plunge as metal prices retreat from record levels,plunge,False
+2022-09-02,vader_compound,most_positive,2,0.4019,0.4019,0.4019,2022-08-30T07:00:00Z,Monochrome Watches,The Car-Inspired Bulgari Aluminium Sorayama Special Edition (Live Pics & Price),,False
+2022-02-25,adj_compound,most_negative,1,-0.2732,-0.2732,-0.2732,2022-02-24T08:00:00Z,Business Standard,"Vedanta Aluminium launches low carbon aluminium, unveils two product lines",,False
+2022-02-25,adj_compound,most_positive,1,0.5106,0.5106,0.5106,2022-02-24T08:00:00Z,Reuters,"Oil tops $105, gas, grains, metals spike as Russia invades Ukraine",,False
+2022-02-25,adj_compound,most_positive,2,0.296,0.296,0.296,2022-02-23T08:00:00Z,The Guardian,Prospect of sanctions hits Russian part-owner of Queensland alumina refinery,,False
+2022-03-04,adj_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-02-27T08:00:00Z,gizchina.com,Russia - Ukraine war pushes up the prices of nickel and aluminum,,False
+2022-03-04,adj_compound,most_negative,2,-0.3612,0,-0.3612,2022-02-28T08:00:00Z,mining.com,Russian metal exports slide as sanctions hit commodity financing,slide,False
+2022-03-04,adj_compound,most_positive,1,0.7783,0.7783,0.7783,2022-02-28T08:00:00Z,HUB-4.COM,"Material handler instead of excavator in metal recycling: greater performance, efficiency and safety for metal recycler in Japan | Hub-4",,False
+2022-03-04,adj_compound,most_positive,2,0.3612,-0.25,0.3612,2022-02-27T08:00:00Z,KSBY News,Aluminum shortage affecting local businesses,shortage,False
+2022-03-11,adj_compound,most_negative,1,-0.802,-0.802,-0.802,2022-03-09T08:00:00Z,WSJ,Nickel Market Crisis Sends London Metal Exchange Scrambling to Prevent Damage,,False
+2022-03-11,adj_compound,most_negative,2,-0.6908,-0.4939,-0.6908,2022-03-09T08:00:00Z,mining.com,Nickel trade falls silent in throwback to LME’s darkest days,falls,False
+2022-03-11,adj_compound,most_positive,1,0.743,0.5859,0.743,2022-03-09T08:00:00Z,barrons.com,"How Much Is a Nickel Coin Worth? More Than a Dime, Thanks to a Surge in Metals Prices.",surge,False
+2022-03-11,adj_compound,most_positive,2,0.6124,0,0.6124,2022-03-08T08:00:00Z,Business Recorder,Steel prices soar on rising raw material cost,rising;soar,False
+2022-03-18,adj_compound,most_negative,1,-0.7579,-0.7579,-0.7579,2022-03-16T07:00:00Z,afr.com,LME: The 18 minutes of trading chaos that broke the nickel market,,False
+2022-03-18,adj_compound,most_negative,2,-0.7351,-0.5719,-0.7351,2022-03-16T07:00:00Z,markets.businessinsider.com,Nickel plunges 5% and London Metal Exchange halts trading once again as chaos continues,plunges,False
+2022-03-18,adj_compound,most_positive,1,0.6808,0.6808,0.6808,2022-03-17T07:00:00Z,Recycling Product News,New research shows aluminum cans better support circular economy than PET and glass containers,,False
+2022-03-18,adj_compound,most_positive,2,0.6369,0.4019,0.6369,2022-03-15T07:00:00Z,Resource Recycling,Curbside aluminum and plastic values jump sharply,jump,False
+2022-03-25,adj_compound,most_negative,1,-0.7184,-0.7184,-0.7184,2022-03-21T07:00:00Z,Irish Examiner,Australia ban on alumina exports to Russia increases uncertainty for Aughinish in Limerick,,False
+2022-03-25,adj_compound,most_negative,2,-0.5574,-0.5574,-0.5574,2022-03-22T07:00:00Z,Reuters,COMMENTARY: Australian alumina ban will squeeze Rusal and aluminium,,False
+2022-03-25,adj_compound,most_positive,1,0.6597,0.4404,0.6597,2022-03-22T07:00:00Z,Reuters,Chalco's net profit hits 14-year high after surge in metals prices,surge,False
+2022-03-25,adj_compound,most_positive,2,0.4019,0.4019,0.4019,2022-03-19T07:00:00Z,tradechronicle.com,Two steel players – ASTL and MUGHAL promising decent earnings CAGR,,False
+2022-04-01,adj_compound,most_negative,1,-0.5499,-0.5499,-0.5499,2022-03-28T07:00:00Z,Reuters,COMMENTARY: LME nickel limps back but tensions are not going away,,False
+2022-04-01,adj_compound,most_negative,2,-0.0516,-0.0516,-0.0516,2022-03-29T07:00:00Z,investingnews.com,"GCM Mining Corp. Acquires 3,430,000 Common Shares in Denarius Metals Corp. and Files Early Warning Report",,False
+2022-04-01,adj_compound,most_positive,1,0.743,0.743,0.743,2022-03-28T07:00:00Z,news24.com,Hulamin sitting pretty as aluminium's popularity grows amid climate change concerns,,False
+2022-04-01,adj_compound,most_positive,2,0.4404,0.4404,0.4404,2022-03-29T07:00:00Z,The Witness | Your compass in the community,Profits up for Pietermaritzburg-based aluminium giant Hulamin,,False
+2022-04-08,adj_compound,most_negative,1,-0.7845,-0.7845,-0.7845,2022-04-08T07:00:00Z,standardmedia.co.ke,Scrap metal ban: Box prices spike as artisans transfer pain to parents,,False
+2022-04-08,adj_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-04-04T07:00:00Z,The Guardian,London Metal Exchange faces review over nickel trading chaos,,False
+2022-04-08,adj_compound,most_positive,1,0.5859,0.3182,0.5859,2022-04-05T07:00:00Z,Business Standard,Rising raw material cost pushes steel prices to fresh record highs,rising,False
+2022-04-08,adj_compound,most_positive,2,0.3612,0,0.3612,2022-04-04T07:00:00Z,EUROMETAL,"Europe HRC steel spread surges in March on offers, raw materials costs spike",surges,False
+2022-04-15,adj_compound,most_negative,1,-0.5859,-0.5859,-0.5859,2022-04-13T07:00:00Z,China Daily Global Edition,Steel sector to see limited impact from external woes,,False
+2022-04-15,adj_compound,most_negative,2,-0.3612,-0.3612,-0.3612,2022-04-13T07:00:00Z,Reuters,COMMENTARY: Vanishing LME shadow stocks add to metals market turmoil,,False
+2022-04-15,adj_compound,most_positive,1,0.7964,0.7964,0.7964,2022-04-12T10:36:53Z,UNSW Sydney,Best hope yet for aluminium-ion batteries,,False
+2022-04-15,adj_compound,most_positive,2,0.6249,0.6249,0.6249,2022-04-13T07:00:00Z,The Drive,This NASA Crew Transport Vehicle Concept Was a Masterpiece in Aluminium,,False
+2022-04-22,adj_compound,most_negative,1,-0.6124,-0.128,-0.6124,2022-04-21T07:00:00Z,Bloomberg.com,Alcoa (AA) Stock Sinks as Aluminum Shipments Fall in Sign of Waning Demand,demand;fall;sinks,False
+2022-04-22,adj_compound,most_negative,2,-0.5106,-0.3182,-0.5106,2022-04-18T07:00:00Z,thefabricator.com,Steel prices stall as demand from manufacturers begins to soften again,demand;soften,False
+2022-04-22,adj_compound,most_positive,1,0.6597,0.6597,0.6597,2022-04-22T07:00:00Z,PR Newswire,"Aluminum Market: 74% of Growth to Originate from APAC | By End-user (transportation, construction, packaging, electrical engineering, and others), Production Process, and Geography | Global Opportunity Analysis and Industry Forecast, 2020-2024",,False
+2022-04-22,adj_compound,most_positive,2,0.5423,0.5423,0.5423,2022-04-20T07:00:00Z,Reuters,"COMMENTARY: China steel market walks high wire between cutting output, boosting growth",,False
+2022-04-29,adj_compound,most_negative,1,-0.5719,-0.5719,-0.5719,2022-04-27T07:00:00Z,Bloomberg.com,LME CEO Backtracks on Exit Plan After Nickel Market Chaos,,False
+2022-04-29,adj_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-04-27T07:00:00Z,South China Morning Post,LME CEO to stay as bourse recovers from nickel chaos,,False
+2022-04-29,adj_compound,most_positive,1,0.6369,0.6369,0.6369,2022-04-27T07:00:00Z,Architecture & Design,Aluminium Cladding: 5 Best Aluminium Façade Systems Available in Australia,,False
+2022-04-29,adj_compound,most_positive,2,0.5719,0.5719,0.5719,2022-04-27T07:00:00Z,CNBC,"Invesco launches ETF focused on metals required for electric vehicles, energy transition",,False
+2022-05-06,adj_compound,most_negative,1,-0.7184,-0.7579,-0.7184,2022-05-05T07:00:00Z,Luxembourg Times,ArcelorMittal sees global steel demand drop on Ukraine war,demand,False
+2022-05-06,adj_compound,most_negative,2,-0.5994,-0.5994,-0.5994,2022-05-05T07:00:00Z,Construction News,Steel and timber prices ratchet up as Ukraine war takes hold,,False
+2022-05-06,adj_compound,most_positive,1,0.7964,0.7964,0.7964,2022-05-06T07:00:00Z,AsiaOne,"Best aluminium-free deodorants that are safe for pregnancy, Lifestyle News",,False
+2022-05-06,adj_compound,most_positive,2,0.6597,0.4404,0.6597,2022-05-03T07:00:00Z,The Economic Times,"Tata Steel Q4 Results: Profit surges 47% YoY to Rs 9,756 crore; company announces 10:1 stock split",surges,False
+2022-05-13,adj_compound,most_negative,1,-0.5719,-0.5719,-0.5719,2022-05-08T07:00:00Z,Reuters,CME explores nickel contract after LME trade chaos,,False
+2022-05-13,adj_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-05-13T07:00:00Z,South China Morning Post,LME seeks to require OTC position reporting after March nickel chaos,,False
+2022-05-13,adj_compound,most_positive,1,0.3612,0,0.3612,2022-05-09T07:00:00Z,ET Infra,"Indian Railways 90,000 wagon purchase plan hit by soaring steel and wheel set prices",soaring,False
+2022-05-13,adj_compound,most_positive,2,0.296,0.296,0.296,2022-05-11T07:00:00Z,Crux Investor,Transition Metals (XTM) - Sustainable Prospect Generator,,False
+2022-05-20,adj_compound,most_negative,1,-0.807,-0.807,-0.807,2022-05-19T07:00:00Z,World Socialist Web Site,Outraged Arconic aluminum workers speak out against USW’s contract proposal: “It’s a bad deal!”,,False
+2022-05-20,adj_compound,most_negative,2,-0.5267,-0.5267,-0.5267,2022-05-20T07:00:00Z,Hackaday,"Square Cuts On Aluminum Extrusion, No Mill Required",,False
+2022-05-27,adj_compound,most_negative,1,-0.4404,-0.1027,-0.4404,2022-05-23T07:00:00Z,The Indian Express,"Stock Market Today: Indices end a tad lower post volatile session, Nifty slips 51 points; Metals drag",slips,False
+2022-05-27,adj_compound,most_negative,2,-0.2732,-0.2732,-0.2732,2022-05-23T07:00:00Z,Reuters,"India's top mining, steel groups warn of adverse impact from export duty hikes",,False
+2022-05-27,adj_compound,most_positive,1,0.7841,0.7841,0.7841,2022-05-21T07:00:00Z,The Economic Times,"​Tata Steel | Profit: Rs 41,100.16 crore - FY22 earnings report card: Here are top 10 most profitable companies in India",,False
+2022-05-27,adj_compound,most_positive,2,0.5423,0.4588,0.5423,2022-05-24T07:00:00Z,African Mining Market,Demand for steel alloys grows as the energy transition gains momentum,demand,False
+2022-06-03,adj_compound,most_negative,1,-0.4019,-0.4939,-0.4019,2022-06-01T07:00:00Z,World Bank Blogs,Global metal markets: Weakening demand amid constrained supply?,demand,False
+2022-06-03,adj_compound,most_negative,2,-0.128,-0.128,-0.128,2022-05-31T07:00:00Z,tour-magazin.de,4 aluminium gravel bikes from 1699 euros on test,,False
+2022-06-03,adj_compound,most_positive,1,0.6597,0.4404,0.6597,2022-05-30T07:00:00Z,NST Online,Press Metal Aluminium net profit rose 104.66pc to RM421.02mil in Q1 due to higher aluminium prices,rose,False
+2022-06-03,adj_compound,most_positive,2,0.5927,0.5927,0.5927,2022-05-29T07:00:00Z,Free Malaysia Today,Sun sets on 120-year-old smelting plant but tin’s future looks bright,,False
+2022-06-10,adj_compound,most_negative,1,-0.7096,-0.7096,-0.7096,2022-06-06T07:00:00Z,MetalMiner,"Nickel Prices: LME Nickel Contract Continues to Lack Liquidity, Harming Price Discovery",,False
+2022-06-10,adj_compound,most_negative,2,-0.6486,-0.6486,-0.6486,2022-06-07T07:00:00Z,CNBC,London Metal Exchange hit with two U.S. lawsuits over nickel trading chaos,,False
+2022-06-10,adj_compound,most_positive,1,0.6369,0.6369,0.6369,2022-06-06T07:00:00Z,Plano Magazine,Metal artist Leif Price sculpts his future from a life-long love of motorcycles,,False
+2022-06-10,adj_compound,most_positive,2,0.5859,0.5859,0.5859,2022-06-07T07:00:00Z,washingtonpost.com,A factory wants to reopen making ‘green’ aluminum. Now it just needs clean energy.,,False
+2022-06-17,adj_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-06-15T07:00:00Z,thefabricator.com,Steel prices tumbling back to levels before the war in Ukraine,,False
+2022-06-17,adj_compound,most_negative,2,-0.5859,-0.5859,-0.5859,2022-06-14T07:00:00Z,Global Trade Review (GTR),China aluminium fraud allegations suggest lessons not learned from Qingdao,,False
+2022-06-17,adj_compound,most_positive,1,0.5994,0.5994,0.5994,2022-06-14T07:00:00Z,Fortune India,"Global rout to hit Sensex, Nifty; Delta Corp, Torrent Power, Tata Steel, Embassy REIT shares eyed",,False
+2022-06-17,adj_compound,most_positive,2,0.5719,0.5719,0.5719,2022-06-15T07:00:00Z,CME Group,Case Study: How one auto maker protected profits and cut aluminum storage costs,,False
+2022-06-24,adj_compound,most_negative,1,-0.6486,-0.6486,-0.6486,2022-06-20T07:00:00Z,Eastern Daily Press,Revealed: Every Norfolk village where metal thieves have struck,,False
+2022-06-24,adj_compound,most_negative,2,-0.3612,0,-0.3612,2022-06-24T07:00:00Z,theweek.in,Domestic Steel prices expected to fall further in the near term,fall,False
+2022-06-24,adj_compound,most_positive,1,0.5859,0.5859,0.5859,2022-06-22T07:00:00Z,spglobal.com,Direct-reduced iron becomes steel decarbonization winner,,False
+2022-06-24,adj_compound,most_positive,2,0.5574,0.2732,0.5574,2022-06-21T07:00:00Z,The Japan Times,Surging energy prices force Japanese steel giant to revisit coal,surging,False
+2022-07-01,adj_compound,most_negative,1,-0.5574,-0.3818,-0.5574,2022-06-28T07:00:00Z,financialexpress.com,Domestic steel majors cut production as demand falls,demand;falls,False
+2022-07-01,adj_compound,most_negative,2,-0.3612,-0.3612,-0.3612,2022-06-28T07:00:00Z,Moneycontrol.com,"Tata Steel to pare debt by $1 billion a year, expansion to be India centric",,False
+2022-07-01,adj_compound,most_positive,1,0.8807,0.8807,0.8807,2022-06-29T07:00:00Z,AL Circle,Vedanta Lanjigarh alumina unit bags Kalinga Environment Excellence Award 2021 for unwavering commitment to environmental sustainability,,False
+2022-07-01,adj_compound,most_positive,2,0.5574,0.5574,0.5574,2022-06-27T07:00:00Z,Moneycontrol.com,"Taking Stock | Market ends higher for third day; positive global cues, IT and metal stocks lift sentiment",,False
+2022-07-08,adj_compound,most_negative,1,-0.8481,-0.8481,-0.8481,2022-07-04T07:00:00Z,Mining.com,Metals melt down as recession fears overwhelm supply woes,,False
+2022-07-08,adj_compound,most_negative,2,-0.8481,-0.8481,-0.8481,2022-07-05T07:00:00Z,Reuters,COMMENTARY: Metals melt down as recession fears overwhelm supply woes,,False
+2022-07-08,adj_compound,most_positive,1,0.7003,0.6486,0.7003,2022-07-05T07:00:00Z,auto.economictimes.indiatimes.com,Improved economic activity to support demand for steel in India: Fitch,demand,False
+2022-07-08,adj_compound,most_positive,2,0.6369,0.6369,0.6369,2022-07-07T07:00:00Z,Business Insider,Bill Gates just poured more money into a car-metal-recycling startup. Here's an exclusive look at the 12-slide pitch deck that won over him and investors at Assembly Ventures.,,False
+2022-07-15,adj_compound,most_negative,1,-0.6249,-0.6808,-0.6249,2022-07-12T07:00:00Z,The Northern Miner,"Weak steel demand puts pressure on iron ore prices, BofA says",demand,False
+2022-07-15,adj_compound,most_negative,2,-0.6249,-0.6249,-0.6249,2022-07-13T07:00:00Z,AL Circle,Bangladesh's aluminium utensil industry in the Talora port region might face extinction due to gas crisis and higher fuel costs,,False
+2022-07-15,adj_compound,most_positive,1,0.5766,0.5766,0.5766,2022-07-11T07:00:00Z,letsrecycle.com,Ward acquires York scrap metal firm L Clancey & Sons,,False
+2022-07-15,adj_compound,most_positive,2,0.4767,0.4767,0.4767,2022-07-13T07:00:00Z,The Economic Times,Bankruptcy court okays Orissa Metaliks’ revival plan for MSP Metallics,,False
+2022-07-22,adj_compound,most_negative,1,-0.7351,-0.7351,-0.7351,2022-07-22T07:00:00Z,mining.com,Europe’s energy crisis risks slashing aluminum production further,,False
+2022-07-22,adj_compound,most_negative,2,-0.3612,0,-0.3612,2022-07-19T07:00:00Z,thefabricator.com,The end of the steel price decline might be near,decline,False
+2022-07-22,adj_compound,most_positive,1,0.5423,0.5423,0.5423,2022-07-18T07:00:00Z,Vedanta Aluminium Metal Limited,Growing Usage of Aluminium in the Auto Industry bolsters Sustainability & Safety.,,False
+2022-07-22,adj_compound,most_positive,2,0.5106,0.5106,0.5106,2022-07-21T07:00:00Z,"County of Union, New Jersey",Free Scrap Metal Recycling for Union County Residents,,False
+2022-07-29,adj_compound,most_negative,1,-0.5267,-0.5267,-0.5267,2022-07-23T07:00:00Z,The i Paper,Threat to Port Talbot steel jobs decried as ‘eco-blackmail’ as Tata seeks £1.5bn in subsidies,,False
+2022-07-29,adj_compound,most_negative,2,-0.3612,0,-0.3612,2022-07-27T07:00:00Z,Moneycontrol.com,Tata Steel: A likely fall in September quarter operating performance,fall,False
+2022-07-29,adj_compound,most_positive,1,0.7351,0.5719,0.7351,2022-07-25T23:30:54Z,fuelcarmagazine,Box Logo Supreme Retail Prices Supreme Drop Price List KRSEC Aluminum Alloy Bike Frame Racing Dirt Jump Set,jump,False
+2022-07-29,adj_compound,most_positive,2,0.6249,0.6249,0.6249,2022-07-27T07:00:00Z,BusinessToday Malaysia,Press Metal’s Prospect Remains Bright in the Age of Decarbonisation: RHB Research,,False
+2022-08-05,adj_compound,most_negative,1,-0.5994,-0.5994,-0.5994,2022-08-01T07:00:00Z,GMK Center,The rolled metal market during the war and in post-war recovery,,False
+2022-08-05,adj_compound,most_negative,2,-0.5719,-0.5719,-0.5719,2022-08-04T07:00:00Z,eskom.co.za,Three convicted for stealing more than 564 kg of Eskom’s aluminium overhead conductor,,False
+2022-08-05,adj_compound,most_positive,1,0.7845,0.7845,0.7845,2022-08-02T07:00:00Z,Vedanta Aluminium Metal Limited,"World Breastfeeding Week: Vedanta Aluminium steps up to protect, promote and support breastfeeding in Odisha",,False
+2022-08-05,adj_compound,most_positive,2,0.6369,0.6369,0.6369,2022-08-01T07:00:00Z,Cosmopolitan,The 16 Best Aluminum-Free Deodorants That Actually Work,,False
+2022-08-12,adj_compound,most_negative,1,-0.3182,-0.3182,-0.3182,2022-08-09T07:00:00Z,Scottish Daily Express,More concerns raised about future of Sanjeev Gupta's Lochaber smelter as owners post £4m loss,,False
+2022-08-12,adj_compound,most_negative,2,-0.2263,-0.2263,-0.2263,2022-08-10T07:00:00Z,UrbanBike.News,Limited Edition: the VanMoof S3 Aluminum,,False
+2022-08-12,adj_compound,most_positive,1,0.8176,0.8176,0.8176,2022-08-11T07:00:00Z,autoevolution,VanMoof Introduces Limited-Edition S3 Aluminum e-Bike: Celebrate Beauty in Simplicity,,False
+2022-08-12,adj_compound,most_positive,2,0.5562,0.5562,0.5562,2022-08-09T07:00:00Z,tradebrains.in,"Tata Steel Vs SAIL - Profitability, Future Prospects & More!",,False
+2022-08-19,adj_compound,most_negative,1,-0.4404,-0.4404,-0.4404,2022-08-14T07:00:00Z,AL Circle,Mahindra to launch Scorpio Classic with all-aluminium engine block sheds 55 kg,,False
+2022-08-19,adj_compound,most_negative,2,-0.4404,-0.4404,-0.4404,2022-08-17T07:00:00Z,Business Standard,Norsk Hydro shuts aluminum plant in Slovakia as Europe's power woes deepen,,False
+2022-08-19,adj_compound,most_positive,1,0.6705,0.6705,0.6705,2022-08-16T07:00:00Z,Trinidad and Tobago Newsday,Gopee-Scoon: Clear need to improve scrap-iron law,,False
+2022-08-19,adj_compound,most_positive,2,0.5574,0.2732,0.5574,2022-08-19T07:00:00Z,intellinews.com,Norsk Hydro to shutter Slovalco aluminium plant in Slovakia as energy prices soar,soar,False
+2022-08-26,adj_compound,most_negative,1,-0.802,-0.802,-0.802,2022-08-23T07:00:00Z,Engineering News,Scrap metal export ban to buy time for SA to build systems to tackle illegal activity,,False
+2022-08-26,adj_compound,most_negative,2,-0.5994,-0.5994,-0.5994,2022-08-25T07:00:00Z,EUROMETAL,Six months of war: How has it changed the global steel market?,,False
+2022-08-26,adj_compound,most_positive,1,0.6808,0.6808,0.6808,2022-08-26T07:00:00Z,AL Circle,Nalco's Panchpatmali bauxite mine took home the prestigious 'Greentech Quality and Innovation Awards 2022',,False
+2022-08-26,adj_compound,most_positive,2,0.6597,0.4404,0.6597,2022-08-23T07:00:00Z,Al Arabiya English,Emirates Global Aluminium’s first half profit surges nearly 250 pct to $1.6 bln,surges,False
+2022-09-02,adj_compound,most_negative,1,-0.6369,-0.6369,-0.6369,2022-08-30T07:00:00Z,GMK Center,Italian long steel companies to stop production due to the energy crisis,,False
+2022-09-02,adj_compound,most_negative,2,-0.4404,-0.4404,-0.4404,2022-09-01T07:00:00Z,New Atlas,Aluminum-gallium powder bubbles hydrogen out of dirty water,,False
+2022-09-02,adj_compound,most_positive,1,0.6478,0.3612,0.6478,2022-09-02T07:00:00Z,朝日新聞,"Toyota, Nippon Steel agree to major rise in price for steel",rise,False
+2022-09-02,adj_compound,most_positive,2,0.5574,0.2732,0.5574,2022-08-31T07:00:00Z,Bloomberg.com,ArcelorMittal Raises European Steel Prices as Energy Costs Surge,surge,False

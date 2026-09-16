@@ -1,0 +1,47 @@
+metric,value,unit,source
+n_headlines,649,count,"headlines_weekly.csv (Google News RSS; text DIRECT, sample PROXY)"
+n_weeks,28,count,"headlines_weekly.csv (Google News RSS; text DIRECT, sample PROXY)"
+headlines_per_week_median,24,count,"headlines_weekly.csv (Google News RSS; text DIRECT, sample PROXY)"
+headlines_per_week_min,12,count,"headlines_weekly.csv (Google News RSS; text DIRECT, sample PROXY)"
+headlines_per_week_max,39,count,"headlines_weekly.csv (Google News RSS; text DIRECT, sample PROXY)"
+share_vader_exactly_zero,0.471495,frac,VADER 3.3.2
+share_vader_positive,0.280431,frac,VADER 3.3.2
+share_vader_negative,0.241911,frac,VADER 3.3.2
+share_adj_exactly_zero,0.416025,frac,VADER + sent_domain_lexicon
+share_adj_positive,0.331279,frac,VADER + sent_domain_lexicon
+share_adj_negative,0.246533,frac,VADER + sent_domain_lexicon
+n_headlines_lexicon_hit,110,count,sent_domain_lexicon
+n_headlines_class_changed_by_lexicon,64,count,sent_domain_lexicon
+n_lexicon_hits_subject_caveat,29,count,title also names shares/stocks/output/trade etc. (price verb may not refer to the metal price)
+n_lexicon_words_added,78,count,sentiment_lexicon.csv
+n_lexicon_words_flipped,3,count,sentiment_lexicon.csv
+n_lexicon_words_removed,1,count,sentiment_lexicon.csv
+n_headlines_core_chain,334,count,audit relevance_match ∩ fetch_news.CORE_TERMS
+n_headlines_cites_later_date,7,count,P0 audit look-ahead flag
+weekly_mean_vader_avg,0.0164946,vader_compound,sentiment_weekly.csv
+weekly_mean_vader_sd,0.08606,vader_compound,sentiment_weekly.csv
+weekly_mean_adj_avg,0.0355334,vader_compound,sentiment_weekly.csv
+weekly_mean_adj_sd,0.0887676,vader_compound,sentiment_weekly.csv
+noise_share_weekly_var_vader,0.603143,frac,mean squared standard error of the weekly mean / variance of the weekly means
+noise_share_weekly_var_adj,0.647074,frac,mean squared standard error of the weekly mean / variance of the weekly means
+n_weeks_95ci_excludes_zero_vader,4,count,weeks whose mean +/- 1.96 standard errors does not straddle zero
+n_weeks_95ci_excludes_zero_adj,3,count,weeks whose mean +/- 1.96 standard errors does not straddle zero
+corr_weekly_vader_vs_adj,0.90445,pearson_r,sentiment_weekly.csv
+ar1_weekly_vader,0.0223439,pearson_r,sentiment_weekly.csv
+ar1_weekly_adj,-0.0446144,pearson_r,sentiment_weekly.csv
+ar1_weekly_lme_logret,-0.253173,pearson_r,market_daily.csv lme_cash_usd_t (DIRECT)
+primary_r_same_week,-0.171723,pearson_r,sentiment_leadlag.csv
+primary_p_same_week_naive,0.382248,p_value,sentiment_leadlag.csv
+adjusted_r_same_week,-0.0945539,pearson_r,sentiment_leadlag.csv
+adjusted_p_same_week_naive,0.632226,p_value,sentiment_leadlag.csv
+n_lead_tests,12,count,"sentiment_leadlag.csv (lags +1..+3, 4 variants)"
+n_lead_tests_naive_5pct,0,count,sentiment_leadlag.csv
+n_lead_tests_bonferroni,0,count,sentiment_leadlag.csv
+n_lead_tests_boot_ci_excludes_zero,0,count,sentiment_leadlag.csv
+n_tests_total,28,count,sentiment_leadlag.csv
+n_tests_total_naive_5pct,0,count,sentiment_leadlag.csv
+n_tests_total_boot_ci_excludes_zero,1,count,sentiment_leadlag.csv
+expected_false_positives_naive_5pct,1.4,count,if no relation existed
+n_episode_verdicts_signal_fired,2,count,sentiment_episodes.csv
+n_episode_verdicts_not_testable,4,count,sentiment_episodes.csv
+n_episode_verdicts_did_not_lead,2,count,sentiment_episodes.csv

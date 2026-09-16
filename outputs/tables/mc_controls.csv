@@ -1,0 +1,4 @@
+snapshot_id,snapshot_date,mc_pnl_inr,phase3_impact_inr,diff_inr,status
+ATH_PLUS_1,2022-03-08,-8551738.12,-8551738.12,0.0,PASS
+PEAK_GROSS_LME,2022-04-21,0.0,0.0,0.0,PASS
+PEAK_BUYER_CONTRACTED,2022-07-27,0.0,0.0,0.0,PASS

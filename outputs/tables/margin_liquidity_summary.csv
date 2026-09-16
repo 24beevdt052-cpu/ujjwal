@@ -1,0 +1,108 @@
+metric,scope,value,unit,note
+cash_balance_inr_min,book,-1159856632.73,inr,on 2022-07-20
+funding_need_total_inr_max,book,1179029542.57,inr,on 2022-07-20
+commercial_funding_need_inr_max,book,1275480231.51,inr,on 2022-07-19
+margin_cash_deployed_inr_max,book,105707065.17,inr,on 2022-03-24
+margin_cash_deployed_inr_min,book,-169571203.27,inr,on 2022-07-14
+mcx_im_inr_max,book,95803037.76,inr,on 2022-04-21
+mcx_im_stress_015_inr_max,book,143704556.64,inr,on 2022-04-21
+lc_outstanding_inr_max,book,1414836540.51487,inr,on 2022-06-13
+lc_outstanding_usd_max,book,18126264.86,usd,on 2022-06-10
+bank_exposure_fb_plus_lc_inr_max,book,1973802186.376269,inr,on 2022-05-27
+mar_99_inr_max,book,245328128.123141,inr,on 2022-04-21
+mar_99_stressed_im_inr_max,book,304380927.184823,inr,on 2022-04-21
+fb_utilisation_frac_max,book,1.17903,frac,on 2022-07-20
+lc_utilisation_frac_max,book,1.414837,frac,on 2022-06-13
+mcx_lots_gross_open_max,book,709.0,lots,on 2022-04-21
+commercial_funding_need_inr_on_peak_funding_day,book,1275480231.51,inr,on 2022-07-20
+margin_cash_deployed_inr_on_peak_funding_day,book,-115623598.78,inr,on 2022-07-20
+interest_accrued_inr_on_peak_funding_day,book,19172909.84,inr,on 2022-07-20
+mcx_im_inr_on_peak_funding_day,book,51051324.99,inr,on 2022-07-20
+cash_purchase_cum_inr_on_peak_funding_day,book,-2146305968.89,inr,on 2022-07-20
+cash_sale_cum_inr_on_peak_funding_day,book,1140197788.67,inr,on 2022-07-20
+cash_igst_cum_inr_on_peak_funding_day,book,-156008726.27,inr,on 2022-07-20
+cash_duty_cum_inr_on_peak_funding_day,book,-49486145.31,inr,on 2022-07-20
+lc_outstanding_inr_on_peak_funding_day,book,0.0,inr,on 2022-07-20
+interest_accrued_inr_final,book,32627694.86,inr,"on 2022-10-31; P3's funding accrual, added to the line as interest debited"
+fb_limit_inr,facility,1000000000.0,inr,liq_fb_wc_limit_inr
+min_cash_buffer_inr,facility,150000000.0,inr,liq_min_cash_buffer_frac_of_fb_limit x limit
+lc_limit_inr,facility,1000000000.0,inr,liq_nfb_lc_limit_inr
+days_buffer_breach,book,30,count,2022-05-10 .. 2022-08-05
+days_fb_limit_breach,book,19,count,2022-05-16 .. 2022-08-05
+days_lc_limit_breach,book,17,count,2022-04-28 .. 2022-06-21
+days_mar_exceeds_buffer,book,51,count,2022-03-09 .. 2022-07-01
+days_mar_exceeds_undrawn,book,28,count,2022-05-11 .. 2022-08-05
+memo_lc_outstanding_ex_tolerance_inr_max,book,1286215036.8317,inr,on 2022-06-13; MEMO: planned face without the LC amount tolerance (an accepted usance bill is booked at invoice)
+memo_days_lc_limit_breach_ex_tolerance,book,11,count,"MEMO: as above, days over the LC line"
+headroom_inr_min,book,-329029542.57,inr,on 2022-07-20
+undrawn_inr_min,book,-179029542.57,inr,on 2022-07-20
+days_need_plus_max_buffer_or_mar_over_limit,book,30,count,"the memo's liquidity rule: funding need + max(buffer, 99 % margin-at-risk at 15 % IM) > fund-based limit"
+book_first_cash_day,book,2022-03-09,date,
+days_reported,book,169,count,2022-03-01 .. 2022-10-31
+days_in_window_reported,book,126,count,to WINDOW_END 2022-08-31
+window_start,CRASH_FORTNIGHT,2022-04-22,date,CONTRACTS §7a.3: the 10-trading-day RETURN window (11 observations) with the most negative LME cash return in the headline window (adverse_event_windows.csv E1_CRASH_FORTNIGHT)
+window_end,CRASH_FORTNIGHT,2022-05-09,date,
+lme_cash_return_frac,CRASH_FORTNIGHT,-0.165228,frac,"actual, start close to end close"
+vm_actual_sum_inr,CRASH_FORTNIGHT,64951870.06,inr,days after the start close
+net_margin_cash_actual_sum_inr,CRASH_FORTNIGHT,121590195.63,inr,VM + charges − IM change; + = cash received
+mcx_im_actual_max_inr,CRASH_FORTNIGHT,95567833.49,inr,
+mcx_lots_net_open_at_start,CRASH_FORTNIGHT,-709.0,lots,
+stress_direction,CRASH_FORTNIGHT,LME_UP,text,the direction that calls more cash
+stress_move_logret,CRASH_FORTNIGHT,0.209159,logret,binding reading: hist60 (as of the 2022-04-22 close)
+stress_move_frac,CRASH_FORTNIGHT,0.232642,frac,
+move_normal_garch_logret,CRASH_FORTNIGHT,0.124475,logret,as of the 2022-04-22 close
+move_normal_hist250_logret,CRASH_FORTNIGHT,0.144317,logret,as of the 2022-04-22 close
+move_normal_hist60_logret,CRASH_FORTNIGHT,0.209159,logret,as of the 2022-04-22 close
+move_empirical_up_logret,CRASH_FORTNIGHT,0.107718,logret,as of the 2022-04-22 close
+move_empirical_down_logret,CRASH_FORTNIGHT,-0.124531,logret,as of the 2022-04-22 close
+lme_cash_stressed_end_usd_t,CRASH_FORTNIGHT,3998.689106,usd_t,
+vm_stressed_sum_inr,CRASH_FORTNIGHT,-70249672.922764,inr,
+extra_margin_cash_out_inr_max,CRASH_FORTNIGHT,153478632.551481,inr,on 2022-05-09
+extra_margin_cash_out_stressed_im_inr_max,CRASH_FORTNIGHT,181790794.890606,inr,on 2022-05-09
+headroom_actual_inr_min,CRASH_FORTNIGHT,175454.73,inr,on 2022-05-09
+headroom_stressed_inr_min,CRASH_FORTNIGHT,-153303177.821481,inr,on 2022-05-09
+headroom_stressed_im_inr_min,CRASH_FORTNIGHT,-181615340.160606,inr,on 2022-05-09
+days_buffer_breach_actual,CRASH_FORTNIGHT,0,count,days after the start close
+days_buffer_breach_stressed_im,CRASH_FORTNIGHT,6,count,days after the start close
+days_fb_limit_breach_actual,CRASH_FORTNIGHT,0,count,days after the start close
+days_fb_limit_breach_stressed_im,CRASH_FORTNIGHT,2,count,days after the start close
+sens_garch_stress_move_frac,CRASH_FORTNIGHT,0.132554,frac,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_extra_margin_cash_out_stressed_im_inr_max,CRASH_FORTNIGHT,146587789.620278,inr,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_headroom_stressed_im_inr_min,CRASH_FORTNIGHT,-146412334.890278,inr,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_days_buffer_breach_stressed_im,CRASH_FORTNIGHT,4,count,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_days_fb_limit_breach_stressed_im,CRASH_FORTNIGHT,0,count,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+memo_physical_mtm_gain_end_inr,CRASH_FORTNIGHT,427038753.16423,inr,"unrealised gain on the physical from the same move (start-day delta, linear): a mark, not cash"
+memo_mc_window_move_logret,CRASH_FORTNIGHT,0.170427,logret,"HINDSIGHT memo, never binding: the Phase 4.2 Monte Carlo's LME marginal (Mar–Aug 2022 daily stdev 0.023167 x sqrt(10) x z99, Normal) — read from mc_factor_stats.csv"
+window_start,MARGIN_FORTNIGHT,2022-03-15,date,the 10 trading days (11 observations) with the most negative summed net MCX margin cash (VM + charges − IM change) in the headline window
+window_end,MARGIN_FORTNIGHT,2022-03-29,date,
+lme_cash_return_frac,MARGIN_FORTNIGHT,0.113598,frac,"actual, start close to end close"
+vm_actual_sum_inr,MARGIN_FORTNIGHT,-50637148.55,inr,days after the start close
+net_margin_cash_actual_sum_inr,MARGIN_FORTNIGHT,-77149858.42,inr,VM + charges − IM change; + = cash received
+mcx_im_actual_max_inr,MARGIN_FORTNIGHT,78630258.63,inr,
+mcx_lots_net_open_at_start,MARGIN_FORTNIGHT,-374.0,lots,
+stress_direction,MARGIN_FORTNIGHT,LME_UP,text,the direction that calls more cash
+stress_move_logret,MARGIN_FORTNIGHT,0.294724,logret,binding reading: garch (as of the 2022-03-15 close)
+stress_move_frac,MARGIN_FORTNIGHT,0.342756,frac,
+move_normal_garch_logret,MARGIN_FORTNIGHT,0.294724,logret,as of the 2022-03-15 close
+move_normal_hist250_logret,MARGIN_FORTNIGHT,0.139406,logret,as of the 2022-03-15 close
+move_normal_hist60_logret,MARGIN_FORTNIGHT,0.19951,logret,as of the 2022-03-15 close
+move_empirical_up_logret,MARGIN_FORTNIGHT,0.106854,logret,as of the 2022-03-15 close
+move_empirical_down_logret,MARGIN_FORTNIGHT,-0.107896,logret,as of the 2022-03-15 close
+lme_cash_stressed_end_usd_t,MARGIN_FORTNIGHT,4320.317366,usd_t,
+vm_stressed_sum_inr,MARGIN_FORTNIGHT,-190788607.662229,inr,
+extra_margin_cash_out_inr_max,MARGIN_FORTNIGHT,155830366.31648,inr,on 2022-03-29
+extra_margin_cash_out_stressed_im_inr_max,MARGIN_FORTNIGHT,201765711.226548,inr,on 2022-03-29
+headroom_actual_inr_min,MARGIN_FORTNIGHT,742721544.48,inr,on 2022-03-24
+headroom_stressed_inr_min,MARGIN_FORTNIGHT,613425317.41352,inr,on 2022-03-29
+headroom_stressed_im_inr_min,MARGIN_FORTNIGHT,567489972.503452,inr,on 2022-03-29
+days_buffer_breach_actual,MARGIN_FORTNIGHT,0,count,days after the start close
+days_buffer_breach_stressed_im,MARGIN_FORTNIGHT,0,count,days after the start close
+days_fb_limit_breach_actual,MARGIN_FORTNIGHT,0,count,days after the start close
+days_fb_limit_breach_stressed_im,MARGIN_FORTNIGHT,0,count,days after the start close
+sens_garch_stress_move_frac,MARGIN_FORTNIGHT,0.342756,frac,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_extra_margin_cash_out_stressed_im_inr_max,MARGIN_FORTNIGHT,201765711.226548,inr,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_headroom_stressed_im_inr_min,MARGIN_FORTNIGHT,567489972.503452,inr,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_days_buffer_breach_stressed_im,MARGIN_FORTNIGHT,0,count,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+sens_garch_days_fb_limit_breach_stressed_im,MARGIN_FORTNIGHT,0,count,SENSITIVITY: the same stress on the GARCH reading alone (not binding)
+memo_physical_mtm_gain_end_inr,MARGIN_FORTNIGHT,122034438.314011,inr,"unrealised gain on the physical from the same move (start-day delta, linear): a mark, not cash"
+memo_mc_window_move_logret,MARGIN_FORTNIGHT,0.170427,logret,"HINDSIGHT memo, never binding: the Phase 4.2 Monte Carlo's LME marginal (Mar–Aug 2022 daily stdev 0.023167 x sqrt(10) x z99, Normal) — read from mc_factor_stats.csv"

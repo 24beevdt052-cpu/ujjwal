@@ -1,0 +1,666 @@
+# Assumptions register for the Phase 4/5 risk pack (CONTRACTS §2: risk.yaml is owned by P4/P5).
+# One section per owning stage. Each agent edits ONLY its own section; a later stage appends a new section below the
+# last one, under its own "# --- ..." header, and never touches the keys above it. Keys are globally unique across
+# config/params/*.yaml (desk.config raises on duplicates), so every key here carries its stage prefix.
+#
+# Model-structure constants (the 95 % confidence level, GARCH(1,1) order, zero-mean / Normal base choice) live in
+# desk/risk/garch_var.py as named constants (CONTRACTS §1.6); the judgement calls a reviewer could reasonably
+# change are below.
+
+# --- Phase 4.1 VaR (owner: desk.risk.run_var — GARCH(1,1) vs historical-volatility VaR + Kupiec backtest) --------
+
+var_garch_refit_frequency:
+  value: W-FRI
+  unit: pandas_period_alias
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/40_var_garch.md §2.2)"
+  verify: "N/A — modelling choice, nothing external to verify against"
+  note: >-
+    GARCH(1,1) parameters are re-estimated once per week (weeks ending Friday, the project calendar convention in
+    CONTRACTS §3) on an expanding sample of every return dated strictly before the first panel day of that week.
+    Inside the week the parameters are held and the variance recursion is filtered daily, so the forecast for day t
+    always uses returns dated t-1 or earlier. Weekly rather than daily refits keep the run light on this 8 GB machine;
+    with 250+ observations one extra week moves the estimates very little, whereas the daily filter carries the
+    information that matters (yesterday's squared return).
+
+var_garch_min_estimation_obs:
+  value: 250
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Desk modelling choice; roughly one year of LME trading days (docs/40_var_garch.md §2.2)"
+  verify: "N/A — modelling choice"
+  note: >-
+    No GARCH forecast is produced until the expanding sample holds at least this many daily returns. With the
+    lookback starting at HISTORY_START (2018-01-02) the first forecast falls on the last days of December 2018, so the
+    2019-2022 unit-exposure backtest starts with every method available. One year is the smallest sample on which a
+    three-parameter GARCH is usually identified; the 2018-only USD/INR fit still hits the alpha = 0 / beta = 1
+    boundary, which var_garch_params.csv flags on every affected refit.
+
+var_hist_window_base_days:
+  value: 250
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Basel market-risk convention of an (at least) one-year observation period for VaR; desk modelling choice"
+  verify: "N/A — declared before any Phase 4 result was computed (2026-09-16)"
+  note: >-
+    The BASE 'simple historical volatility' against which GARCH is compared: the root-mean-square of the last 250
+    daily returns ending the day before the forecast date (zero mean, like the GARCH). Chosen ex ante as the
+    one-year window a desk or regulator would use, NOT because it lags; var_hist_window_fast_days is published
+    beside it in every table so a reader can see GARCH against a fast window too. Also the window for the freight
+    and LME cash-3M spread volatilities, which are historical in both methods.
+
+var_hist_window_fast_days:
+  value: 60
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Desk modelling choice (about one quarter of trading days)"
+  verify: "N/A — declared before any Phase 4 result was computed (2026-09-16)"
+  note: >-
+    The fast historical window reported next to the base in every table, chart and Kupiec row. It is the honest
+    counterpart to the base: a 60-day window reacts much faster than 250 days, so any GARCH lead measured against it
+    is the conservative reading.
+
+var_corr_window_days:
+  value: 250
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/40_var_garch.md §2.4)"
+  verify: "N/A — modelling choice"
+  note: >-
+    Rolling Pearson correlation of daily factor changes (LME cash log return, USD/INR log return, USEC freight log
+    return, LME cash-3M spread change) over the 250 panel days ending the day before the VaR date. The SAME
+    correlation matrix is used by both vol methods, so the GARCH-vs-historical comparison isolates the volatility
+    forecast. Freight is assessed weekly and carried forward (CONTRACTS §3), so its daily correlations are attenuated;
+    freight is immaterial to this book's VaR (docs/40 §4.2).
+
+var_vol_alert_percentiles:
+  value: [0.75, 0.90, 0.95]
+  unit: frac_percentile
+  flag: ASSUMPTION
+  source: "Desk modelling choice for the lead/lag reading (docs/40_var_garch.md §5)"
+  verify: "N/A — modelling choice; 0.90 is the base, the others are robustness rows"
+  note: >-
+    A method 'flags rising risk' on the first day its volatility forecast rises above the given percentile of ITS
+    OWN forecasts over var_vol_alert_reference_period (a pre-2022 period, so the thresholds contain no 2022 data).
+    Each method is measured against its own distribution because a 250-day window is smoother than GARCH and would
+    otherwise be judged against a bar it can never reach. 0.90 is the base threshold quoted in the finding.
+
+var_vol_alert_reference_period:
+  value: ["2019-01-02", "2021-12-31"]
+  unit: date_range_inclusive
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/40_var_garch.md §5)"
+  verify: "N/A — modelling choice"
+  note: >-
+    The three calendar years of forecasts that define each method's alert thresholds. Ends before 2022 so no
+    threshold is informed by the February-March 2022 spike, the 7-March-2022 all-time high or the crash it is used
+    to date.
+
+var_lead_episodes:
+  value:
+    - ["LME_MARCH_SPIKE", "2022-01-03", "2022-03-31"]
+    - ["LME_MAY_JULY_CRASH", "2022-04-01", "2022-07-15"]
+  unit: name_start_end
+  flag: ASSUMPTION
+  source: "Reporting-only search windows around the dated events in outputs/tables/adverse_event_windows.csv"
+  verify: "N/A — reporting convention; no VaR or backtest number depends on these windows"
+  note: >-
+    Where the lead/lag table looks for each method's first alert. Episode 1 runs up to and through the 7-Mar-2022
+    all-time high; episode 2 runs from the start of April to the E1 trough (2022-07-15), which contains the E1 crash
+    fortnight 2022-04-22 -> 2022-05-09. Like the P3 event windows these are drawn after the fact and are
+    REPORTING-ONLY: they select which dates to describe, never an input to a forecast. If a method is already above
+    its threshold when a window opens, the table reports the day that spell began instead of inventing a crossing.
+
+var_unit_backtest_start:
+  value: 2019-01-02
+  unit: date
+  flag: ASSUMPTION
+  source: "Desk modelling choice (spec Table 6 row 4.1 asks for a Kupiec test; ~120 book days have low power)"
+  verify: "N/A — modelling choice"
+  note: >-
+    First forecast date of the constant-exposure backtests, which run to PANEL_END (2022-12-30). These exist because
+    120 book days cannot tell a good VaR from a bad one (Kupiec does not reject anything from 2 to 11 exceptions at
+    n = 120); roughly 1,000 days of a fixed exposure narrow that band to 38-64 exceptions against 50.5 expected.
+
+var_unit_lme_mt:
+  value: 1000.0
+  unit: mt
+  flag: ASSUMPTION
+  source: "Desk modelling choice: a round long LME position, not a trade"
+  verify: "N/A — modelling choice"
+  note: >-
+    Constant long LME aluminium cash position for the unit backtest. P&L on day t = qty x (cash_t - cash_t-1) x
+    usdinr_t (the USD move converted at the day's rate); VaR = 1.645 x sigma_t x qty x cash_t-1 x usdinr_t-1. The
+    size is irrelevant to exception counts; it only sets the rupee scale of the chart.
+
+var_unit_fx_usd:
+  value: 1000000.0
+  unit: usd
+  flag: ASSUMPTION
+  source: "Desk modelling choice: a round long-USD position, not a trade"
+  verify: "N/A — modelling choice"
+  note: >-
+    Constant long USD position against INR for the USD/INR unit backtest (the second GARCH series used in the book
+    VaR). P&L = notional x (usdinr_t - usdinr_t-1); VaR = 1.645 x sigma_t x notional x usdinr_t-1.
+
+# --- Phase 4.2 Monte Carlo (owner: desk.risk.run_mc — 10,000-path joint simulation, full revaluation, stress overlay)
+# The estimation window itself is not a key: MASTER_SPEC Table 6 row 4.2 fixes it as the backtest window, which is
+# WINDOW_START..WINDOW_END in desk/__init__.py. The path count (10,000) and the 95 % / 99 % levels are spec-fixed
+# model-structure constants in desk/risk/monte_carlo.py. The freight +40 % shock is `freight_stress_shock_frac`
+# (logistics.yaml) and the BIS-QCO stress uses `qco_stress_*` (regulatory.yaml): read, not duplicated here.
+
+mc_horizon_bdays:
+  value: 10
+  unit: business_days
+  flag: ASSUMPTION
+  source: "Basel market-risk convention of a 10-business-day holding period; desk modelling choice (docs/41_monte_carlo.md §2.3)"
+  verify: "N/A — declared before any Phase 4.2 result was computed (2026-09-16)"
+  note: >-
+    The base risk horizon: the covariance of daily factor changes is scaled by 10 (square root of time, no
+    autocorrelation) and the book is re-marked instantaneously at the snapshot close with the clock, contracts and
+    events held. Ten business days is roughly the time a physical desk needs to re-hedge or re-sell a cargo-sized
+    position (an MCX hedge can be lifted in a day; a sale to a new smelter takes one to two weeks). A static-position
+    "to settlement" horizon is also published, as a memo only, because the desk did not hold any snapshot position
+    unchanged to settlement.
+
+mc_pit_lookback_days:
+  value: 126
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "Desk modelling choice: the number of daily returns in the spec's estimation window (2022-03-01..2022-08-31 has 126 LME days)"
+  verify: "N/A — modelling choice"
+  note: >-
+    Length of the POINT-IN-TIME covariance sensitivity: the 126 daily changes dated on or before each snapshot date
+    (and the complete W-FRI weeks inside that span for freight and the MCX basis). The spec's window covariance uses
+    returns after an early snapshot (hindsight); this variant uses only what the desk knew at that close. Same length
+    as the window so the two differ only in dating.
+
+mc_student_t_dof:
+  value: 5
+  unit: degrees_of_freedom
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/41_monte_carlo.md §2.4); common choice for commodity-return tails"
+  verify: "N/A — modelling choice"
+  note: >-
+    Degrees of freedom of the multivariate Student-t sensitivity, scaled to the SAME covariance as the base normal
+    (x = L z sqrt((nu-2)/chi2)). One chi-square per path scales all factors together: a normal whose variance is
+    uncertain over the horizon. At equal variance nu = 5 puts the one-factor 95 % quantile 5 % BELOW the normal's,
+    the 99 % quantile 12 % above it and the 99.9 % quantile 48 % above it.
+
+mc_snapshot_rules:
+  value:
+    - ["ATH_PLUS_1", "first LME panel day after the window's highest LME cash close (the 7-Mar-2022 all-time high)"]
+    - ["PEAK_GROSS_LME", "window day with the largest BOOK lme_delta_physical_mt in book_exposures_daily.csv"]
+    - ["PEAK_BUYER_CONTRACTED", "first window day on which mc_buyer_default_buyer_id's contracted exposure (receivable + presettlement, buyer_credit_exposure_by_trade_daily.csv) is at its window maximum"]
+  unit: id_rule
+  flag: ASSUMPTION
+  source: "Desk modelling choice, declared before any Phase 4.2 result was computed (2026-09-16); docs/41_monte_carlo.md §2.2"
+  verify: "N/A — modelling choice"
+  note: >-
+    Three dates on which the book is revalued. Any date a rule selects that is an MCX exit or roll-out day
+    (mcx_variation_margin.csv action exit|roll_out) moves to the next panel day that is not one, because the
+    valuation at such a close still carries the exiting contract (docs/40_var_garch.md open issue 1). ATH_PLUS_1 is
+    the spec's crash narrative (and the book's first day: T01 long, not yet hedged); PEAK_GROSS_LME is the most metal
+    the desk ever carried, where hedge slippage matters most; PEAK_BUYER_CONTRACTED is the day the buyer-default
+    stress has the most to bite on. The rules select dates from exposures and credit tables only, never from P&L.
+
+mc_stress_lme_move_frac:
+  value: -0.15
+  unit: frac_of_lme_cash
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 6 row 4.2 stress scenario 'LME -15%'"
+  verify: "N/A — spec-defined scenario"
+  note: >-
+    Instantaneous LME cash x 0.85 (log shock ln 0.85), with MCX recomputed from the shocked cash at the held basis
+    (unit beta, docs/30 §5.1). For scale: LME cash fell 12.95 % on 8-Mar-2022 alone.
+
+mc_stress_usdinr_move_frac:
+  value: 0.05
+  unit: frac_of_usdinr
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 6 row 4.2 stress scenario 'INR -5%'"
+  verify: "N/A — spec-defined scenario"
+  note: >-
+    Convention: 'INR -5 %' is read as the quoted USD/INR rate rising 5 % (rupee depreciation; log shock ln 1.05) —
+    the way an Indian desk quotes the move. Measured as the rupee's own USD value it is a 4.76 % fall; a 5 % fall in
+    that measure would be USD/INR +5.26 %. The CBIC customs rate moves with the market rate (valuation.shock_state).
+
+mc_buyer_default_buyer_id:
+  value: BUY_RJK_01
+  unit: counterparty_id
+  flag: ASSUMPTION
+  source: "Phase 1-3 fix log open item 1 (docs/reviews/phase1-3_fix_log.md §3): advance reliance 1.26x/1.53x/1.83x of a ₹120 m limit; contracted exposure peaks at 2.57x"
+  verify: "N/A — scenario design"
+  note: >-
+    The buyer defaulted in the Table 6 'buyer default' stress. Chosen for performance exposure relative to its limit
+    (the desk relies on its advances), not for the largest rupee exposure: BUY_MUN_01's contracted exposure peaks
+    higher in rupees (₹750 m on a ₹650 m limit). The stress is run on every snapshot; where this buyer has no open
+    flow the scenario is zero and says so.
+
+mc_buyer_default_recovery_frac:
+  value: 0.25
+  unit: frac_of_receivable
+  flag: ASSUMPTION
+  source: "Desk judgement: unsecured operational creditor of a defaulted small foundry (SIM)"
+  verify: "PENDING — compare with published realisation rates for operational creditors in Indian insolvency resolutions (IBBI quarterly newsletter)"
+  note: >-
+    Recovery on cargo already RELEASED to the buyer when it defaults (an unsecured trade receivable, no retention of
+    title assumed). Operational creditors rank behind secured lenders and typically recover a small fraction, late;
+    0.25 is a judgement, so mc_buyer_default_recovery_sensitivity_frac publishes the 0 and 0.5 cases beside it.
+
+mc_buyer_default_recovery_sensitivity_frac:
+  value: [0.0, 0.5]
+  unit: frac_of_receivable
+  flag: ASSUMPTION
+  source: "Desk modelling choice"
+  verify: "N/A — sensitivity grid"
+  note: >-
+    Memo rows of the buyer-default scenario at these recoveries on released cargo (retained cargo is unaffected).
+
+mc_buyer_default_resale_discount_frac:
+  value: 0.05
+  unit: frac_of_replacement_value
+  flag: ASSUMPTION
+  source: "Desk judgement: distressed resale of an imported scrap lot to another Gujarat smelter within weeks"
+  verify: "N/A — scenario assumption (no public quote for distressed domestic scrap resales)"
+  note: >-
+    Cargo NOT yet released when the buyer defaults stays with the desk and is resold at the unsold-cargo mark
+    (import replacement value, CONTRACTS §7a.1.3) less this discount. The loss is the lost contract receipts minus
+    those resale proceeds, floored at zero (no windfall from a default). Extra storage while re-selling is not
+    modelled.
+
+mc_qco_uncleared_only:
+  value: true
+  unit: bool
+  flag: ASSUMPTION
+  source: "Desk modelling choice; a clearance-stage BIS-QCO bites at the Bill of Entry (regulatory.yaml qco_stress_delay_days note)"
+  verify: "N/A — modelling choice"
+  note: >-
+    Apply StressEvent('qco_hold') only to tickets on the book with at least one lot not yet released at the snapshot.
+    The API charges extra dwell on every box of a ticket and writes off the rejected fraction of its unsold (or, if
+    all sold, whole) tonnage regardless of lot status; applied to already-cleared tickets that overstates the policy
+    stress, so the all-tickets figure is published only as a memo row.
+
+# --- Phase 5 liquidity & policy (owner: desk.risk.run_liquidity — margin & liquidity, Table 6 row 4.5, and the risk
+# policy memo, row 4.6; code in desk/risk/liquidity.py and desk/risk/policy_memo.py, doc docs/51_margin_liquidity.md).
+# Appended below the sections above without editing them. `liq_` keys size the facilities and the margin stress;
+# `policy_` keys are the limits the (SIM) head of desk proposes in outputs/reports/risk_policy_memo.md. Every policy
+# note quotes the book evidence it was set against; the memo prints where the 2022 book would have breached it.
+
+liq_plan_parity_week_end:
+  value: "2022-02-25"
+  unit: date
+  flag: ASSUMPTION
+  source: "Desk modelling choice: the last Phase 1 parity week before WINDOW_START (outputs/tables/parity_weekly.csv)"
+  verify: "N/A — modelling choice"
+  note: >-
+    The facilities are sized as a bank would size them at sanction — before the window opened, on the prices and
+    cash-cycle economics visible then: the six grade x lane cases of the parity week ending 2022-02-25. Nothing dated
+    after that week enters the sizing. Carried caveat: that week's grade factor and freight level are Phase 1
+    hindsight reconstructions (CONTRACTS §4.3), so the plan cost per tonne is itself partly reconstructed;
+    margin_liquidity_limit_grid.csv shows the result at other facility sizes.
+
+liq_plan_throughput_mt_pa:
+  value: 30000.0
+  unit: mt_per_year
+  flag: ASSUMPTION
+  source: "Desk plan read from MASTER_SPEC_V3 Table 4 (8-10 trades of 1,000-5,000 MT over the six-month window)"
+  verify: "N/A — business-plan assumption"
+  note: >-
+    A first-year desk planning at the lower middle of the spec's range (about 9 parcels of ~1,700 MT a half-year)
+    budgets ~15,000 MT per half-year, i.e. 30,000 MT a year (2,500 MT a month). Taken from the spec range, not from the
+    book: the realised book (14,350 MT contracted Mar-Aug, ~2,390 MT a month) came in about 4 % under it, so the
+    facility test is about the book's cash TIMING (usance maturities, IGST, buyer credit bunching), not its volume.
+
+liq_plan_lc_tenor_days:
+  value: 60
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk construction from lc_open_days_before_laycan_min (commercial.yaml), sight payment ~7 days after B/L, and 60-90 day usance"
+  verify: "N/A — plan assumption"
+  note: >-
+    Average days one parcel's import LC sits on the non-fund limit in the plan. A sight LC is outstanding from opening
+    (at least 10 days before the laycan) to document payment about 7 days after the B/L, roughly 25-30 days; a usance
+    LC adds its 60-90 days. A plan that puts about a third of parcels on 90-day usance averages ~60 days. The book
+    used usance on 3 of 9 parcels (T02 90 d, T05 60 d, T09 60 d).
+
+liq_facility_rounding_inr:
+  value: 250000000.0
+  unit: inr
+  flag: ASSUMPTION
+  source: "Desk convention: sanctioned limits are round numbers"
+  verify: "N/A — convention"
+  note: >-
+    Each plan requirement is rounded UP to the next ₹25 crore (₹250 m) to give the sanctioned limit. Rounding can only
+    add headroom: on the 2022-02-25 plan it adds ₹30.2 m to the fund-based line and ₹126.8 m to the LC line.
+
+liq_fb_wc_limit_inr:
+  value: 1000000000.0
+  unit: inr
+  flag: ASSUMPTION
+  source: "Desk construction: liq_plan_throughput_mt_pa x mean over the plan week's six parity cases of (finance_inr_t + igst_finance_inr_t) / wc_rate_inr_pa, rounded up by liq_facility_rounding_inr"
+  verify: "PENDING — no 2022 sanction letter for a comparable importer was retrieved. Next step: a listed Indian non-ferrous metals trader's FY2022-23 annual report (sanctioned fund-based working-capital limits against turnover)."
+  note: >-
+    Sanctioned fund-based working-capital limit (cash credit / WCDL / import loans on one line) — the line Phase 3's
+    funding accrual already assumes (CONTRACTS §7a.5) but never capped. Rule: 30,000 MT/yr x ₹32,326 of funded
+    rupee-years per tonne (Phase 1's own finance_inr_t + igst_finance_inr_t at the 9.50 % plan rate) = ₹969.8 m
+    average funded balance, rounded up to ₹1,000 m (₹100 crore); margin_liquidity_facility.csv recomputes it and a
+    test asserts the registered value equals the rule. It is a sanction on the plan's AVERAGE balance, as a
+    holding-period assessment would give; a parcel business is lumpy, and the buffer below plus an ad-hoc limit are
+    what a bank expects to carry peaks. It was not set from the book's realised peak funding need.
+
+liq_nfb_lc_limit_inr:
+  value: 1000000000.0
+  unit: inr
+  flag: ASSUMPTION
+  source: "Desk construction: liq_plan_throughput_mt_pa x mean plan-week CIF value per tonne (cif_usd_t x usdinr) x liq_plan_lc_tenor_days / 365, rounded up by liq_facility_rounding_inr"
+  verify: "PENDING — as liq_fb_wc_limit_inr"
+  note: >-
+    Non-fund import LC limit (sight and usance credits outstanding). Rule: 30,000 MT/yr x ₹177,064 CIF per tonne x
+    60/365 = ₹873.2 m average LC outstanding, rounded up to ₹1,000 m. The book's LC outstanding is valued at the
+    trade-date planned purchase value x (1 + the ticket's LC tolerance), converted at each day's USD/INR (PROXY).
+
+liq_min_cash_buffer_frac_of_fb_limit:
+  value: 0.15
+  unit: frac_of_fund_based_limit
+  flag: ASSUMPTION
+  source: "Treasury convention: keep 10-20 % of committed working-capital lines undrawn for margin calls and payment slippage; midpoint"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Minimum undrawn liquidity reserved at all times: headroom = limit − buffer − funding need, so a buffer you can
+    spend is not counted as headroom. ₹150 m on the ₹1,000 m line. Anchor at plan prices: initial margin at
+    mcx_al_margin_used_frac (10 %) on two months of plan throughput (5,000 MT) hedged 1:1 at the 25-Feb-2022 MCX M1
+    proxy (₹273.24/kg) is ₹136.6 m. The analysis tests this against a daily 99 % margin-at-risk; the memo's buffer
+    rule is set from that test, not from this convention.
+
+liq_stress_confidence_frac:
+  value: 0.99
+  unit: frac_percentile
+  flag: ASSUMPTION
+  source: "MASTER_SPEC_V3 Table 6 row 4.2 (the Monte Carlo reports 95 %/99 % losses); desk modelling choice"
+  verify: "N/A — modelling choice"
+  note: >-
+    Confidence of the adverse LME move used for margin-at-risk and the crash-fortnight stress. A liquidity buffer is
+    sized for the tail, so 99 % rather than the 95 % of the daily VaR.
+
+liq_stress_horizon_days:
+  value: 10
+  unit: trading_days
+  flag: ASSUMPTION
+  source: "CONTRACTS §7a.3 fortnight convention (10 trading-day returns); equals mc_horizon_bdays of the Phase 4.2 Monte Carlo"
+  verify: "N/A — modelling choice"
+  note: >-
+    Horizon of the 99 % move: one crash fortnight. Normal readings scale a one-day volatility forecast by sqrt(10)
+    (no mean reversion, no autocorrelation); the empirical reading uses overlapping 10-day LME cash log returns from
+    HISTORY_START to the stress date, so it needs no scaling.
+
+policy_memo_date:
+  value: "2022-11-07"
+  unit: date
+  flag: ASSUMPTION
+  source: "Desk convention: the first Monday after HORIZON_END (2022-10-31), when every figure the memo quotes is known"
+  verify: "N/A — convention"
+  note: >-
+    The memo proposes policy looking back over the whole book (its cash path runs to 31-Oct and the credit scores to
+    31-Aug), so it is dated after the last input it uses: no figure in it was unknowable on its date.
+
+policy_max_physical_open_mt:
+  value: 5000.0
+  unit: mt_lme_equivalent
+  flag: ASSUMPTION
+  source: "Desk policy; evidence book_exposures_daily.csv (BOOK lme_delta_physical_mt, unsold_mt)"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Gross physical LME exposure (priced-or-unpriced metal the desk is long before hedges). Set at the spec's maximum
+    parcel (5,000 MT), which is also just above what the book ran (peak 4,450 MT LME-equivalent on 21-Apr; unsold
+    cargo peaked at 4,980 MT on 6-Apr). Not raised above that level because the liquidity analysis shows this level
+    already used the whole working-capital line. Disclosure: the level was chosen with the book's peak in view, so the
+    memo's "within" verdict is true by construction and is not evidence that the limit is right.
+
+policy_max_physical_open_usd:
+  value: 15000000.0
+  unit: usd
+  flag: ASSUMPTION
+  source: "Desk policy; evidence BOOK lme_delta_physical_mt x lme_cash_usd_t"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    The same limit in dollars, so a price rally cannot grow exposure inside a tonnage limit. Book peak USD 14.5 m on
+    21-Apr-2022 (4,450 MT x LME cash 3,262). Set just above that peak with the book in view (see the MT twin).
+
+policy_max_net_unhedged_mt:
+  value: 1000.0
+  unit: mt_lme_equivalent
+  flag: ASSUMPTION
+  source: "Desk policy; evidence BOOK lme_delta_mt (net of MCX), excluding the 16 MCX exit/roll position dates flagged in var_daily.csv"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Absolute net LME delta after hedges, long or short. At window LME cash prices (USD 2,320-3,985/t) 1,000 MT is
+    USD 2.3-4.0 m. The book's absolute net had a 95th percentile of 967 MT on clean position days; it exceeded
+    1,000 MT on 5 of them, the largest the 1,817 MT naked session on 8-Mar before T01's hedge (MCX proxy at its daily
+    limit).
+
+policy_max_net_unhedged_usd:
+  value: 3000000.0
+  unit: usd
+  flag: ASSUMPTION
+  source: "Desk policy; evidence BOOK lme_delta_usd"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Dollar twin of policy_max_net_unhedged_mt (about 1,000 MT at USD 3,000/t). Book: above USD 3 m on 2 clean days
+    (8-Mar USD 6.36 m; 14-Apr).
+
+policy_max_unhedged_frac:
+  value: 0.25
+  unit: frac_of_physical_lme_exposure
+  flag: ASSUMPTION
+  source: "Desk policy; evidence BOOK lme_delta_mt / lme_delta_physical_mt"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    |net| / gross physical, checked daily when gross physical is at least policy_unhedged_frac_min_physical_mt.
+    Symmetric: over-hedging (net short) counts. The book's median hedge ratio was 0.903, but ratios drift between
+    re-sizing decisions, so the book was outside 25 % on 26 of 99 qualifying clean days. The remedy is a rebalancing
+    rule, not a looser band.
+
+policy_unhedged_frac_min_physical_mt:
+  value: 1000.0
+  unit: mt_lme_equivalent
+  flag: ASSUMPTION
+  source: "Desk policy"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Below this gross physical exposure the percentage test is not applied (a 20 % miss on 300 MT is noise; the
+    absolute net limit still binds).
+
+policy_mcx_hedge_ratio_band_frac:
+  value: [0.80, 1.10]
+  unit: frac_of_lme_equivalent_physical_at_decision
+  flag: ASSUMPTION
+  source: "Desk policy; evidence trade_hedges.csv hedge_ratio_target / hedge_ratio_actual per ticket"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Hedge ratio each ticket must be sized to at every MCX decision (entry, roll, tranche). Eight tickets targeted 0.9
+    or 1.0 and filled within 0.899-1.002; T04's deliberate 0.50 is outside and would need prior committee approval.
+    The upper bound allows for the MCX lot rounding and the 5.4-5.5 MT LME-equivalent per 5 MT lot.
+
+policy_fx_forward_cover_min_frac:
+  value: 0.90
+  unit: frac_of_fixed_usd_payable
+  flag: ASSUMPTION
+  source: "Desk policy; evidence trade_book.csv fx_hedge_frac_target, fx_cover_frac_of_fixed_purchase"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Minimum forward cover of each fixed USD payable from the day it is fixed, measured on physical + forwards only
+    (the MCX short's embedded USD must not be netted in: docs/40 §4.2, fix log open item 3). Eight tickets covered
+    100 %; T06 covered 60 %.
+
+policy_stop_ticket_review_inr:
+  value: 10000000.0
+  unit: inr_drawdown_from_ticket_peak
+  flag: ASSUMPTION
+  source: "Desk policy; evidence attribution_daily.csv per-ticket cum_pnl_inr drawdowns"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    A ticket whose cumulative P&L falls ₹10 m below its own peak goes to a same-day review with the head of desk
+    (about 2.3x the book's mean daily GARCH VaR, ₹4.27 m). Four of nine tickets would have triggered it (T04, T05,
+    T07, T08). Chosen after the drawdowns were known: which tickets trip is illustration, not a test of the level.
+
+policy_stop_ticket_hard_inr:
+  value: 20000000.0
+  unit: inr_drawdown_from_ticket_peak
+  flag: ASSUMPTION
+  source: "Desk policy; evidence attribution_daily.csv per-ticket drawdowns"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    At ₹20 m below peak the ticket is hedged to 1.0 on MCX and forwards and no new exposure in the same grade is
+    added until it closes. Only T08 reached it (−₹22.8 m on 1-Aug, worst −₹26.1 m on 8-Aug, mostly grade spread),
+    and the desk bought T09 in the same grade on 3-Aug. Disclosure: the level sits where only the worst ticket trips,
+    and it was set with the book's drawdowns in view.
+
+policy_stop_book_drawdown_inr:
+  value: 40000000.0
+  unit: inr_drawdown_from_book_peak
+  flag: ASSUMPTION
+  source: "Desk policy; evidence attribution_daily.csv BOOK cum_pnl_inr"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    At ₹40 m below the book's peak (about ten times the mean daily GARCH VaR) no new purchase is contracted until the
+    committee has reviewed the book. The book drew down ₹49.9 m from its 9-Jun peak to 8-Aug, crossing ₹40 m on
+    1-Aug; T09 was contracted on 3-Aug. Set with that drawdown in view (a disclosure, not a validation).
+
+policy_var_limit_inr:
+  value: 10000000.0
+  unit: inr_one_day_95pct_var
+  flag: ASSUMPTION
+  source: "Desk policy; evidence var_daily.csv (docs/40_var_garch.md)"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    One-day 95 % VaR limit applied to the larger of the GARCH(1,1) VaR and the 250-day historical VaR (the historical
+    number is the floor, because GARCH decayed below both rolling windows into the April-May crash). ₹10 m is 2.3x the
+    mean GARCH VaR (₹4.27 m). On clean position days the book breached it once: ₹43.5 m on 9-Mar, the naked session.
+    Scope: the VaR covers LME, USD/INR and freight only. Grade-spread P&L (daily std ₹2.2 m over the window, not a VaR
+    factor) and the LME cash-3M spread (memo VaR +18 %) sit outside the limit (docs/40 §4.2, §6.1).
+
+policy_freight_fix_within_bdays:
+  value: 10
+  unit: trading_days_after_purchase
+  flag: ASSUMPTION
+  source: "Desk policy; evidence trade_book.csv trade_date vs freight_fixture_date on the three FOB tickets"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    FOB purchases fix freight within 10 trading days of the purchase. T01 fixed after 8, T04 after 6, T07 after 2.
+
+policy_freight_stop_max_frac_over_fixture:
+  value: 0.20
+  unit: frac_above_fixture_rate
+  flag: ASSUMPTION
+  source: "Desk policy; evidence trade_book.csv freight_stop_loss_usd_box vs freight_rate_usd_box"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Unhedged freight carries a stated stop no more than 20 % above the fixture (the book's stops were 18.4 %, 12.7 %
+    and 14.2 % above). No proxy hedge: no accessible instrument tracks the India lanes (Table 4 row 2.7(d) note), the
+    two lanes are one factor (JEA_NSA = 0.2255 x USEC_MUN), freight VaR averaged ₹0.05 m, and the hypothetical +40 %
+    spike costs T01 ₹8.55 m (docs/31 §3.5).
+
+# --- Phase 7 sentiment overlay (owner: desk.sentiment.run — VADER on the real Google News RSS headlines, spec Table 7
+# row 5.2; doc docs/70_sentiment_overlay.md). Appended below the sections above without editing them. Every key here
+# was declared on 2026-09-16 BEFORE any sentiment-vs-LME correlation was computed, and none was revised after seeing
+# one. The lead/lag range (-3..+3 weeks) and the 10,000 bootstrap draws are brief-fixed model-structure constants in
+# desk/sentiment/run.py; the key price weeks come from outputs/tables/adverse_event_windows.csv (P3, reporting-only).
+
+sent_vader_pos_threshold:
+  value: 0.05
+  unit: vader_compound_score
+  flag: ASSUMPTION
+  source: "vaderSentiment 3.3.2 README (Hutto & Gilbert, ICWSM 2014): the authors' recommended cut-off, compound >= 0.05 = positive"
+  verify: "N/A — tool author's convention, adopted unchanged"
+  note: >-
+    A headline counts toward a week's pos_share when its VADER compound score is at least this value. Adopted from
+    the tool's documentation rather than chosen, so the share cannot have been tuned to prices. Applied identically to
+    the raw and the domain-adjusted score.
+
+sent_vader_neg_threshold:
+  value: -0.05
+  unit: vader_compound_score
+  flag: ASSUMPTION
+  source: "vaderSentiment 3.3.2 README (Hutto & Gilbert, ICWSM 2014): compound <= -0.05 = negative"
+  verify: "N/A — tool author's convention, adopted unchanged"
+  note: >-
+    A headline counts toward a week's neg_share when its compound score is at most this value; scores strictly between
+    the two thresholds are neutral. Most commodity headlines contain no VADER lexicon word at all and score exactly
+    0, so the neutral share is large and is published alongside.
+
+sent_zscore_min_past_weeks:
+  value: 4
+  unit: weeks
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/70_sentiment_overlay.md §2.4)"
+  verify: "N/A — modelling choice"
+  note: >-
+    A week's z-score compares its mean score with the mean and standard deviation of ALL EARLIER weeks only
+    (expanding window, the week itself excluded from the reference), and is left blank until at least four earlier
+    weeks exist. Four is the smallest reference that gives a standard deviation any stability while leaving 24 of the
+    28 weeks scored; it means no z-score exists for the weeks around the 7-Mar-2022 high, which the doc states rather
+    than hides. No future week ever enters a z-score.
+
+sent_signal_z_abs:
+  value: 1.0
+  unit: z_score_abs
+  flag: ASSUMPTION
+  source: "Desk modelling choice (docs/70_sentiment_overlay.md §2.6)"
+  verify: "N/A — modelling choice, declared before any lead test was run"
+  note: >-
+    The episode lead test records SIGNAL FIRED for a price turn if, in one of the three W-FRI weeks ending on or before
+    the last close before the move, the past-only z-score pointed in the direction of the coming move by at least one
+    standard deviation. (Wording corrected after the first run to match the code, which was written before any
+    result; the earlier wording, "the three complete weeks before the week of the turn", is published as
+    verdict_alt_window in sentiment_episodes.csv and gives the same verdicts.) One sigma is deliberately loose (a
+    lenient test gives sentiment every chance); the table therefore also publishes the base rate, i.e. how often the
+    same condition fired in all other weeks, without which a single hit means nothing.
+
+sent_bootstrap_block_weeks:
+  value: 3
+  unit: weeks
+  flag: ASSUMPTION
+  source: "Desk modelling choice; moving-block bootstrap (Kunsch 1989) because weekly sentiment and returns are autocorrelated"
+  verify: "N/A — modelling choice"
+  note: >-
+    Block length of the moving-block bootstrap behind the lead/lag correlation intervals. Resampling single weeks
+    would treat autocorrelated weekly scores as independent and give intervals that are too narrow; three weeks is
+    roughly n^(1/3) for n = 28 (the usual rate for block length) and matches the +/-3-week lag range.
+
+sent_domain_valence_abs:
+  value: 1.5
+  unit: vader_valence_points
+  flag: ASSUMPTION
+  source: "vaderSentiment 3.3.2 vader_lexicon.txt: mean absolute valence of its 7,506 entries is 1.54 (median 1.6)"
+  verify: "N/A — computed from the installed lexicon file, rounded down"
+  note: >-
+    The single valence (+1.5 bullish, -1.5 bearish) given to every word in sent_domain_lexicon. One magnitude for all
+    words, set at the lexicon's typical word strength, so no individual weight could be tuned; rounded DOWN so a domain
+    word never outweighs a typical VADER word.
+
+sent_domain_lexicon:
+  value:
+    up: [surge, surges, surged, surging, soar, soars, soared, soaring, jump, jumps, jumped, rally, rallies, rallied,
+         rallying, rise, rises, rose, rising, climb, climbs, climbed, climbing, rebound, rebounds, rebounded, bullish,
+         deficit, deficits, shortage, shortages, tight, tighter, tightness]
+    down: [slump, slumps, slumped, plunge, plunges, plunged, plunging, tumble, tumbles, tumbled, fall, falls, fell,
+           slide, slides, slid, decline, declines, declined, declining, sink, sinks, sank, slip, slips, slipped, dip,
+           dips, dipped, drops, dropped, crashes, crashed, plummet, plummets, plummeted, bearish, glut, gluts, surplus,
+           surpluses, oversupply, slowdown, soften, softens, softened, softer]
+    neutral: [demand]
+  unit: word_lists_price_direction
+  flag: ASSUMPTION
+  source: "Desk judgement from standard metals market-report vocabulary; declared 2026-09-16 before any correlation with LME was computed; per-word reasons in docs/70_sentiment_overlay.md §2.3"
+  verify: "N/A — judgement; the doc publishes raw VADER next to the adjusted score so the adjustment can be ignored"
+  note: >-
+    A small PRICE-DIRECTION overlay on VADER, which is a general social-media lexicon: it has no entry for surge, soar,
+    rally, rise, plunge, slump, tumble, fall, decline or glut, and scores deficit (-1.7) and shortage (-1.0) as bad
+    news although in a metals headline they are bullish for price. Rules: (1) only words whose price direction is the
+    same in nearly all market-report usage; (2) inflections listed explicitly because VADER does not stem; (3) add a
+    word only if VADER lacks it, or overwrite it only if VADER gives it the wrong sign for price (deficit, shortage,
+    shortages; deficits is simply absent) or a tone that is not a price direction (demand -0.5 -> 0); words VADER already signs
+    the right way (gain, drop, crash, falling, low, lower, weak, strong) are left alone; (4) deliberately NOT added
+    because their price direction is ambiguous: war, sanctions, crisis, cut(s), curbs, halt, closure, hike(s), ease,
+    cool, recovery (also a recycling term), high, record, peak, tightening (monetary). The overlay assumes the subject
+    of the verb is price, so "LME stocks fall" is mis-scored bearish; the doc counts such cases.

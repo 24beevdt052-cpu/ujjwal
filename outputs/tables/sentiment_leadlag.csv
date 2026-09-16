@@ -1,0 +1,29 @@
+variant,variant_label,is_primary,lag_weeks,reading,n_pairs,pearson_r,pearson_p_naive,fisher_ci_lo,fisher_ci_hi,boot_ci_lo,boot_ci_hi,boot_ci_excludes_zero,boot_valid_draws,spearman_rho,spearman_p_naive,significant_naive_5pct,significant_bonferroni_7lags,n_boot,block_weeks
+vader_all,"Raw VADER, all headlines (primary)",True,-3,LME leads sentiment by 3 weeks,25,-0.0430895,0.837953,-0.430884,0.358139,-0.331527,0.283089,False,10000,-0.198462,0.341599,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,-2,LME leads sentiment by 2 weeks,26,-0.0688978,0.738054,-0.44439,0.327186,-0.619881,0.573088,False,10000,-0.0495726,0.809952,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,-1,LME leads sentiment by 1 week,27,0.168798,0.399978,-0.225693,0.51573,-0.08722,0.555691,False,10000,0.233822,0.240458,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,0,same week,28,-0.171723,0.382248,-0.511998,0.215137,-0.55562,0.260148,False,10000,-0.114395,0.562162,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,1,sentiment leads LME by 1 week,27,-0.0071177,0.971892,-0.386087,0.373908,-0.344456,0.227538,False,10000,0.0842491,0.676093,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,2,sentiment leads LME by 2 weeks,26,0.00707121,0.972651,-0.381325,0.393346,-0.44417,0.429735,False,10000,0.037265,0.856578,False,False,10000,3
+vader_all,"Raw VADER, all headlines (primary)",True,3,sentiment leads LME by 3 weeks,25,-0.0844814,0.688052,-0.464119,0.321377,-0.299548,0.283985,False,10000,-0.156923,0.453794,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,-3,LME leads sentiment by 3 weeks,25,0.00666144,0.974789,-0.389495,0.400738,-0.314905,0.331494,False,10000,-0.176923,0.397536,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,-2,LME leads sentiment by 2 weeks,26,-0.032776,0.873709,-0.414861,0.359135,-0.681081,0.626751,False,10000,-0.0406838,0.843572,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,-1,LME leads sentiment by 1 week,27,0.286794,0.146952,-0.104622,0.601277,0.0821717,0.559467,True,10000,0.333333,0.0893047,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,0,same week,28,-0.0945539,0.632226,-0.451697,0.288707,-0.595579,0.357299,False,10000,-0.0388615,0.844349,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,1,sentiment leads LME by 1 week,27,-0.112938,0.574882,-0.472666,0.279052,-0.507193,0.21588,False,10000,-0.0970696,0.630046,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,2,sentiment leads LME by 2 weeks,26,0.0213717,0.917466,-0.369035,0.405368,-0.41341,0.465053,False,10000,-0.0208547,0.919456,False,False,10000,3
+adjusted_all,"Price-direction adjusted, all headlines",False,3,sentiment leads LME by 3 weeks,25,-0.0100267,0.962061,-0.403559,0.386636,-0.252177,0.296464,False,10000,-0.113846,0.587918,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,-3,LME leads sentiment by 3 weeks,25,-0.261566,0.206589,-0.595183,0.148961,-0.543069,0.161689,False,10000,-0.257692,0.213635,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,-2,LME leads sentiment by 2 weeks,26,0.0909502,0.658586,-0.307225,0.462025,-0.357262,0.631584,False,10000,0.102906,0.616903,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,-1,LME leads sentiment by 1 week,27,0.0285222,0.887695,-0.355343,0.404156,-0.252739,0.470371,False,10000,0.0885226,0.660607,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,0,same week,28,-0.208351,0.287349,-0.539493,0.17861,-0.491563,0.150302,False,10000,-0.123153,0.532407,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,1,sentiment leads LME by 1 week,27,-0.0513215,0.799323,-0.423084,0.33523,-0.347663,0.204092,False,10000,0.00854701,0.966251,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,2,sentiment leads LME by 2 weeks,26,-0.0152598,0.94102,-0.400246,0.374305,-0.523589,0.439442,False,10000,-0.0386325,0.851371,False,False,10000,3
+vader_core,"Raw VADER, aluminium-chain titles only",False,3,sentiment leads LME by 3 weeks,25,0.000856625,0.996758,-0.394408,0.395854,-0.24919,0.34416,False,10000,0.0161538,0.938911,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,-3,LME leads sentiment by 3 weeks,25,-0.260574,0.208377,-0.594496,0.150001,-0.547576,0.139323,False,10000,-0.294615,0.152826,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,-2,LME leads sentiment by 2 weeks,26,0.119217,0.561869,-0.281117,0.484209,-0.34113,0.655753,False,10000,0.14735,0.472556,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,-1,LME leads sentiment by 1 week,27,0.0282212,0.888873,-0.355606,0.403904,-0.260787,0.494733,False,10000,0.135531,0.500288,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,0,same week,28,-0.0580821,0.769081,-0.422014,0.321972,-0.473034,0.312511,False,10000,0.0399562,0.840019,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,1,sentiment leads LME by 1 week,27,-0.092765,0.645368,-0.45668,0.297745,-0.341815,0.188203,False,10000,-0.0537241,0.790131,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,2,sentiment leads LME by 2 weeks,26,-0.0219082,0.915401,-0.405816,0.368571,-0.568304,0.469932,False,10000,-0.0495726,0.809952,False,False,10000,3
+adjusted_core,"Adjusted, aluminium-chain titles only",False,3,sentiment leads LME by 3 weeks,25,0.0721089,0.73195,-0.332496,0.454296,-0.181088,0.37305,False,10000,0.0738462,0.725733,False,False,10000,3

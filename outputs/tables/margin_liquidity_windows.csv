@@ -1,0 +1,3 @@
+window,start,end,rule,reporting_only
+CRASH_FORTNIGHT,2022-04-22,2022-05-09,CONTRACTS §7a.3: the 10-trading-day RETURN window (11 observations) with the most negative LME cash return in the headline window (adverse_event_windows.csv E1_CRASH_FORTNIGHT),True
+MARGIN_FORTNIGHT,2022-03-15,2022-03-29,the 10 trading days (11 observations) with the most negative summed net MCX margin cash (VM + charges − IM change) in the headline window,True

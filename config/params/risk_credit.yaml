@@ -1,0 +1,243 @@
+# ACADEMIC SIMULATION — not actual trades.
+#
+# Phase 5 (MASTER_SPEC Table 6 rows 4.3 and 4.4): counterparty credit scoring and the credit tracker.
+# Owner: P5 credit (desk.risk.credit_scoring, desk.risk.credit_tracker, desk.risk.run_credit).
+# Kept apart from risk.yaml (owned by the P4 VaR build) so two builds never edit one file; keys are prefixed
+# `credit_` and the register loader (desk.config) reads every *.yaml in this folder.
+#
+# EVERYTHING in the "synthetic data-generating process" section describes a FICTIONAL buyer population invented to
+# illustrate a logistic credit model. None of it is an estimate from real Indian foundry data. The odds ratios were
+# written down from the reasoning in each note BEFORE the three SIM buyers were scored, and the scoring
+# sensitivities (outputs/tables/credit_scores_sensitivity.csv) show how much the ranking and bands depend on them.
+
+# =================================================================================================================
+# Synthetic data-generating process (DGP) — ILLUSTRATIVE, SYNTHETIC
+# =================================================================================================================
+credit_synth_base_default_rate_annual_frac:
+  value: 0.04
+  unit: frac_of_buyer_quarters_defaulting_within_12_months
+  flag: ASSUMPTION
+  source: >-
+    Judgement, bracketed by published Indian MSME bank-credit figures that are NOT the same measure:
+    TransUnion CIBIL-SIDBI MSME Pulse (newsroom release 8-Aug-2022) reports an MSME NPA rate of 12.8 % in Mar-2022
+    (12.0 % Mar-2021), 20.8 % at public sector banks, 9.6 % at NBFCs and 5.6 % at private banks in FY22-Q4, and that
+    ~70 % of 90+ DPD balances pertain to accounts originated up to Mar-2017
+    (https://newsroom.transunioncibil.com/msme-credit-disbursement-accelerates-while-credit-quality-stays-stable/).
+  verify: >-
+    N/A — calibration assumption. The bureau figures quoted in `source` were read on 2026-09-16; no published 2022
+    annual default (flow) rate for 30-day supplier trade credit to Indian foundries or secondary smelters was found.
+  note: >-
+    Target mean 12-month default probability of the synthetic buyer-quarter population; the DGP intercept is solved
+    so the population mean equals it. Chosen inside the 2-5 %/yr band the Phase 5 brief states, and deliberately well
+    below the bureau NPA ratios because those are balance-weighted STOCK ratios on multi-year bank loans (dominated
+    by pre-2017 vintages), whereas trade credit is 30-45 days, re-underwritten every parcel and cut off at the first
+    missed payment, so its annual flow default rate should be lower. Bands are absolute PD cut-offs, so this number
+    moves bands: the 2 % and 5 % variants are published in credit_scores_sensitivity.csv.
+
+credit_dgp_odds_ratio_utilisation_per_10pp:
+  value: 1.25
+  unit: odds_ratio_per_0.10_of_peak_credit_utilisation_over_the_quarter
+  flag: ASSUMPTION
+  source: "Judgement (synthetic DGP). Direction from standard behavioural-scorecard practice: drawn/limit is among the strongest delinquency predictors."
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: >-
+    +10 percentage points of peak credit utilisation multiplies default odds by 1.25, so running a line at 90 %
+    rather than 30 % multiplies odds by ~3.8. A buyer that lives near its limit has no headroom when its own
+    customers pay late. Credit utilisation is the desk's own limit definition (config/counterparties.yaml header,
+    docs/20 rule C1): receivable plus the part of contracted-not-invoiced sales an advance does not cover, over the
+    credit limit. It deliberately EXCLUDES advances still owed (see docs/50_credit_scoring.md §3.2 for why advance
+    reliance is an overlay, not part of this feature).
+
+credit_dgp_odds_ratio_dpd_per_10d:
+  value: 1.50
+  unit: odds_ratio_per_10_days_of_worst_days_past_due_over_trailing_12_months
+  flag: ASSUMPTION
+  source: "Judgement (synthetic DGP). Past delinquency is the most widely used behavioural default predictor in trade-credit and bureau scorecards."
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: >-
+    Each 10 days of worst delinquency in the last 12 months multiplies default odds by 1.5 (0 to 37 days: ~x4.5).
+    Set as the strongest per-unit driver because a missed due date is the one feature that is an observed payment
+    failure rather than a circumstance.
+
+credit_dgp_odds_ratio_history_per_12m:
+  value: 0.80
+  unit: odds_ratio_per_12_months_of_payment_history_with_the_desk
+  flag: ASSUMPTION
+  source: "Judgement (synthetic DGP). Thin-file / new-relationship names default more often in trade-credit portfolios."
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: >-
+    Each extra year of payment history with the desk multiplies default odds by 0.8 (12 to 48 months: ~x0.45).
+    Deliberately the weakest effect: a long history is survivorship evidence, not a balance sheet.
+
+credit_dgp_odds_ratio_concentration_per_10pp:
+  value: 1.15
+  unit: odds_ratio_per_0.10_of_the_buyer's_annual_raw_material_spend_sourced_from_this_desk
+  flag: ASSUMPTION
+  source: "Judgement (synthetic DGP). A buyer sourcing most of its input from one supplier on credit is using that supplier as a financier and has fewer alternative lines."
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: >-
+    +10 percentage points of the buyer's raw-material spend coming from the desk multiplies default odds by 1.15
+    (10 % to 60 %: ~x2.0). Buyer-side dependence, not the desk's own book share: the desk's concentration in one
+    name is an exposure question and is handled by limits, not by the PD.
+
+credit_synth_gen_utilisation:
+  value: {mean: 0.50, weakness_loading: 0.15, noise_sd: 0.20, floor: 0.0, cap: 1.30}
+  unit: "mapping: peak credit utilisation frac = clip(mean + weakness_loading*w + noise_sd*e, floor, cap); w ~ N(0,1) per buyer, e ~ N(0,1) per quarter"
+  flag: ASSUMPTION
+  source: "Judgement (synthetic feature generator)"
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: >-
+    Utilisation spread wide enough (1st-99th pct roughly 0-1.03, occasional breaches to 1.3) to cover the SIM
+    buyers' credit-utilisation peaks (0.74-0.89). Weaker buyers (higher latent w) run fuller lines, so features are
+    correlated the way a real portfolio's are; w never enters the default probability directly, so a logistic model
+    on the four features is correctly specified by construction (a real portfolio would not be).
+
+credit_synth_gen_dpd:
+  value: {p_late_logit_intercept: -0.30, p_late_weakness_loading: 1.00, late_mean_days: 12.0, late_mean_weakness_elasticity: 0.35, cap_days: 120}
+  unit: "mapping: worst DPD days = 0 with prob 1-sigmoid(a+b*w), else ceil(Exponential(late_mean_days*exp(elasticity*w))) capped"
+  flag: ASSUMPTION
+  source: "Judgement (synthetic feature generator)"
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: "Zero-inflated: about 45 % of buyer-quarters have some delinquency in the trailing year, mostly under three weeks, with a long tail for weak names (99th percentile ~55 days)."
+
+credit_synth_gen_history:
+  value: {median_months: 30.0, log_sd: 0.70, weakness_loading_log: -0.20, months_per_quarter: 3.0, floor_months: 1.0, cap_months: 180.0}
+  unit: "mapping: months of history = clip(exp(log(median)+weakness_loading_log*w+log_sd*e_buyer) + months_per_quarter*quarter_index, floor, cap)"
+  flag: ASSUMPTION
+  source: "Judgement (synthetic feature generator)"
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: "Relationship length is buyer-level (it grows 3 months per observed quarter) and only mildly related to weakness."
+
+credit_synth_gen_concentration:
+  value: {logit_intercept: -1.80, weakness_loading: 0.50, buyer_sd: 0.80, quarter_sd: 0.30}
+  unit: "mapping: share of buyer raw-material spend from the desk = sigmoid(intercept + loading*w + buyer_sd*e_buyer + quarter_sd*e_quarter)"
+  flag: ASSUMPTION
+  source: "Judgement (synthetic feature generator)"
+  verify: "N/A — synthetic data-generating process, nothing to verify against"
+  note: "Median ~14 %, 99th percentile ~60 %: most foundries multi-source, a tail of small names depend on one importer."
+
+# =================================================================================================================
+# Point-in-time feature definitions for scoring the SIM buyers
+# =================================================================================================================
+credit_feature_lookback_utilisation_days:
+  value: 91
+  unit: calendar_days
+  flag: ASSUMPTION
+  source: "Model design: matches the synthetic training grain (one observation = one buyer-quarter)"
+  verify: "N/A — model design choice"
+  note: >-
+    Peak credit utilisation, and the peak advance-reliance multiple that triggers the performance overlay, are
+    taken over panel days in (d-91, d] using only rows dated on or before the scoring date d.
+
+credit_feature_lookback_dpd_days:
+  value: 365
+  unit: calendar_days
+  flag: ASSUMPTION
+  source: "Model design: worst delinquency over the trailing 12 months, a standard bureau/scorecard window"
+  verify: "N/A — model design choice"
+  note: >-
+    The book's own days_past_due (P3) is combined with the SIM profile's prior_dpd_max_days from
+    config/counterparties.yaml. ASSUMPTION: that prior worst delinquency is dated inside the 12 months before the
+    book's first day, so it stays in the window through HORIZON_END (the profile carries no dates).
+
+credit_feature_lookback_concentration_days:
+  value: 365
+  unit: calendar_days
+  flag: ASSUMPTION
+  source: "Model design: trailing 12 months of contracted desk sales against one year of the buyer's raw-material spend"
+  verify: "N/A — model design choice"
+  note: >-
+    order_concentration_frac(d) = booking-time invoice value of desk sales to the buyer contracted in (d-365, d]
+    divided by annual_turnover_inr x secondary_raw_material_cost_share. Pre-book invoices have no recorded values, so
+    early-window concentration is a lower bound. The profile's group_concentration_frac is NOT used: it is undefined
+    in the schema and matches the whole book's final sales, so using it before those sales were contracted would be
+    look-ahead.
+
+# =================================================================================================================
+# Score bands and the band -> limit policy (quoted by the risk policy memo, Table 6 row 4.6)
+# =================================================================================================================
+credit_band_pd_upper_frac:
+  value: {A: 0.02, B: 0.05, C: 0.12}
+  unit: annual_pd_frac_upper_bound_exclusive (D = everything at or above the C bound)
+  flag: ASSUMPTION
+  source: "Desk policy judgement, expressed against the synthetic population base rate (credit_synth_base_default_rate_annual_frac = 4 %)"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    A < half the population base rate; B up to 1.25x base; C up to 3x base; D above. Set before scoring. Four bands
+    because a credit committee can act on four (grow, hold, secure, exit/advance-only) and cannot act on a decimal.
+
+credit_performance_overlay_notches:
+  value: 1
+  unit: bands_downgraded
+  flag: ASSUMPTION
+  source: "Desk policy judgement, Phase 1-3 open item 1 (docs/reviews/phase1-3_fix_log.md §3): score advance failure as well as receivable default"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    If the buyer's advance-reliance multiple (advances contracted and not yet received / credit limit) exceeded
+    buyer_advance_limit_multiple_of_credit_limit (commercial.yaml, 1.0x, rule P14) on any panel day in the
+    utilisation lookback, the model band is downgraded this many notches (floor D). An overlay rather than a model
+    feature: it changes what the desk loses if the name fails, and it lies far outside any support a utilisation
+    feature could be trained on (docs/50_credit_scoring.md §3.2).
+
+credit_soft_utilisation_frac:
+  value: 0.80
+  unit: frac_of_credit_limit_inr
+  flag: ASSUMPTION
+  source: "Desk policy judgement: early-warning line on the credit-utilisation measure"
+  verify: "N/A — desk policy assumption"
+  note: "Credit utilisation (receivable plus advance-uncovered contracted sales) at or above 80 % of the line raises a soft flag in the tracker: the next parcel to that name cannot go on open credit without a clearance first."
+
+credit_band_max_credit_utilisation_frac:
+  value: {A: 1.00, B: 0.90, C: 0.75, D: 0.50}
+  unit: frac_of_credit_limit_inr
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy)"
+  verify: "N/A — desk policy assumption"
+  note: "Maximum credit utilisation (the P04 measure: receivable plus advance-uncovered contracted sales, over the limit) a new sale may leave behind, by the buyer's final band at the previous close."
+
+credit_band_max_advance_reliance_multiple:
+  value: {A: 1.00, B: 1.00, C: 0.50, D: 0.00}
+  unit: multiple_of_credit_limit_inr
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy), tightening rule P14 for weaker bands"
+  verify: "N/A — desk policy assumption"
+  note: >-
+    Advance the desk may RELY ON before it arrives (cargo allocated, hedge lifted). A and B keep the P14 cap of
+    1.0x; C halves it; D relies on nothing — the hedge stays on and the cargo stays unallocated until the advance
+    is in the bank.
+
+credit_band_limit_multiplier:
+  value: {A: 1.00, B: 1.00, C: 1.00, D: 0.50}
+  unit: multiple_of_current_credit_limit_inr
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy)"
+  verify: "N/A — desk policy assumption"
+  note: "Recommended limit = current limit x multiplier. C is frozen at the current line (no increase); D is cut in half pending committee review."
+
+credit_band_max_credit_days:
+  value: {A: 45, B: 30, C: 30, D: 0}
+  unit: days
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy), capped by max_domestic_credit_days (commercial.yaml, 45)"
+  verify: "N/A — desk policy assumption"
+  note: "D-band names buy on advance or cash against documents only; C-band credit needs security (post-dated cheques or a bank guarantee) covering the credit balance."
+
+credit_band_review_frequency_days:
+  value: {A: 180, B: 90, C: 30, D: 7}
+  unit: days_between_credit_reviews
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy)"
+  verify: "N/A — desk policy assumption"
+  note: "How often the name comes back to the credit committee."
+
+credit_band_limit_action:
+  value:
+    A: "MAINTAIN — eligible for a limit increase at the next review"
+    B: "MAINTAIN — watch utilisation; no increase without a clean review"
+    C: "FREEZE — no increase; security for any credit balance; advance reliance capped at 0.5x limit"
+    D: "REDUCE — cut the line to 50 %; advance or cash-against-documents only; do not lift the hedge before the advance arrives"
+  unit: text_by_band
+  flag: ASSUMPTION
+  source: "Desk policy judgement (band -> limit policy)"
+  verify: "N/A — desk policy assumption"
+  note: "The action text written into credit_scores.csv and credit_tracker.csv, quoted by the risk policy memo."

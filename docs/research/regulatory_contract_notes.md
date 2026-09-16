@@ -153,7 +153,7 @@ Trader implications:
 - **Cross-product basis.** The hedge is primary-ingot futures against scrap bought and alloy ingot sold. MCX itself
   reports near-month futures vs MCX spot hedge efficiency of only 14.00% (FY21-22) and 55.67% (FY22-23), basis std
   4.37 and 4.44 ₹/kg; the desk's residual basis is larger (see §9 on the alloy-ingot anchor).
-- **DPL mattered.** LME official cash moved >4% on 10 days from 24-Feb to 31-Aug-2022 in the panel (−12.2% on
+- **DPL mattered.** LME official cash moved >4% on 10 days from 24-Feb to 31-Aug-2022 in the panel (−12.1% on
   08-Mar), so the 4% narrow slab was a live constraint.
 - **Timing.** MCX closes at 23:30 IST, hours after the LME official (12:20–13:25 London), so daily MCX closes contain
   afternoon information the same day's LME official does not.

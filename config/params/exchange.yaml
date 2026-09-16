@@ -83,7 +83,7 @@ mcx_al_dpl_base_frac:
   flag: DIRECT
   source: "[C385]/[C617] 'Daily Price Limits': narrower slab of 4%, relaxed to 6% without cooling-off, then 9% after a 15-minute cooling-off; beyond 9% in steps of 3% when international prices move more"
   verify: "VERIFIED 2026-09-16 (SEBI circular 27-Sep-2022, attached to MCX/TRD/556/2022, later allowed direct relaxation — after the window)"
-  note: "LME official cash moved more than 4% on 10 days between 24-Feb and 31-Aug-2022 in lme_daily.csv (−12.2% on 08-Mar-2022, −5.3% on 15-Mar), so the 4% narrow slab was a live constraint on MCX price discovery in the window; whether MCX actually invoked the 6%/9% relaxations on those days was not checked."
+  note: "LME official cash moved more than 4% on 10 days between 24-Feb and 31-Aug-2022 in lme_daily.csv (−12.1% on 08-Mar-2022, −5.3% on 15-Mar), so the 4% narrow slab was a live constraint on MCX price discovery in the window; whether MCX actually invoked the 6%/9% relaxations on those days was not checked."
 
 mcx_al_dpl_relaxed_frac:
   value: 0.06
