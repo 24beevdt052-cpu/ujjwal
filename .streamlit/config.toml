@@ -1,0 +1,30 @@
+# Virtual Metals Trading Desk dashboard (app/streamlit_app.py). ACADEMIC SIMULATION — not actual trades.
+# Light, print-like theme on the desk palette (desk/reporting/style.py PALETTE); headless, no file watcher, no telemetry.
+
+[theme]
+base = "light"
+primaryColor = "#1f4e79"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f6fa"
+textColor = "#1f2430"
+linkColor = "#1f4e79"
+borderColor = "#dde3ea"
+font = "sans-serif"
+baseRadius = "0.4rem"
+metricValueFontSize = "1.6rem"
+showWidgetBorder = true
+chartCategoricalColors = ["#1f4e79", "#c55a11", "#548235", "#7f6000", "#8064a2", "#4bacc6", "#c00000", "#7f7f7f"]
+
+[server]
+headless = true
+runOnSave = false
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"
+
+[runner]
+magicEnabled = false

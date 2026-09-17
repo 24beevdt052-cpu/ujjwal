@@ -21,6 +21,18 @@ the rupee's slide. It is built in phases.
 
 Every number traces to a flagged source, and every weak spot is stated next to the number it weakens.
 
+## Run the dashboard
+
+A read-only Streamlit dashboard sits over the published outputs. It never runs a pipeline stage, writes a file or
+fetches data, and it shows the headline P&L only together with its sensitivity band.
+
+```sh
+.venv/bin/pip install -r requirements.txt
+.venv/bin/streamlit run app/streamlit_app.py --server.address localhost
+```
+
+Page map, honesty rules and how to add a page: [docs/80_frontend.md](docs/80_frontend.md).
+
 ## Contents
 
 1. [Headline results](#headline-results)

@@ -18,3 +18,5 @@ statsmodels==0.15.0
 vaderSentiment==3.3.2
 xlsxwriter==3.2.9
 yfinance==1.7.0
+plotly==7.1.0
+streamlit==1.64.0
