@@ -259,7 +259,7 @@ def test_monte_carlo_snapshot_memo_stresses_and_covariance():
     assert _metrics(at)["Net LME delta, MT"] == num(snaps.loc[snap, "lme_delta_mt"])
     cov = data.mc_table("covariance")
     span = cov[cov["covariance_id"] == f"pit_{snap}"].iloc[0]
-    assert pd.Timestamp(span["span_start"]).strftime("%-d-%b-%Y") in _frame(at, "Span")["Span"].iloc[0]
+    assert pd.Timestamp(span["span_start"]).strftime("%#d-%b-%Y") in _frame(at, "Span")["Span"].iloc[0]
 
 
 # ------------------------------------------------------------------------------------------------ credit

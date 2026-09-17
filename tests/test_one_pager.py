@@ -60,7 +60,7 @@ def _rupees(x: float) -> str:
 
 
 def _day(d) -> str:
-    return pd.Timestamp(d).strftime("%-d-%b")
+    return pd.Timestamp(d).strftime("%#d-%b")
 
 
 # ------------------------------------------------------------------------------------------------ fixtures

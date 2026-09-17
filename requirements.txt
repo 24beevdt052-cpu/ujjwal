@@ -13,7 +13,7 @@ PyYAML==6.0.3
 reportlab==5.0.1
 requests==2.34.2
 scikit-learn==1.9.1
-scipy==1.18.1
+scipy
 statsmodels==0.15.0
 vaderSentiment==3.3.2
 xlsxwriter==3.2.9

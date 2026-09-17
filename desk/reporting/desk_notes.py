@@ -156,7 +156,7 @@ def pct(x: float, dp: int = 1, sign: bool = False) -> str:
 
 
 def day(d: str, year: bool = False) -> str:
-    return pd.Timestamp(d).strftime("%-d-%b-%Y" if year else "%-d-%b")
+    return pd.Timestamp(d).strftime("%#d-%b-%Y" if year else "%#d-%b")
 
 
 def month_name(d: str) -> str:
@@ -1380,7 +1380,7 @@ def chart_tape(n: int, week_end: str, data: Mapping[str, pd.DataFrame]) -> Path:
     for a in (a1, a2):
         a.tick_params(labelsize=5.8, length=2, pad=1.5)
         a.grid(alpha=0.25)
-    a2.xaxis.set_major_formatter(mdates.DateFormatter("%-d-%b"))
+    a2.xaxis.set_major_formatter(mdates.DateFormatter("%#d-%b"))
     a2.xaxis.set_major_locator(mdates.MonthLocator())
     fig.tight_layout(pad=0.3, h_pad=0.5, rect=(0, 0.045, 1, 1))
     name = chart_name(n)

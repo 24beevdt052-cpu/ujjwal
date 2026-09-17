@@ -141,7 +141,7 @@ def test_headline_and_attribution_numbers_match_csvs(published):
     assert abs(ndt["new_deal_on_trade_date_inr"] + ndt["new_deal_after_trade_date_inr"] - life["new_deal"]) < 1.0
 
     big = t.loc[t["lme_flat"].abs().idxmax()]
-    big_day = pd.Timestamp(big["date"]).strftime("%-d-%b")
+    big_day = pd.Timestamp(big["date"]).strftime("%#d-%b")
     assert f"**{_m(big['lme_flat'], sign=True)} on {big_day} alone**" in published
     assert f"{_m(life['lme_flat'] - big['lme_flat'], sign=True)} on every other day" in published
 

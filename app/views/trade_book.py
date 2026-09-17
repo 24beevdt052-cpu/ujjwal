@@ -620,7 +620,7 @@ with tab_time:
                 y=sub["trade"], x=(sub["end"] - sub["start"]).dt.total_seconds() * 1000 + 86_400_000,
                 base=sub["start"].dt.strftime("%Y-%m-%d"), orientation="h", name=phase, marker_color=color,
                 offsetgroup=phase, opacity=0.85,
-                customdata=list(zip(sub["start"].dt.strftime("%-d-%b"), sub["end"].dt.strftime("%-d-%b-%Y"))),
+                customdata=list(zip(sub["start"].dt.strftime("%#d-%b"), sub["end"].dt.strftime("%#d-%b-%Y"))),
                 hovertemplate="%{y} · " + phase + ": %{customdata[0]} → %{customdata[1]}<extra></extra>"))
         pdf = pd.DataFrame(pts)
         for kind, (symbol, color) in MARKERS.items():
@@ -630,7 +630,7 @@ with tab_time:
             fig.add_trace(go.Scatter(
                 x=sub["date"], y=sub["trade"], mode="markers", name=kind,
                 marker=dict(symbol=symbol, size=10, color=color, line=dict(width=1, color="white")),
-                customdata=sub["date"].dt.strftime("%-d-%b-%Y"),
+                customdata=sub["date"].dt.strftime("%#d-%b-%Y"),
                 hovertemplate="%{y} · " + kind + ": %{customdata}<extra></extra>"))
         fig.update_layout(barmode="group", bargap=0.2, bargroupgap=0.0)
         charts.shade_window(fig)

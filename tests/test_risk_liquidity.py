@@ -317,7 +317,7 @@ def test_memo_pdf_is_exactly_one_page(memo_md, tmp_path):
 def test_memo_is_dated_after_everything_it_quotes(memo_md):
     d = pd.Timestamp(config.value("policy_memo_date"))
     assert d > pd.Timestamp(HORIZON_END)
-    assert d.strftime("%-d %B %Y") in memo_md
+    assert d.strftime("%#d %B %Y") in memo_md
 
 
 def test_memo_numbers_match_their_source_tables(memo_md):

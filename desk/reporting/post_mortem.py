@@ -111,7 +111,7 @@ def pct(x: float, dp: int = 1) -> str:
 
 
 def day(d: str, year: bool = False) -> str:
-    return pd.Timestamp(d).strftime("%-d-%b-%Y" if year else "%-d-%b")
+    return pd.Timestamp(d).strftime("%#d-%b-%Y" if year else "%#d-%b")
 
 
 def m_cell(x: float, dp: int = 2) -> str:

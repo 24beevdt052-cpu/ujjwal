@@ -106,7 +106,8 @@ def mult(x: float, dp: int = 2) -> str:
 
 
 def day(d, year: bool = False) -> str:
-    return pd.Timestamp(d).strftime("%-d-%b-%Y" if year else "%-d-%b")
+    ts = pd.Timestamp(d)
+    return ts.strftime(f"{ts.day}-%b-%Y" if year else f"{ts.day}-%b")
 
 
 def usd_t(x: float, dp: int = 0) -> str:

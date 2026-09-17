@@ -86,7 +86,7 @@ def mark_events(fig: go.Figure, events: Iterable[tuple[DateLike, str]], color: s
         x = _ts(when)
         fig.add_shape(type="line", x0=x, x1=x, y0=0, y1=1, xref="x", yref="paper",
                       line=dict(color=color, width=1, dash="dot"), opacity=0.7)
-        fig.add_annotation(x=x, y=1, xref="x", yref="paper", text=f"{label} ({x:%-d-%b})", showarrow=False,
+        fig.add_annotation(x=x, y=1, xref="x", yref="paper", text=f"{label} ({x:%#d-%b})", showarrow=False,
                            xanchor="left", yanchor="top", xshift=3, yshift=-2 - 15 * i,
                            font=dict(size=10, color=color), bgcolor="rgba(255,255,255,0.75)")
     return fig

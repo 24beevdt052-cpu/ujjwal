@@ -68,7 +68,7 @@ def pct(x: float, dp: int = 1) -> str:
 
 
 def day(d: str) -> str:
-    return pd.Timestamp(d).strftime("%-d-%b")
+    return pd.Timestamp(d).strftime("%#d-%b")
 
 
 # ------------------------------------------------------------------------------------------------ sources
@@ -424,7 +424,7 @@ def render_md(limits: pd.DataFrame, ev: dict) -> str:
 
     md = f"""# Risk policy memo — aluminium scrap import desk (SIM)
 
-**To:** Risk Committee (SIM) · **From:** Head of Desk (SIM), Meridian Non-Ferrous Trading (SIM) · **Date:** {memo_date.strftime('%-d %B %Y')} · **Re:** limits for the next book, set against what the Mar–Oct 2022 book actually did
+**To:** Risk Committee (SIM) · **From:** Head of Desk (SIM), Meridian Non-Ferrous Trading (SIM) · **Date:** {memo_date.strftime('%#d %B %Y')} · **Re:** limits for the next book, set against what the Mar–Oct 2022 book actually did
 
 > **{SIM_LABEL}.** Book P&L was {inr_m(ev['pnl_horizon'])} at {day(str(HORIZON_END))}-2022, but it is **not sign-robust**: {inr_m(ev['pnl_band_min'])} to {inr_m(ev['pnl_band_max'], sign=True)} across the registered domestic anchor-premium grid (break-even {num(ev['breakeven_anchor'])} ₹/t inside it). So every limit below is sized on the risk the book ran, not on what it earned. Evidence is from the published tables; checks that include the MCX leg skip the {ev['n_stale_dates']} MCX exit/roll position dates P3 flags. Hedge effectiveness is measured on a unit-beta MCX proxy, so the MCX basis is under-represented in every hedge number here. The third-party mirror's beta is {ev['mcx_beta_weekly']:.2f} on weekly closes and {ev['mcx_beta']:.2f} on daily data, which the MCX evening close biases down: mean GARCH VaR is {inr_m(ev['var_beta_weekly_mean'])} at the weekly beta and {inr_m(ev['var_beta_mean'])} at the daily one (the pessimistic end, not a hedge ratio anyone would use), against {inr_m(ev['var_mean_garch'], 2)} on the proxy.
 

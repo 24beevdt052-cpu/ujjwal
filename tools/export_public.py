@@ -48,9 +48,10 @@ MANIFEST_REL = "data/raw/_download_manifest.json"
 STRICT_DATA_PREFIXES = ("data/processed/", "data/interim/", "data/manual/")
 PROFILES = {"strict": DIST / "public", "full-local": DIST / "full-local"}
 BINARY_SCAN_LIMIT = 20_000_000
-csv.field_size_limit(sys.maxsize)
-
-
+try:
+    csv.field_size_limit(sys.maxsize)
+except OverflowError:
+    csv.field_size_limit(2**31 - 1)
 # ------------------------------------------------------------------------------------------------ helpers
 
 
