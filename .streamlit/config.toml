@@ -1,19 +1,25 @@
 # Virtual Metals Trading Desk dashboard (app/streamlit_app.py). ACADEMIC SIMULATION — not actual trades.
-# Light, print-like theme on the desk palette (desk/reporting/style.py PALETTE); headless, no file watcher, no telemetry.
+# Dark desk-terminal theme. These are the tokens Streamlit itself needs; everything config.toml cannot reach
+# (webfonts, card internals, badge pills, table zebra, sidebar active indicator) lives in app/lib/theme.py.
+# Headless, no file watcher, no telemetry.
 
 [theme]
-base = "light"
-primaryColor = "#1f4e79"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f3f6fa"
-textColor = "#1f2430"
-linkColor = "#1f4e79"
-borderColor = "#dde3ea"
-font = "sans-serif"
-baseRadius = "0.4rem"
-metricValueFontSize = "1.6rem"
+base = "dark"
+primaryColor = "#3D8BFF"
+backgroundColor = "#0B0E14"
+secondaryBackgroundColor = "#151922"
+textColor = "#E8EAED"
+linkColor = "#3D8BFF"
+borderColor = "#262B36"
+# Fonts for Streamlit's own chrome and code blocks (the webfaces themselves are loaded by app/lib/theme.py).
+# Note: st.dataframe paints its cells on a canvas and ignores both these settings and CSS — see components.df_table.
+font = "Inter, -apple-system, 'Segoe UI', Roboto, sans-serif"
+codeFont = "'IBM Plex Mono', ui-monospace, Menlo, monospace"
+baseRadius = "0.5rem"
+metricValueFontSize = "2rem"
 showWidgetBorder = true
-chartCategoricalColors = ["#1f4e79", "#c55a11", "#548235", "#7f6000", "#8064a2", "#4bacc6", "#c00000", "#7f7f7f"]
+# Chart series colours: restrained blues/greens first, red kept for losses and alerts.
+chartCategoricalColors = ["#3D8BFF", "#E5A700", "#2FBF71", "#A78BFA", "#4FB8D6", "#F2874E", "#E5484D", "#8B909C"]
 
 [server]
 headless = true
